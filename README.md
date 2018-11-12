@@ -21,70 +21,70 @@ The significance of the above demo created by Jean-Philippe Grenier from Ubisoft
 Goals
 ======================
 
-## 1. Simple wave particle rendering.
+* 1. Simple wave particle rendering.
 
-## 2. Combine wave particle with flow map.
+* 2. Combine wave particle with flow map.
 
-## 3. Generate flow map in real-time.
+* 3. Generate flow map in real-time.
 
-## 4. Identify and solve the problems caused by advection of height, uv, normal. (extra features)
+* 4. Identify and solve the problems caused by advection of height, uv, normal. (extra features)
 
 Milestones
 ======================
 
-## - [] Milestone 1
+- [] Milestone 1
 
-### 	- [] DX12 frame work
+  - [] DX12 frame work
+  
+    - [] Compute shader
 
-####		- [] Compute shader
+    - [] Tessellation shader
 
-####		- [] Tessellation shader
+    - [] Basic Interaction
 
-####		- [] Basic Interaction
+    - [] Basic UI
 
-####		- [] Basic UI
+ - [] Basic wave particle rendering
 
-###	- [] Basic wave particle rendering
+    - [] Single particle
 
-####		- [] Single particle
+- [] Milestone 2
 
-## - [] Milestone 2
+  - [] Advanced wave particle rendering
 
-### 	- [] Advanced wave particle rendering
+    - [] Multiple particles
 
-####		- [] Multiple particles
+    - [] Particle boundary interaction
 
-####		- [] Particle boundary interaction
+    - [] User interaction (create bump or dent) 
 
-####		- [] User interaction (create bump or dent) 
+  - [] Combine flow map with wave particle
 
-### 	- [] Combine flow map with wave particle
+    - [] Find some interesting flow maps
 
-####		- [] Find some interesting flow maps
+    - [] Use flow map to advect wave particle
 
-####		- [] Use flow map to advect wave particle
+  - [] Improve rendering method
 
-### 	- [] Improve rendering method
+    - [] Foam
 
-####		- [] Foam
+    - [] Subsurface scattering
 
-####		- [] Subsurface scattering
+- [] Milestone 3
 
-## - [] Milestone 3
+  - [] Generate flow map in real-time
 
-### 	- [] Generate flow map in real-time
+    - [] Fluid simulation
 
-####		- [] Fluid simulation
+    - [] Create blockers (rocks and etc.)
 
-####		- [] Create blockers (rocks and etc.)
+    - [] Advect properties using simulation result
 
-####		- [] Advect properties using simulation result
+- [] Final
 
-## - [] Final
+  - [] Finish unfinished work
 
-### 	- [] Finish unfinished work
-
-### 	- [] Identify and solve the problems caused by advection of height, uv, normal
+  - [] Identify and solve the problems caused by advection of height, uv, normal
 
 References
 ======================
