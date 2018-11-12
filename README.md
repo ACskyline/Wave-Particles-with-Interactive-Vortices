@@ -3,7 +3,7 @@ Wave Particles with Interactive Vortices
 
 ## Overview 
 
-In game industry water can be divided into two domains: ocean and river. This project focuses on river. Not too long ago, a demo of a real-time river editor was developed by a graphics programmer from Ubisoft. We think what he did is awesome and want to replicate it (as possible as we can).
+In game industry water can be divided into two domains: ocean and river. This project focuses on river. Not too long ago, a demo of a real-time river editor was developed by graphics programmer [Jean-Philippe Grenier](http://jpgrenier.org/) from Ubisoft. We think what he did is awesome and want to replicate it (as possible as we can).
 
 [![](img/1.jpg)](https://www.youtube.com/watch?v=--B6QZKwsdA)
 
@@ -84,6 +84,8 @@ The significance of the above demo created by Jean-Philippe Grenier from Ubisoft
   - [ ] Identify and solve the problems caused by advection of height, uv, normal
 
 ## References
+
+[A Similar Workflow](https://pdfs.semanticscholar.org/f548/cc7476e2e7e53b42befa19a376b61d12c7e9.pdf)
 
 [River Editor Water Simulation in Real-Time](https://80.lv/articles/river-editor-water-simulation-in-real-time/)
 
