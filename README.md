@@ -1,8 +1,7 @@
 Wave Particles with Interactive Vortices
 ========================
 
-Overview 
-======================
+## Overview 
 
 In game industry water can be divided into two domains: ocean and river. This project focuses on river. Not too long ago, a demo of a real-time river editor was developed by a graphics programmer from Ubisoft. We think what he did is awesome and want to replicate it (as possible as we can).
 
@@ -18,8 +17,7 @@ The new method is Wave Particles. Initially, Wave Particles were introduced into
 
 The significance of the above demo created by Jean-Philippe Grenier from Ubisoft is that it generates flow map in real-time. That is why the user can interactively create rocks to block the river as we can see in the video. When performing advection on height and normal, previous implementations [valve, naughty dog] use noise and blending multiple uv sets to minimize repetition and pulsing caused by advection of a finite sized texture. But in this demo the developer used a new technique called wave profile buffer to solve the repetition and pulsing.
 
-Goals
-======================
+## Goals
 
 * Simple wave particle rendering.
 
@@ -86,8 +84,7 @@ Milestones
 
   - [ ] Identify and solve the problems caused by advection of height, uv, normal
 
-References
-======================
+## References
 
 [River Editor Water Simulation in Real-Time](https://80.lv/articles/river-editor-water-simulation-in-real-time/)
 
