@@ -99,7 +99,7 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 [Valve Flow Map](http://advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf)
 
-[2D Fluid Solver](https://prideout.net/blog/old/blog/index.html@p=58.html)
+[A 2D Fluid Solver](https://prideout.net/blog/old/blog/index.html@p=58.html)
 
 [GPU Gems: Fast Fluid Dynamics Simulation on the GPU](https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch38.html)
 
