@@ -27,8 +27,7 @@ The significance of the above demo created by Jean-Philippe Grenier from Ubisoft
 
 * Identify and solve the problems caused by advection of height, uv, normal. (extra features)
 
-Milestones
-======================
+## Milestones
 
 - [ ] Milestone 1
 
