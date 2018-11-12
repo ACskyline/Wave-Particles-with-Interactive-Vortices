@@ -44,7 +44,7 @@ Milestones
 
     - [ ] Basic UI
 
- - [ ] Basic wave particle rendering
+  - [ ] Basic wave particle rendering
 
     - [ ] Single particle
 
