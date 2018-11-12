@@ -89,20 +89,20 @@ Milestones
 References
 ======================
 
-https://80.lv/articles/river-editor-water-simulation-in-real-time/
+[River Editor Water Simulation in Real-Time](https://80.lv/articles/river-editor-water-simulation-in-real-time/)
 
-http://www.cemyuksel.com/research/waveparticles/waveparticles_sketch_slides.pdf
+[Wave Particles Slides](http://www.cemyuksel.com/research/waveparticles/waveparticles_sketch_slides.pdf)
 
-http://www.cemyuksel.com/research/waveparticles/cem_yuksel_dissertation.pdf
+[Wave Particles Paper](http://www.cemyuksel.com/research/waveparticles/cem_yuksel_dissertation.pdf)
 
-http://advances.realtimerendering.com/s2016/s16_ramy_final.pptx
+[Uncharted 4 River Rendering](http://advances.realtimerendering.com/s2016/s16_ramy_final.pptx)
 
-https://prideout.net/blog/old/blog/index.html@p=58.html
+[2D Fluid Solver](https://prideout.net/blog/old/blog/index.html@p=58.html)
 
-https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch38.html
+[GPU Gems: Fast Fluid Dynamics Simulation on the GPU](https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch38.html)
 
-http://pub.ist.ac.at/group_wojtan/projects/2018_Jeschke_WaterSurfaceWavelets/WaterSurfaceWavelets.pdf
+[Water Surface Wavelets](http://pub.ist.ac.at/group_wojtan/projects/2018_Jeschke_WaterSurfaceWavelets/WaterSurfaceWavelets.pdf)
 
-https://www.gdcvault.com/play/1015309/Water-Technology-of
+[Uncharted 3 Ocean Rendering](https://www.gdcvault.com/play/1015309/Water-Technology-of)
 
-http://advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf
+[Valve Flow Map](http://advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf)
