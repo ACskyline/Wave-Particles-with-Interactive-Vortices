@@ -17,13 +17,11 @@ The new method is [Wave Particles](http://www.cemyuksel.com/research/waveparticl
 
 ![](img/0.JPG)
 
-The significance of the Jean-Philippe Grenier's work is that it generates flow map in real-time. That is why the user can interactively create rocks to block the river and affect the flow of river as we can see in the video. When performing advection on height and normal, previous implementations from Naughty Dog or [Valve](http://advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf) use noise and blending techniques to minimize repetition and pulsing caused by advection of a finite sized texture. 
+The significance of the Jean-Philippe Grenier's work is that it generates flow map in real-time. That is why the user can interactively create rocks to block the river and affect the flow of river as we can see in the video. When performing advection on height and normal, previous implementations from Naughty Dog or [Valve](http://advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf) use noise and blending techniques to minimize repetition and pulsing caused by advection of a finite sized texture. But in this demo the developer used a new technique called [Wave Profile Buffer](http://pub.ist.ac.at/group_wojtan/projects/2018_Jeschke_WaterSurfaceWavelets/WaterSurfaceWavelets.pdf) to solve the repetition and pulsing.
 
 ![](img/3.JPG)
 
 ![](img/4.JPG)
-
-But in this demo the developer used a new technique called [Wave Profile Buffer](http://pub.ist.ac.at/group_wojtan/projects/2018_Jeschke_WaterSurfaceWavelets/WaterSurfaceWavelets.pdf) to solve the repetition and pulsing.
 
 ## Goals
 
