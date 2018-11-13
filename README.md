@@ -23,11 +23,11 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ![](img/3.JPG)
 
-###### (picture from Rendering rapids in Uncharted 4 by Carlos Gonzalez-Ochoa, Siggraph 2016 Advances in Real-Time Rendering in Games course)
+###### (picture from Water Flow in Portal 2 by Alex Vlachos, Siggraph 2010 Advances in Real-Time Rendering course)
 
 ![](img/4.JPG)
 
-###### (picture from Water Flow in Portal 2 by Alex Vlachos, Siggraph 2010 Advances in Real-Time Rendering course)
+###### (picture from Rendering rapids in Uncharted 4 by Carlos Gonzalez-Ochoa, Siggraph 2016 Advances in Real-Time Rendering in Games course)
 
 ## Goals
 
