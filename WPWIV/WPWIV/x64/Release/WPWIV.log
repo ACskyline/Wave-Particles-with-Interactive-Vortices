@@ -1,0 +1,118 @@
+﻿  main.cpp
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5338): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5338): error C2143: syntax error: missing ',' before '&'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5339): error C2803: 'operator ==' must have at least one formal parameter of class type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5339): error C2805: binary 'operator ==' has too few parameters
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5340): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5340): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5342): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5342): error C2143: syntax error: missing ',' before '&'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5343): error C2803: 'operator ==' must have at least one formal parameter of class type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5343): error C2805: binary 'operator ==' has too few parameters
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5344): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5344): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5345): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5345): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5346): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5346): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5347): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5347): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5348): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5348): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5349): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5349): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5352): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5352): error C2143: syntax error: missing ',' before '&'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5353): error C2803: 'operator ==' must have at least one formal parameter of class type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5353): error C2805: binary 'operator ==' has too few parameters
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5354): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5354): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5355): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5355): error C2065: 'D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5355): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5358): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5358): error C2143: syntax error: missing ',' before '&'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5359): error C2803: 'operator ==' must have at least one formal parameter of class type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5359): error C2805: binary 'operator ==' has too few parameters
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5360): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5360): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5361): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5361): error C2065: 'D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_RESOLVE': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5361): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5364): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5364): error C2143: syntax error: missing ',' before '&'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5365): error C2803: 'operator ==' must have at least one formal parameter of class type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5365): error C2805: binary 'operator ==' has too few parameters
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5366): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5366): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5367): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5367): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5368): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5368): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5371): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5371): error C2143: syntax error: missing ',' before '&'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5372): error C2803: 'operator ==' must have at least one formal parameter of class type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5372): error C2805: binary 'operator ==' has too few parameters
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5373): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5373): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5374): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5374): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5375): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5375): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5376): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5376): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5377): error C2065: 'a': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5377): error C2065: 'b': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5411): error C2061: syntax error: identifier 'D3D12_STATE_OBJECT_TYPE'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5411): error C2535: 'CD3DX12_STATE_OBJECT_DESC::CD3DX12_STATE_OBJECT_DESC(void)': member function already defined or declared
+  e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5407): note: see declaration of 'CD3DX12_STATE_OBJECT_DESC::CD3DX12_STATE_OBJECT_DESC'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5415): error C2061: syntax error: identifier 'D3D12_STATE_OBJECT_TYPE'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5416): error C2833: 'operator D3D12_STATE_OBJECT_DESC' is not a recognized operator or type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5416): error C2059: syntax error: 'newline'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5417): error C2334: unexpected token(s) preceding '{'; skipping apparent function body
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5451): error C2833: 'operator D3D12_STATE_OBJECT_DESC' is not a recognized operator or type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5451): error C2059: syntax error: 'newline'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5452): error C2334: unexpected token(s) preceding '{'; skipping apparent function body
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5491): error C2143: syntax error: missing ';' before '*'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5491): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5492): error C2334: unexpected token(s) preceding '{'; skipping apparent function body
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5501): error C2061: syntax error: identifier 'D3D12_STATE_OBJECT_TYPE'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5511): error C2504: 'D3D12_STATE_SUBOBJECT': base class undefined
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5512): error C2143: syntax error: missing ';' before '*'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5512): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5512): error C2238: unexpected token(s) preceding ';'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5515): error C3646: 'm_Desc': unknown override specifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5515): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5518): error C2065: 'D3D12_STATE_SUBOBJECT': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5518): error C2923: 'std::vector': 'D3D12_STATE_SUBOBJECT' is not a valid template type argument for parameter '_Ty'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5518): error C2903: 'allocator': symbol is neither a class template nor a function template
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5518): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5520): error C2065: 'D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5520): error C2923: 'std::list': 'D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION' is not a valid template type argument for parameter '_Ty'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5520): error C2903: 'allocator': symbol is neither a class template nor a function template
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5520): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5521): error C2923: 'std::list': 'D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION' is not a valid template type argument for parameter '_Ty'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5521): error C2903: 'allocator': symbol is neither a class template nor a function template
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5521): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5557): error C3646: 'Type': unknown override specifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5557): error C2059: syntax error: ')'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5557): error C2238: unexpected token(s) preceding ';'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5565): error C2143: syntax error: missing ';' before '*'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5565): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5565): error C2238: unexpected token(s) preceding ';'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5407): error C2512: 'std::vector': no appropriate default constructor available
+  d:\visual studio community 2017\vc\tools\msvc\14.15.26726\include\vector(625): note: see declaration of 'std::vector'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5407): error C2512: 'std::list': no appropriate default constructor available
+  d:\visual studio community 2017\vc\tools\msvc\14.15.26726\include\list(739): note: see declaration of 'std::list'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5409): error C2065: 'D3D12_STATE_OBJECT_TYPE_COLLECTION': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5411): error C2512: 'std::vector': no appropriate default constructor available
+  d:\visual studio community 2017\vc\tools\msvc\14.15.26726\include\vector(625): note: see declaration of 'std::vector'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5411): error C2512: 'std::list': no appropriate default constructor available
+  d:\visual studio community 2017\vc\tools\msvc\14.15.26726\include\list(739): note: see declaration of 'std::list'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5413): error C2065: 'Type': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5415): error C2065: 'm_Desc': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5415): error C2065: 'Type': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5503): error C2065: 'Type': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5504): error C2065: 'm_Desc': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5505): error C2065: 'm_Desc': undeclared identifier
+e:\projects\visual_studio_projects\wpwiv\wpwiv\d3dx12.h(5505): fatal error C1003: error count exceeds 100; stopping compilation
