@@ -1,7 +1,5 @@
 #include "Mesh.h"
 
-
-
 Mesh::Mesh(MeshType _type, 
 	const XMFLOAT3& _position,
 	const XMFLOAT3& _scale,

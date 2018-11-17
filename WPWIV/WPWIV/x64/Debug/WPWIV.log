@@ -1,7 +1,2 @@
-﻿  Mesh.cpp
-e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(113): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(142): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
-  main.cpp
-  Generating Code...
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1709): warning C4715: 'GetDXGIFormatBitsPerPixel': not all control paths return a value
+﻿  Renderer.cpp
   WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

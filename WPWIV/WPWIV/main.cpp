@@ -6,8 +6,6 @@
 #include "Camera.h"
 #include "Mesh.h"
 
-using namespace DirectX; // we will be using the directxmath library
-
 // Handle to the window
 HWND hwnd = NULL;
 
@@ -88,62 +86,8 @@ ID3D12PipelineState* pipelineStateObject; // pso containing a pipeline state
 
 ID3D12RootSignature* rootSignature; // root signature defines data shaders will access
 
-//D3D12_VIEWPORT viewport; // area that output from rasterizer will be stretched to.
-
-//D3D12_RECT scissorRect; // the area to draw in. pixels outside that area will not be drawn onto
-
-//ID3D12Resource* vertexBuffer; // a default buffer in GPU memory that we will load vertex data for our triangle into
-//ID3D12Resource* indexBuffer; // a default buffer in GPU memory that we will load index data for our triangle into
-
-//D3D12_VERTEX_BUFFER_VIEW vertexBufferView; // a structure containing a pointer to the vertex data in gpu memory
-//										   // the total size of the buffer, and the size of each element (vertex)
-//
-//D3D12_INDEX_BUFFER_VIEW indexBufferView; // a structure holding information about the index buffer
-
 ID3D12Resource* depthStencilBuffer; // This is the memory for our depth buffer. it will also be used for a stencil buffer in a later tutorial
 ID3D12DescriptorHeap* dsDescriptorHeap; // This is a heap for our depth/stencil buffer descriptor
-
-// this is the structure of our constant buffer.
-//struct ConstantBufferPerObject {
-//	XMFLOAT4X4 wvpMat;
-//};
-
-// Constant buffers must be 256-byte aligned which has to do with constant reads on the GPU.
-// We are only able to read at 256 byte intervals from the start of a resource heap, so we will
-// make sure that we add padding between the two constant buffers in the heap (one for cube1 and one for cube2)
-// Another way to do this would be to add a float array in the constant buffer structure for padding. In this case
-// we would need to add a float padding[50]; after the wvpMat variable. This would align our structure to 256 bytes (4 bytes per float)
-// The reason i didn't go with this way, was because there would actually be wasted cpu cycles when memcpy our constant
-// buffer data to the gpu virtual address. currently we memcpy the size of our structure, which is 16 bytes here, but if we
-// were to add the padding array, we would memcpy 64 bytes if we memcpy the size of our structure, which is 50 wasted bytes
-// being copied.
-//int ConstantBufferPerObjectAlignedSize = (sizeof(ConstantBufferPerObject) + 255) & ~255;
-
-//ConstantBufferPerObject cbPerObject[2]; // this is the constant buffer data we will send to the gpu 
-//										// (which will be placed in the resource we created above)
-//
-////ID3D12Resource* constantBufferUploadHeaps[frameBufferCount]; // this is the memory on the gpu where constant buffers for each frame will be placed
-//ID3D12Resource* constantBufferUploadHeaps[2];
-
-//UINT8* cbvGPUAddress[frameBufferCount]; // this is a pointer to each of the constant buffer resource heaps
-//void* cbvGPUAddress[2];
-
-//XMFLOAT4X4 cameraProjMat; // this will store our projection matrix
-//XMFLOAT4X4 cameraViewMat; // this will store our view matrix
-//
-//XMFLOAT4 cameraPosition; // this is our cameras position vector
-//XMFLOAT4 cameraTarget; // a vector describing the point in space our camera is looking at
-//XMFLOAT4 cameraUp; // the worlds up vector
-
-//XMFLOAT4X4 cube1WorldMat; // our first cubes world matrix (transformation matrix)
-//XMFLOAT4X4 cube1RotMat; // this will keep track of our rotation for the first cube
-//XMFLOAT4 cube1Position; // our first cubes position in space
-//
-//XMFLOAT4X4 cube2WorldMat; // our first cubes world matrix (transformation matrix)
-//XMFLOAT4X4 cube2RotMat; // this will keep track of our rotation for the second cube
-//XMFLOAT4 cube2PositionOffset; // our second cube will rotate around the first cube, so this is the position offset from the first cube
-
-//int numCubeIndices; // the number of indices to draw the cube
 
 ID3D12Resource* textureBuffer; // the resource heap containing our texture
 
@@ -162,10 +106,6 @@ D3D12_SHADER_BYTECODE vertexShaderBytecode = {};
 D3D12_SHADER_BYTECODE pixelShaderBytecode = {};
 
 DXGI_SAMPLE_DESC sampleDesc = {};
-
-int vBufferSize;
-
-int iBufferSize;
 
 BYTE* imageData;
 
@@ -611,15 +551,15 @@ bool CreateRootSignature()
 	rootParameters[0].Descriptor = rootCBVDescriptor; // this is the root descriptor for this root parameter
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
 
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[2].Descriptor = rootCBVDescriptor2; // this is the root descriptor for this root parameter
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[1].Descriptor = rootCBVDescriptor2; // this is the root descriptor for this root parameter
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
 
 	// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
 	// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-	rootParameters[1].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+	rootParameters[2].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -784,186 +724,6 @@ bool CreatePSO()
 	return true;
 }
 
-//bool CreateCube()
-//{
-//	//HRESULT hr;
-//	//// Create vertex buffer
-//
-//	//// a cube
-//	//Vertex vList[] = {
-//	//	// front face
-//	//	{ -0.5f,  0.5f, -0.5f, 0.0f, 0.0f },
-//	//	{  0.5f, -0.5f, -0.5f, 1.0f, 1.0f },
-//	//	{ -0.5f, -0.5f, -0.5f, 0.0f, 1.0f },
-//	//	{  0.5f,  0.5f, -0.5f, 1.0f, 0.0f },
-//
-//	//	// right side face
-//	//	{  0.5f, -0.5f, -0.5f, 0.0f, 1.0f },
-//	//	{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f },
-//	//	{  0.5f, -0.5f,  0.5f, 1.0f, 1.0f },
-//	//	{  0.5f,  0.5f, -0.5f, 0.0f, 0.0f },
-//
-//	//	// left side face
-//	//	{ -0.5f,  0.5f,  0.5f, 0.0f, 0.0f },
-//	//	{ -0.5f, -0.5f, -0.5f, 1.0f, 1.0f },
-//	//	{ -0.5f, -0.5f,  0.5f, 0.0f, 1.0f },
-//	//	{ -0.5f,  0.5f, -0.5f, 1.0f, 0.0f },
-//
-//	//	// back face
-//	//	{  0.5f,  0.5f,  0.5f, 0.0f, 0.0f },
-//	//	{ -0.5f, -0.5f,  0.5f, 1.0f, 1.0f },
-//	//	{  0.5f, -0.5f,  0.5f, 0.0f, 1.0f },
-//	//	{ -0.5f,  0.5f,  0.5f, 1.0f, 0.0f },
-//
-//	//	// top face
-//	//	{ -0.5f,  0.5f, -0.5f, 0.0f, 1.0f },
-//	//	{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f },
-//	//	{  0.5f,  0.5f, -0.5f, 1.0f, 1.0f },
-//	//	{ -0.5f,  0.5f,  0.5f, 0.0f, 0.0f },
-//
-//	//	// bottom face
-//	//	{  0.5f, -0.5f,  0.5f, 0.0f, 0.0f },
-//	//	{ -0.5f, -0.5f, -0.5f, 1.0f, 1.0f },
-//	//	{  0.5f, -0.5f, -0.5f, 0.0f, 1.0f },
-//	//	{ -0.5f, -0.5f,  0.5f, 1.0f, 0.0f },
-//	//};
-//
-//	//vBufferSize = sizeof(vList);
-//
-//	//// create default heap
-//	//// default heap is memory on the GPU. Only the GPU has access to this memory
-//	//// To get data into this heap, we will have to upload the data using
-//	//// an upload heap
-//	//hr = device->CreateCommittedResource(
-//	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
-//	//	D3D12_HEAP_FLAG_NONE, // no flags
-//	//	&CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), // resource description for a buffer
-//	//	D3D12_RESOURCE_STATE_COPY_DEST, // we will start this heap in the copy destination state since we will copy data
-//	//									// from the upload heap to this heap
-//	//	nullptr, // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
-//	//	IID_PPV_ARGS(&vertexBuffer));
-//	//if (FAILED(hr))
-//	//{
-//	//	Running = false;
-//	//	return false;
-//	//}
-//
-//	//// we can give resource heaps a name so when we debug with the graphics debugger we know what resource we are looking at
-//	//vertexBuffer->SetName(L"Vertex Buffer Resource Heap");
-//
-//	//// create upload heap
-//	//// upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
-//	//// We will upload the vertex buffer using this heap to the default heap
-//	//ID3D12Resource* vBufferUploadHeap;
-//	//hr = device->CreateCommittedResource(
-//	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // upload heap
-//	//	D3D12_HEAP_FLAG_NONE, // no flags
-//	//	&CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), // resource description for a buffer
-//	//	D3D12_RESOURCE_STATE_GENERIC_READ, // GPU will read from this buffer and copy its contents to the default heap
-//	//	nullptr,
-//	//	IID_PPV_ARGS(&vBufferUploadHeap));
-//	//if (FAILED(hr))
-//	//{
-//	//	Running = false;
-//	//	return false;
-//	//}
-//	//vBufferUploadHeap->SetName(L"Vertex Buffer Upload Resource Heap");
-//
-//	//// store vertex buffer in upload heap
-//	//D3D12_SUBRESOURCE_DATA vertexData = {};
-//	//vertexData.pData = reinterpret_cast<BYTE*>(vList); // pointer to our vertex array
-//	//vertexData.RowPitch = vBufferSize; // size of all our triangle vertex data
-//	//vertexData.SlicePitch = vBufferSize; // also the size of our triangle vertex data
-//
-//	//// we are now creating a command with the command list to copy the data from
-//	//// the upload heap to the default heap
-//	//UpdateSubresources(commandList, vertexBuffer, vBufferUploadHeap, 0, 0, 1, &vertexData);
-//
-//	//// transition the vertex buffer data from copy destination state to vertex buffer state
-//	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-//
-//	//// Create index buffer
-//
-//	//// a quad (2 triangles)
-//	//DWORD iList[] = {
-//	//	// ffront face
-//	//	0, 1, 2, // first triangle
-//	//	0, 3, 1, // second triangle
-//
-//	//	// left face
-//	//	4, 5, 6, // first triangle
-//	//	4, 7, 5, // second triangle
-//
-//	//	// right face
-//	//	8, 9, 10, // first triangle
-//	//	8, 11, 9, // second triangle
-//
-//	//	// back face
-//	//	12, 13, 14, // first triangle
-//	//	12, 15, 13, // second triangle
-//
-//	//	// top face
-//	//	16, 17, 18, // first triangle
-//	//	16, 19, 17, // second triangle
-//
-//	//	// bottom face
-//	//	20, 21, 22, // first triangle
-//	//	20, 23, 21, // second triangle
-//	//};
-//
-//	//iBufferSize = sizeof(iList);
-//
-//	//numCubeIndices = sizeof(iList) / sizeof(DWORD);
-//
-//	//// create default heap to hold index buffer
-//	//hr = device->CreateCommittedResource(
-//	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
-//	//	D3D12_HEAP_FLAG_NONE, // no flags
-//	//	&CD3DX12_RESOURCE_DESC::Buffer(iBufferSize), // resource description for a buffer
-//	//	D3D12_RESOURCE_STATE_COPY_DEST, // start in the copy destination state
-//	//	nullptr, // optimized clear value must be null for this type of resource
-//	//	IID_PPV_ARGS(&indexBuffer));
-//	//if (FAILED(hr))
-//	//{
-//	//	Running = false;
-//	//	return false;
-//	//}
-//
-//	//// we can give resource heaps a name so when we debug with the graphics debugger we know what resource we are looking at
-//	//vertexBuffer->SetName(L"Index Buffer Resource Heap");
-//
-//	//// create upload heap to upload index buffer
-//	//ID3D12Resource* iBufferUploadHeap;
-//	//hr = device->CreateCommittedResource(
-//	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // upload heap
-//	//	D3D12_HEAP_FLAG_NONE, // no flags
-//	//	&CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), // resource description for a buffer
-//	//	D3D12_RESOURCE_STATE_GENERIC_READ, // GPU will read from this buffer and copy its contents to the default heap
-//	//	nullptr,
-//	//	IID_PPV_ARGS(&iBufferUploadHeap));
-//	//if (FAILED(hr))
-//	//{
-//	//	Running = false;
-//	//	return false;
-//	//}
-//	//vBufferUploadHeap->SetName(L"Index Buffer Upload Resource Heap");
-//
-//	//// store vertex buffer in upload heap
-//	//D3D12_SUBRESOURCE_DATA indexData = {};
-//	//indexData.pData = reinterpret_cast<BYTE*>(iList); // pointer to our index array
-//	//indexData.RowPitch = iBufferSize; // size of all our index buffer
-//	//indexData.SlicePitch = iBufferSize; // also the size of our index buffer
-//
-//	//// we are now creating a command with the command list to copy the data from
-//	//// the upload heap to the default heap
-//	//UpdateSubresources(commandList, indexBuffer, iBufferUploadHeap, 0, 0, 1, &indexData);
-//
-//	//// transition the vertex buffer data from copy destination state to vertex buffer state
-//	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-//
-//	//return true;
-//}
-
 bool CreateDepthStencilBuffer()
 {
 	HRESULT hr;
@@ -1011,61 +771,6 @@ bool CreateDepthStencilBuffer()
 	return true;
 }
 
-//bool CreateObjectUniform()
-//{
-//
-//
-//	// create the constant buffer resource heap
-//	// We will update the constant buffer one or more times per frame, so we will use only an upload heap
-//	// unlike previously we used an upload heap to upload the vertex and index data, and then copied over
-//	// to a default heap. If you plan to use a resource for more than a couple frames, it is usually more
-//	// efficient to copy to a default heap where it stays on the gpu. In this case, our constant buffer
-//	// will be modified and uploaded at least once per frame, so we only use an upload heap
-//
-//	// first we will create a resource heap (upload heap) for each frame for the cubes constant buffers
-//	// As you can see, we are allocating 64KB for each resource we create. Buffer resource heaps must be
-//	// an alignment of 64KB. We are creating 3 resources, one for each frame. Each constant buffer is 
-//	// only a 4x4 matrix of floats in this tutorial. So with a float being 4 bytes, we have 
-//	// 16 floats in one constant buffer, and we will store 2 constant buffers in each
-//	// heap, one for each cube, thats only 64x2 bits, or 128 bits we are using for each
-//	// resource, and each resource must be at least 64KB (65536 bits)
-//
-//	HRESULT hr;
-//
-//	for (int i = 0; i < 2; ++i)
-//	{
-//		// create resource for cube 1
-//		hr = device->CreateCommittedResource(
-//			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // this heap will be used to upload the constant buffer data
-//			D3D12_HEAP_FLAG_NONE, // no flags
-//			&CD3DX12_RESOURCE_DESC::Buffer(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT), // size of the resource heap. Must be a multiple of 64KB for single-textures and constant buffers
-//			D3D12_RESOURCE_STATE_GENERIC_READ, // will be data that is read from so we keep it in the generic read state
-//			nullptr, // we do not have use an optimized clear value for constant buffers
-//			IID_PPV_ARGS(&constantBufferUploadHeaps[i]));
-//		if (FAILED(hr))
-//		{
-//			Running = false;
-//			return false;
-//		}
-//		constantBufferUploadHeaps[i]->SetName(L"Constant Buffer Upload Resource Heap");
-//
-//		ZeroMemory(&cbPerObject, sizeof(cbPerObject));
-//
-//		CD3DX12_RANGE readRange(0, 0);    // We do not intend to read from this resource on the CPU. (so end is less than or equal to begin)
-//
-//		// map the resource heap to get a gpu virtual address to the beginning of the heap
-//		hr = constantBufferUploadHeaps[i]->Map(0, &readRange, &cbvGPUAddress[i]);
-//
-//		// Because of the constant read alignment requirements, constant buffer views must be 256 bit aligned. Our buffers are smaller than 256 bits,
-//		// so we need to add spacing between the two buffers, so that the second buffer starts at 256 bits from the beginning of the resource heap.
-//		//memcpy(cbvGPUAddress, &cbPerObject, sizeof(cbPerObject)); // cube1's constant buffer data
-//		//memcpy(cbvGPUAddress + ConstantBufferPerObjectAlignedSize, &cbPerObject, sizeof(cbPerObject)); // cube2's constant buffer data
-//	}
-//
-//
-//	return true;
-//}
-
 bool CreateTexture()
 {
 
@@ -1074,7 +779,7 @@ bool CreateTexture()
 	// Load the image from file
 	D3D12_RESOURCE_DESC textureDesc;
 	int imageBytesPerRow;
-	int imageSize = LoadImageDataFromFile(&imageData, textureDesc, L"braynzar.jpg", imageBytesPerRow);
+	int imageSize = LoadImageDataFromFile(&imageData, textureDesc, L"checkerboard.jpg", imageBytesPerRow);
 
 	// make sure we have data
 	if (imageSize <= 0)
@@ -1125,7 +830,7 @@ bool CreateTexture()
 	D3D12_SUBRESOURCE_DATA textureData = {};
 	textureData.pData = &imageData[0]; // pointer to our image data
 	textureData.RowPitch = imageBytesPerRow; // size of all our triangle vertex data
-	textureData.SlicePitch = imageBytesPerRow * textureDesc.Height; // also the size of our triangle vertex data
+	textureData.SlicePitch = static_cast<LONG_PTR>(imageBytesPerRow) * static_cast<LONG_PTR>(textureDesc.Height); // also the size of our triangle vertex data
 
 	// Now we copy the upload buffer contents to the default heap
 	UpdateSubresources(commandList, textureBuffer, textureBufferUploadHeap, 0, 0, 1, &textureData);
@@ -1240,18 +945,6 @@ bool InitD3D()
 		return false;
 	}
 
-	//if (!CreateCube())
-	//{
-	//	printf("CreateCube failed\n");
-	//	return false;
-	//}
-
-	//if (!CreateObjectUniform())
-	//{
-	//	printf("CreateObjectUniform failed\n");
-	//	return false;
-	//}
-
 	if (!CreateTexture())
 	{
 		printf("CreateTexture failed\n");
@@ -1281,64 +974,7 @@ bool InitD3D()
 		printf("InitCube2 failed\n");
 		return false;
 	}
-	//// create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
-	//vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-	//vertexBufferView.StrideInBytes = sizeof(Vertex);
-	//vertexBufferView.SizeInBytes = vBufferSize;
-
-	//// create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
-	//indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
-	//indexBufferView.Format = DXGI_FORMAT_R32_UINT; // 32-bit unsigned integer (this is what a dword is, double word, a word is 2 bytes)
-	//indexBufferView.SizeInBytes = iBufferSize;
-
-	//// Fill out the Viewport
-	//viewport.TopLeftX = 0;
-	//viewport.TopLeftY = 0;
-	//viewport.Width = Width;
-	//viewport.Height = Height;
-	//viewport.MinDepth = 0.0f;
-	//viewport.MaxDepth = 1.0f;
-
-	//// Fill out a scissor rect
-	//scissorRect.left = 0;
-	//scissorRect.top = 0;
-	//scissorRect.right = Width;
-	//scissorRect.bottom = Height;
-
-	//// build projection and view matrix
-	//XMMATRIX tmpMat = XMMatrixPerspectiveFovLH(45.0f*(3.14f / 180.0f), (float)Width / (float)Height, 0.1f, 1000.0f);
-	//XMStoreFloat4x4(&cameraProjMat, tmpMat);
-
-	//// set starting camera state
-	//cameraPosition = XMFLOAT4(0.0f, 2.0f, -4.0f, 0.0f);
-	//cameraTarget = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
-	//cameraUp = XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
-
-	//// build view matrix
-	//XMVECTOR cPos = XMLoadFloat4(&cameraPosition);
-	//XMVECTOR cTarg = XMLoadFloat4(&cameraTarget);
-	//XMVECTOR cUp = XMLoadFloat4(&cameraUp);
-	//tmpMat = XMMatrixLookAtLH(cPos, cTarg, cUp);
-	//XMStoreFloat4x4(&cameraViewMat, tmpMat);
-
-	// set starting cubes position
-	// first cube
-	//cube1Position = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f); // set cube 1's position
-	//XMVECTOR posVec = XMLoadFloat4(&cube1Position); // create xmvector for cube1's position
-
-	//XMMATRIX tmpMat = XMMatrixTranslationFromVector(posVec); // create translation matrix from cube1's position vector
-	//XMStoreFloat4x4(&cube1RotMat, XMMatrixIdentity()); // initialize cube1's rotation matrix to identity matrix
-	//XMStoreFloat4x4(&cube1WorldMat, tmpMat); // store cube1's world matrix
-
-	//// second cube
-	//cube2PositionOffset = XMFLOAT4(1.5f, 0.0f, 0.0f, 0.0f);
-	//posVec = XMLoadFloat4(&cube2PositionOffset) + XMLoadFloat4(&cube1Position); // create xmvector for cube2's position
-	//																			// we are rotating around cube1 here, so add cube2's position to cube1
-
-	//tmpMat = XMMatrixTranslationFromVector(posVec); // create translation matrix from cube2's position offset vector
-	//XMStoreFloat4x4(&cube2RotMat, XMMatrixIdentity()); // initialize cube2's rotation matrix to identity matrix
-	//XMStoreFloat4x4(&cube2WorldMat, tmpMat); // store cube2's world matrix
-
+	
 	return true;
 }
 
@@ -1355,69 +991,7 @@ void Update()
 	mCube2.SetPosition(temp);
 	mCube2.UpdateUniform();
 	mCube2.UpdateUniformBuffer();
-	// update app logic, such as moving the camera or figuring out what objects are in view
-
-	// create rotation matrices
-	//XMMATRIX rotXMat = XMMatrixRotationX(0.0001f);
-	//XMMATRIX rotYMat = XMMatrixRotationY(0.0002f);
-	//XMMATRIX rotZMat = XMMatrixRotationZ(0.0003f);
-
-	//// add rotation to cube1's rotation matrix and store it
-	//XMMATRIX rotMat = XMLoadFloat4x4(&cube1RotMat) * rotXMat * rotYMat * rotZMat;
-	//XMStoreFloat4x4(&cube1RotMat, rotMat);
-
-	//// create translation matrix for cube 1 from cube 1's position vector
-	//XMMATRIX translationMat = XMMatrixTranslationFromVector(XMLoadFloat4(&cube1Position));
-
-	//// create cube1's world matrix by first rotating the cube, then positioning the rotated cube
-	//XMMATRIX worldMat = rotMat * translationMat;
-
-	//// store cube1's world matrix
-	//XMStoreFloat4x4(&cube1WorldMat, worldMat);
-
-	//// update constant buffer for cube1
-	//// create the wvp matrix and store in constant buffer
-	////XMMATRIX viewMat = XMLoadFloat4x4(&cameraViewMat); // load view matrix
-	////XMMATRIX projMat = XMLoadFloat4x4(&cameraProjMat); // load projection matrix
-	//XMMATRIX wvpMat = XMLoadFloat4x4(&cube1WorldMat);// *viewMat * projMat; // create wvp matrix
-	//XMMATRIX transposed = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
-	//XMStoreFloat4x4(&cbPerObject[0].wvpMat, wvpMat); // store transposed wvp matrix in constant buffer
-
-	//// copy our ConstantBuffer instance to the mapped constant buffer resource
-	//memcpy(cbvGPUAddress[0], &cbPerObject[0], sizeof(cbPerObject[0]));//0 can be changed to frameIndex
-
-	//// now do cube2's world matrix
-	//// create rotation matrices for cube2
-	//rotXMat = XMMatrixRotationX(0.0003f);
-	//rotYMat = XMMatrixRotationY(0.0002f);
-	//rotZMat = XMMatrixRotationZ(0.0001f);
-
-	//// add rotation to cube2's rotation matrix and store it
-	//rotMat = rotZMat * (XMLoadFloat4x4(&cube2RotMat) * (rotXMat * rotYMat));
-	//XMStoreFloat4x4(&cube2RotMat, rotMat);
-
-	//// create translation matrix for cube 2 to offset it from cube 1 (its position relative to cube1
-	//XMMATRIX translationOffsetMat = XMMatrixTranslationFromVector(XMLoadFloat4(&cube2PositionOffset));
-
-	//// we want cube 2 to be half the size of cube 1, so we scale it by .5 in all dimensions
-	//XMMATRIX scaleMat = XMMatrixScaling(0.5f, 0.5f, 0.5f);
-
-	//// reuse worldMat. 
-	//// first we scale cube2. scaling happens relative to point 0,0,0, so you will almost always want to scale first
-	//// then we translate it. 
-	//// then we rotate it. rotation always rotates around point 0,0,0
-	//// finally we move it to cube 1's position, which will cause it to rotate around cube 1
-	//worldMat = scaleMat * translationOffsetMat * rotMat * translationMat;
-
-	//wvpMat = XMLoadFloat4x4(&cube2WorldMat);// *viewMat * projMat; // create wvp matrix
-	//transposed = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
-	//XMStoreFloat4x4(&cbPerObject[1].wvpMat, wvpMat); // store transposed wvp matrix in constant buffer
-
-	//// copy our ConstantBuffer instance to the mapped constant buffer resource
-	//memcpy(cbvGPUAddress[1], &cbPerObject[1], sizeof(cbPerObject[1]));//0 can be changed to frameIndex
-
-	//// store cube2's world matrix
-	//XMStoreFloat4x4(&cube2WorldMat, worldMat);
+	
 }
 
 void UpdatePipeline()
@@ -1480,7 +1054,7 @@ void UpdatePipeline()
 	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootDescriptorTable(1, mainDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	commandList->SetGraphicsRootDescriptorTable(2, mainDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
 	commandList->RSSetViewports(1, &mCamera.GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &mCamera.GetScissorRect()); // set the scissor rects
@@ -1489,7 +1063,7 @@ void UpdatePipeline()
 	commandList->IASetIndexBuffer(&mCube1.GetIndexBufferView());//&indexBufferView);
 
 
-	commandList->SetGraphicsRootConstantBufferView(2, mCamera.GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(1, mCamera.GetUniformBufferGpuAddress());
 	// first cube
 
 	// set cube1's constant buffer
@@ -1558,7 +1132,8 @@ void Cleanup()
 
 	// get swapchain out of full screen before exiting
 	BOOL fs = false;
-	if (swapChain->GetFullscreenState(&fs, NULL))
+	swapChain->GetFullscreenState(&fs, NULL);
+	if (fs == TRUE)
 		swapChain->SetFullscreenState(false, NULL);
 
 	SAFE_RELEASE(device);
@@ -1576,16 +1151,9 @@ void Cleanup()
 
 	SAFE_RELEASE(pipelineStateObject);
 	SAFE_RELEASE(rootSignature);
-	//SAFE_RELEASE(vertexBuffer);
-	//SAFE_RELEASE(indexBuffer);
 
 	SAFE_RELEASE(depthStencilBuffer);
 	SAFE_RELEASE(dsDescriptorHeap);
-
-	//for (int i = 0; i < 2; ++i)
-	//{
-	//	SAFE_RELEASE(constantBufferUploadHeaps[i]);
-	//};
 }
 
 void WaitForPreviousFrame()
@@ -1726,7 +1294,8 @@ int LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescrip
 	if (wicFactory == NULL)
 	{
 		// Initialize the COM library
-		CoInitialize(NULL);
+		hr = CoInitialize(NULL);
+		if (FAILED(hr)) return 0;
 
 		// create the WIC factory
 		hr = CoCreateInstance(
