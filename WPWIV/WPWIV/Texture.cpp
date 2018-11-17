@@ -6,15 +6,16 @@ Texture::Texture()
 
 Texture::~Texture()
 {
+	//ReleaseBufferCPU();
+	ReleaseBuffer();
 }
 
-bool Texture::CreateTextureBufferFromFile(ID3D12Device* device, string fileName)
+bool Texture::CreateTextureBufferFromFile(ID3D12Device* device, const wstring& fileName)
 {
 	// load the image, create a texture resource and descriptor heap
 
 	// Load the image from file
-	int imageBytesPerRow;
-	int imageSize = LoadImageDataFromFile(&textureData, textureDesc, L"checkerboard.jpg", imageBytesPerRow);
+	int imageSize = LoadImageDataFromFile(&imageData, textureDesc, fileName.c_str(), imageBytesPerRow);
 
 	// make sure we have data
 	if (imageSize <= 0)
@@ -96,7 +97,7 @@ bool Texture::UpdateTextureBuffer(ID3D12Device* device)
 
 	// store vertex buffer in upload heap
 	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = &textureData; // pointer to our image data
+	textureData.pData = imageData; // pointer to our image data
 	textureData.RowPitch = imageBytesPerRow; // size of all our triangle vertex data
 	textureData.SlicePitch = static_cast<LONG_PTR>(imageBytesPerRow) * static_cast<LONG_PTR>(textureDesc.Height); // also the size of our triangle vertex data
 
@@ -121,6 +122,27 @@ bool Texture::UpdateTextureBuffer(ID3D12Device* device)
 	SAFE_RELEASE(immediateCopyBuffer);
 
 	return true;
+}
+
+ID3D12Resource* Texture::GetTextureBuffer()
+{
+	return textureBuffer;
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC Texture::GetSrvDesc()
+{
+	return srvDesc;
+}
+
+//void Texture::ReleaseBufferCPU()
+//{
+//	free(imageData);
+//}
+
+void Texture::ReleaseBuffer()
+{
+	SAFE_RELEASE(textureBuffer);
+	free(imageData);
 }
 
 int Texture::LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int &bytesPerRow)

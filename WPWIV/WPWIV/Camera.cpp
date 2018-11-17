@@ -104,7 +104,7 @@ bool Camera::CreateUniformBuffer(ID3D12Device* device)
 		D3D12_RESOURCE_STATE_GENERIC_READ, // will be data that is read from so we keep it in the generic read state
 		nullptr, // we do not have use an optimized clear value for constant buffers
 		IID_PPV_ARGS(&gpuUniformBuffer));
-
+	
 	if (FAILED(hr))
 	{
 		return false;
