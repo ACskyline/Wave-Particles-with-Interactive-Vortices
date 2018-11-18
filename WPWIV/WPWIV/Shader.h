@@ -10,6 +10,8 @@ public:
 	~Shader();
 
 	bool CreateVertexShaderFromFile(const wstring& fileName);
+	bool CreateHullShaderFromFile(const wstring& fileName);
+	bool CreateDomainShaderFromFile(const wstring& fileName);
 	bool CreatePixelShaderFromFile(const wstring& fileName);
 	D3D12_SHADER_BYTECODE GetShaderByteCode();
 

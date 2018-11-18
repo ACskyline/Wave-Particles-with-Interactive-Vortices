@@ -28,6 +28,8 @@ Mesh mPlane1(Mesh::MeshType::Plane, XMFLOAT3(-2, -1, 0), XMFLOAT3(1, 1, 1), XMFL
 Mesh mPlane2(Mesh::MeshType::Plane, XMFLOAT3(2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 Renderer mRenderer;
 Shader mVertexShader;
+Shader mHullShader;
+Shader mDomainShader;
 Shader mPixelShader;
 Texture mTexture;
 Scene mScene;
@@ -258,6 +260,18 @@ bool InitData()
 		return false;
 	}
 
+	if (!mHullShader.CreateHullShaderFromFile(L"HullShader.hlsl"))
+	{
+		printf("CreateHullShaderFromFile failed\n");
+		return false;
+	}
+
+	if (!mDomainShader.CreateDomainShaderFromFile(L"DomainShader.hlsl"))
+	{
+		printf("CreateDomainShaderFromFile failed\n");
+		return false;
+	}
+
 	if (!mPixelShader.CreatePixelShaderFromFile(L"PixelShader.hlsl"))
 	{
 		printf("CreatePixelShaderFromFile failed\n");
@@ -356,9 +370,10 @@ bool InitD3D()
 		return false;
 	}
 
-	if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mPixelShader, &mTexture))
+	//if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mPixelShader, &mTexture))
+	if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mHullShader, &mDomainShader, &mPixelShader, &mTexture))
 	{
-		printf("CreateRootSignature failed\n");
+		printf("CreateGraphicsPipeline failed\n");
 		return false;
 	}
 
@@ -451,7 +466,7 @@ void UpdatePipeline()
 	}
 
 	// RECORD GRAPHICS PIPELINE
-	mRenderer.RecordGraphicsPipeline(frameIndex, commandList, &mScene);
+	mRenderer.RecordGraphicsPipelinePatch(frameIndex, commandList, &mScene); ;// mRenderer.RecordGraphicsPipeline(frameIndex, commandList, &mScene);
 
 	hr = commandList->Close();
 	if (FAILED(hr))

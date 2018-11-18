@@ -23,13 +23,16 @@ public:
 	bool CreateRenderTargetBuffer(ID3D12Device* device, IDXGISwapChain3* swapChain);
 
 	bool CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader, Texture* texture);
+	bool CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader, Texture* texture);
 	bool CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader);
+	bool CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader);
 	bool CreateGraphicsRootSignature(ID3D12Device* device);
 	bool CreateGraphicsDescriptorHeap(ID3D12Device* device);
 	bool BindTextureToGraphicsDescriptor(ID3D12Device* device, Texture* texture);
 
 	void RecordGraphicsPipeline(int frameIndex, ID3D12GraphicsCommandList* commandList, Scene* pScene);
-	
+	void RecordGraphicsPipelinePatch(int frameIndex, ID3D12GraphicsCommandList* commandList, Scene* pScene);
+
 	void Release();
 
 private:

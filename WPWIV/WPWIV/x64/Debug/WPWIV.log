@@ -1,4 +1,2 @@
-﻿  main.cpp
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(284): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(353): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+﻿  compilation object save succeeded; see E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\DomainShader.cso
   WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

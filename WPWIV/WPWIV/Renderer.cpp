@@ -36,19 +36,19 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
 	rootCBVDescriptors[0].ShaderRegister = 0;
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
 	rootParameters[0].Descriptor = rootCBVDescriptors[0]; // this is the root descriptor for this root parameter
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
 	rootCBVDescriptors[1].RegisterSpace = 0;
 	rootCBVDescriptors[1].ShaderRegister = 1;
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
 	rootParameters[1].Descriptor = rootCBVDescriptors[1]; // this is the root descriptor for this root parameter
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
 	// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
 	// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
 	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
 	rootParameters[2].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -64,7 +64,7 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
 	sampler.MaxLOD = D3D12_FLOAT32_MAX;
 	sampler.ShaderRegister = 0;
 	sampler.RegisterSpace = 0;
-	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(_countof(rootParameters), // we have 2 root parameters
@@ -72,8 +72,8 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
 		1, // we have one static sampler
 		&sampler, // a pointer to our static sampler (array)
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // we can deny shader stages here for better performance
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		//D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+		//D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
 
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
@@ -126,6 +126,59 @@ bool Renderer::CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Sha
 	psoDesc.VS = vertexShader->GetShaderByteCode(); // structure describing where to find the vertex shader bytecode and how large it is
 	psoDesc.PS = pixelShader->GetShaderByteCode(); // same as VS but for pixel shader
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
+	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // format of the render target
+	psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
+	psoDesc.SampleMask = 0xffffffff; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
+	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
+	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT); // a default blent state.
+	psoDesc.NumRenderTargets = 1; // we are only binding one render target
+	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
+
+	// create the pso
+	hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&graphicsPSO));
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool Renderer::CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader)
+{
+	HRESULT hr;
+	// create input layout
+
+	// fill out an input layout description structure
+	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = {};
+
+	// we can get the number of elements in an array by "sizeof(array) / sizeof(arrayElementType)"
+	inputLayoutDesc.NumElements = sizeof(VertexInputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
+	inputLayoutDesc.pInputElementDescs = VertexInputLayout;
+
+	// create a pipeline state object (PSO)
+
+	// In a real application, you will have many pso's. for each different shader
+	// or different combinations of shaders, different blend states or different rasterizer states,
+	// different topology types (point, line, triangle, patch), or a different number
+	// of render targets you will need a pso
+
+	// VS is the only required shader for a pso. You might be wondering when a case would be where
+	// you only set the VS. It's possible that you have a pso that only outputs data with the stream
+	// output, and not on a render target, which means you would not need anything after the stream
+	// output.
+
+	DXGI_SAMPLE_DESC sampleDesc = {};
+	sampleDesc.Count = MultiSampleCount;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {}; // a structure to define a pso
+	psoDesc.InputLayout = inputLayoutDesc; // the structure describing our input layout
+	psoDesc.pRootSignature = graphicsRootSignature; // the root signature that describes the input data this pso needs
+	psoDesc.VS = vertexShader->GetShaderByteCode(); // structure describing where to find the vertex shader bytecode and how large it is
+	psoDesc.HS = hullShader->GetShaderByteCode();
+	psoDesc.DS = domainShader->GetShaderByteCode();
+	psoDesc.PS = pixelShader->GetShaderByteCode(); // same as VS but for pixel shader
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;// D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // format of the render target
 	psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
 	psoDesc.SampleMask = 0xffffffff; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
@@ -340,6 +393,36 @@ bool Renderer::CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader
 	return true;
 }
 
+bool Renderer::CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader, Texture* texture)
+{
+
+	if (!CreateGraphicsRootSignature(device))
+	{
+		printf("CreateRootSignature failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, vertexShader, hullShader, domainShader, pixelShader))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsDescriptorHeap(device))
+	{
+		printf("CreateMainDescriptorHeap failed\n");
+		return false;
+	}
+
+	if (!BindTextureToGraphicsDescriptor(device, texture))
+	{
+		printf("BindTextureToMainDescriptor failed\n");
+		return false;
+	}
+
+	return true;
+}
+
 void Renderer::Release()
 {
 	SAFE_RELEASE(graphicsPSO);
@@ -386,6 +469,52 @@ void Renderer::RecordGraphicsPipeline(int frameIndex, ID3D12GraphicsCommandList*
 	commandList->RSSetViewports(1, &pScene->pCamera->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pScene->pCamera->GetScissorRect()); // set the scissor rects
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // set the primitive topology
+
+	int meshCount = pScene->pMeshVec.size();
+	for (int i = 0; i < meshCount; i++)
+	{
+		commandList->IASetVertexBuffers(0, 1, &pScene->pMeshVec[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
+		commandList->IASetIndexBuffer(&pScene->pMeshVec[i]->GetIndexBufferView());//&indexBufferView);
+		commandList->SetGraphicsRootConstantBufferView(0, pScene->pMeshVec[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->DrawIndexedInstanced(pScene->pMeshVec[i]->GetIndexCount(), 1, 0, 0, 0);
+	}
+
+	// transition the "frameIndex" render target from the render target state to the present state. If the debug layer is enabled, you will receive a
+	// warning if present is called on the render target when it's not in the present state
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+}
+
+void Renderer::RecordGraphicsPipelinePatch(int frameIndex, ID3D12GraphicsCommandList* commandList, Scene* pScene)
+{
+	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
+
+	// transition the "frameIndex" render target from the present state to the render target state so the command list draws to it starting from here
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(1, &GetRtvHandle(frameIndex), FALSE, &GetDsvHandle());
+
+	// Clear the render target by using the ClearRenderTargetView command
+	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	commandList->ClearRenderTargetView(GetRtvHandle(frameIndex), clearColor, 0, nullptr);
+
+	// clear the depth/stencil buffer
+	commandList->ClearDepthStencilView(GetDsvHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	// set root signature
+	commandList->SetGraphicsRootSignature(GetGraphicsRootSignature()); // set the root signature
+
+	// set the descriptor heap
+	ID3D12DescriptorHeap* descriptorHeaps[] = { GetGraphicsHeap() };
+	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
+	commandList->SetGraphicsRootConstantBufferView(1, pScene->pCamera->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootDescriptorTable(2, GetGraphicsHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandList->RSSetViewports(1, &pScene->pCamera->GetViewport()); // set the viewports
+	commandList->RSSetScissorRects(1, &pScene->pCamera->GetScissorRect()); // set the scissor rects
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST); // set the primitive topology
 
 	int meshCount = pScene->pMeshVec.size();
 	for (int i = 0; i < meshCount; i++)

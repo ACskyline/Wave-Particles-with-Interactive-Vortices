@@ -1,30 +1,17 @@
-struct VS_INPUT
-{
-    float4 pos : POSITION;
-    float2 texCoord : TEXCOORD;
-};
+#include "GlobalInclude.hlsli"
 
-struct VS_OUTPUT
-{
-    float4 pos : SV_POSITION;
-    float2 texCoord : TEXCOORD;
-};
+//VS_OUTPUT main(VS_INPUT input)
+//{
+//    VS_OUTPUT output;
+//    output.pos = mul(mul(viewProj, model), float4(input.pos, 1));
+//    output.texCoord = input.texCoord;
+//    return output;
+//}
 
-cbuffer ConstantBuffer : register(b0)
+VS_CONTROL_POINT_OUTPUT main(VS_INPUT input)
 {
-    float4x4 wvpMat;
-};
-
-cbuffer CameraUniform : register(b1)
-{
-    float4x4 viewProj;
-    float4x4 viewProjInv;
-}
-
-VS_OUTPUT main(VS_INPUT input)
-{
-    VS_OUTPUT output;
-    output.pos = mul(mul(viewProj, wvpMat), input.pos); //mul(input.pos, mul(wvpMat, viewProj)); //mul(input.pos, wvpMat);
+    VS_CONTROL_POINT_OUTPUT output;
+    output.pos = input.pos;
     output.texCoord = input.texCoord;
     return output;
 }
