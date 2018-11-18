@@ -1,98 +1,36 @@
 #include <windows.h>
-#include <dxgi1_4.h>
 #include <wincodec.h>
-#include "GlobalInclude.h"
-#include "Camera.h"
-#include "Mesh.h"
+#include "Scene.h"
 #include "Renderer.h"
 
-// Handle to the window
-HWND hwnd = NULL;
-
-// name of the window (not the title)
-LPCTSTR WindowName = L"BzTutsApp";
-
-// title of the window
-LPCTSTR WindowTitle = L"Bz Window";
-
-// width and height of the window
-int Width = 800;
+HWND hwnd = NULL;// Handle to the window
+LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
+LPCTSTR WindowTitle = L"WPWIV_1.0";// title of the window
+int Width = 800;// width and height of the window
 int Height = 600;
-
-// is window full screen?
-bool FullScreen = false;
-
-// we will exit the program when this becomes false
-bool Running = true;
-
-// create a window
-bool InitializeWindow(HINSTANCE hInstance,
-	int ShowWnd,
-	bool fullscreen);
-
-// main application loop
-void mainloop();
-
-// callback function for windows messages
-LRESULT CALLBACK WndProc(HWND hWnd,
-	UINT msg,
-	WPARAM wParam,
-	LPARAM lParam);
-
-// direct3d stuff
-const int frameBufferCount = 3; // number of buffers we want, 2 for double buffering, 3 for tripple buffering
-
+bool FullScreen = false; // is window full screen?
+bool Running = true; // we will exit the program when this becomes false
 IDXGIFactory4* dxgiFactory;
-
 ID3D12Device* device; // direct3d device
-
 IDXGISwapChain3* swapChain; // swapchain used to switch between render targets
-
 ID3D12CommandQueue* commandQueue; // container for command lists
-
-ID3D12DescriptorHeap* rtvDescriptorHeap; // a descriptor heap to hold resources like the render targets
-
-ID3D12Resource* renderTargets[frameBufferCount]; // number of render targets equal to buffer count
-
-ID3D12CommandAllocator* commandAllocator[frameBufferCount]; // we want enough allocators for each buffer * number of threads (we only have one thread)
-
+ID3D12CommandAllocator* commandAllocator[FrameBufferCount]; // we want enough allocators for each buffer * number of threads (we only have one thread)
 ID3D12GraphicsCommandList* commandList; // a command list we can record commands into, then execute them to render the frame
-
-ID3D12Fence* fence[frameBufferCount];    // an object that is locked while our command list is being executed by the gpu. We need as many 
-										 //as we have allocators (more if we want to know when the gpu is finished with an asset)
-
+ID3D12Fence* fence[FrameBufferCount];    
 HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
-
-UINT64 fenceValue[frameBufferCount]; // this value is incremented each frame. each fence will have its own value
-
+UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. each fence will have its own value
 int frameIndex; // current rtv we are on
-
-int rtvDescriptorSize; // size of the rtv descriptor on the device (all front and back buffers will be the same size)
-					   // function declarations
-
-bool InitD3D(); // initializes direct3d 12
-
-void Update(); // update the game logic
-
-void UpdatePipeline(); // update the direct3d pipeline (update command lists)
-
-void Render(); // execute the command list
-
-void Cleanup(); // release com ojects and clean up memory
-
-void WaitForPreviousFrame(); // wait until gpu is finished with command list
-
-DXGI_SAMPLE_DESC sampleDesc;
-
-BYTE* imageData;
 
 Camera mCamera(XMFLOAT3(0.0f, 2.0f, -4.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 Mesh mCube1(Mesh::MeshType::Cube, XMFLOAT3(-2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 Mesh mCube2(Mesh::MeshType::Cube, XMFLOAT3(2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+Mesh mPlane1(Mesh::MeshType::Plane, XMFLOAT3(-2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+Mesh mPlane2(Mesh::MeshType::Plane, XMFLOAT3(2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 Renderer mRenderer;
 Shader mVertexShader;
 Shader mPixelShader;
 Texture mTexture;
+Scene mScene;
 
 void InitConsole()
 {
@@ -100,166 +38,6 @@ void InitConsole()
 	AttachConsole(GetCurrentProcessId());
 	FILE* stream;
 	freopen_s(&stream, "CON", "w", stdout);
-}
-
-int WINAPI WinMain(HINSTANCE hInstance,    //Main windows function
-	HINSTANCE hPrevInstance,
-	LPSTR lpCmdLine,
-	int nShowCmd)
-
-{
-	InitConsole();
-
-	// create the window
-	if (!InitializeWindow(hInstance, nShowCmd, FullScreen))
-	{
-		MessageBox(0, L"Window Initialization - Failed",
-			L"Error", MB_OK);
-		return 1;
-	}
-
-	// initialize direct3d
-	if (!InitD3D())
-	{
-		MessageBox(0, L"Failed to initialize direct3d 12",
-			L"Error", MB_OK);
-		Cleanup();
-		return 1;
-	}
-
-	// start the main loop
-	mainloop();
-
-	// we want to wait for the gpu to finish executing the command list before we start releasing everything
-	WaitForPreviousFrame();
-
-	// close the fence event
-	CloseHandle(fenceEvent);
-
-	// clean up everything
-	Cleanup();
-
-	return 0;
-}
-
-// create and show the window
-bool InitializeWindow(HINSTANCE hInstance,
-	int ShowWnd,
-	bool fullscreen)
-
-{
-	if (fullscreen)
-	{
-		HMONITOR hmon = MonitorFromWindow(hwnd,
-			MONITOR_DEFAULTTONEAREST);
-		MONITORINFO mi = { sizeof(mi) };
-		GetMonitorInfo(hmon, &mi);
-
-		Width = mi.rcMonitor.right - mi.rcMonitor.left;
-		Height = mi.rcMonitor.bottom - mi.rcMonitor.top;
-	}
-
-	WNDCLASSEX wc;
-
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WndProc;
-	wc.cbClsExtra = NULL;
-	wc.cbWndExtra = NULL;
-	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 2);
-	wc.lpszMenuName = NULL;
-	wc.lpszClassName = WindowName;
-	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
-
-	if (!RegisterClassEx(&wc))
-	{
-		MessageBox(NULL, L"Error registering class",
-			L"Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-
-	hwnd = CreateWindowEx(NULL,
-		WindowName,
-		WindowTitle,
-		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		Width, Height,
-		NULL,
-		NULL,
-		hInstance,
-		NULL);
-
-	if (!hwnd)
-	{
-		MessageBox(NULL, L"Error creating window",
-			L"Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-
-	if (fullscreen)
-	{
-		SetWindowLong(hwnd, GWL_STYLE, 0);
-	}
-
-	ShowWindow(hwnd, ShowWnd);
-	UpdateWindow(hwnd);
-
-	return true;
-}
-
-void mainloop() {
-	MSG msg;
-	ZeroMemory(&msg, sizeof(MSG));
-
-	while (Running)
-	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			if (msg.message == WM_QUIT)
-				break;
-
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		else {
-			// run game code
-			Update(); // update the game logic
-			Render(); // execute the command queue (rendering the scene is the result of the gpu executing the command lists)
-		}
-	}
-}
-
-LRESULT CALLBACK WndProc(HWND hwnd,
-	UINT msg,
-	WPARAM wParam,
-	LPARAM lParam)
-
-{
-	switch (msg)
-	{
-	case WM_KEYDOWN:
-		if (wParam == VK_ESCAPE) {
-			if (MessageBox(0, L"Are you sure you want to exit?",
-				L"Really?", MB_YESNO | MB_ICONQUESTION) == IDYES)
-			{
-				Running = false;
-				DestroyWindow(hwnd);
-			}
-		}
-		return 0;
-
-	case WM_DESTROY: // x button on top right corner of window was pressed
-		Running = false;
-		PostQuitMessage(0);
-		return 0;
-	}
-	return DefWindowProc(hwnd,
-		msg,
-		wParam,
-		lParam);
 }
 
 bool InitDevice()
@@ -327,7 +105,6 @@ bool InitDevice()
 
 bool InitCommandQueue()
 {
-
 	HRESULT hr;
 
 	// -- Create a direct command queue -- //
@@ -348,6 +125,7 @@ bool InitCommandQueue()
 
 bool InitSwapChain()
 {
+	HRESULT hr;
 	// -- Create the Swap Chain (double/tripple buffering) -- //
 
 	DXGI_MODE_DESC backBufferDesc = {}; // this is to describe our display mode
@@ -357,11 +135,12 @@ bool InitSwapChain()
 
 														// describe our multi-sampling. We are not multi-sampling, so we set the count to 1 (we need at least one sample of course)
 
-	sampleDesc.Count = 1; // multisample count (no multisampling, so we just put 1, since we still need 1 sample)
+	DXGI_SAMPLE_DESC sampleDesc = {};//this way the first member variable will be initialized
+	sampleDesc.Count = MultiSampleCount; // multisample count (no multisampling, so we just put 1, since we still need 1 sample)
 
 						  // Describe and create the swap chain.
 	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-	swapChainDesc.BufferCount = frameBufferCount; // number of buffers we have
+	swapChainDesc.BufferCount = FrameBufferCount; // number of buffers we have
 	swapChainDesc.BufferDesc = backBufferDesc; // our back buffer description
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // this says the pipeline will render to this swap chain
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // dxgi will discard the buffer (data) after we call present
@@ -371,69 +150,20 @@ bool InitSwapChain()
 
 	IDXGISwapChain* tempSwapChain;
 
-	dxgiFactory->CreateSwapChain(
+	hr = dxgiFactory->CreateSwapChain(
 		commandQueue, // the queue will be flushed once the swap chain is created
 		&swapChainDesc, // give it the swap chain description we created above
 		&tempSwapChain // store the created swap chain in a temp IDXGISwapChain interface
 	);
-
-	swapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
-
-	frameIndex = swapChain->GetCurrentBackBufferIndex();
-
-	return true;
-}
-
-bool InitRenderTargetBuffer()
-{
-
-	HRESULT hr;
-
-
-	// -- Create the Back Buffers (render target views) Descriptor Heap -- //
-
-	// describe an rtv descriptor heap and create
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.NumDescriptors = frameBufferCount; // number of descriptors for this heap.
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // this heap is a render target view heap
-
-													   // This heap will not be directly referenced by the shaders (not shader visible), as this will store the output from the pipeline
-													   // otherwise we would set the heap's flag to D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	hr = device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap));
 	if (FAILED(hr))
 	{
 		Running = false;
 		return false;
 	}
 
-	// get the size of a descriptor in this heap (this is a rtv heap, so only rtv descriptors should be stored in it.
-	// descriptor sizes may vary from device to device, which is why there is no set size and we must ask the 
-	// device to give us the size. we will use this size to increment a descriptor handle offset
-	rtvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	swapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 
-	// get a handle to the first descriptor in the descriptor heap. a handle is basically a pointer,
-	// but we cannot literally use it like a c++ pointer.
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-	// Create a RTV for each buffer (double buffering is two buffers, tripple buffering is 3).
-	for (int i = 0; i < frameBufferCount; i++)
-	{
-		// first we get the n'th buffer in the swap chain and store it in the n'th
-		// position of our ID3D12Resource array
-		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(&renderTargets[i]));
-		if (FAILED(hr))
-		{
-			Running = false;
-			return false;
-		}
-
-		// the we "create" a render target view which binds the swap chain buffer (ID3D12Resource[n]) to the rtv handle
-		device->CreateRenderTargetView(renderTargets[i], nullptr, rtvHandle);
-
-		// we increment the rtv handle by the rtv descriptor size we got above
-		rtvHandle.Offset(1, rtvDescriptorSize);
-	}
+	frameIndex = swapChain->GetCurrentBackBufferIndex();
 
 	return true;
 }
@@ -445,7 +175,7 @@ bool InitCommandList()
 
 	// -- Create the Command Allocators -- //
 
-	for (int i = 0; i < frameBufferCount; i++)
+	for (int i = 0; i < FrameBufferCount; i++)
 	{
 		hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator[i]));
 		if (FAILED(hr))
@@ -476,7 +206,7 @@ bool InitFence()
 	// -- Create a Fence & Fence Event -- //
 
 	// create the fences
-	for (int i = 0; i < frameBufferCount; i++)
+	for (int i = 0; i < FrameBufferCount; i++)
 	{
 		hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence[i]));
 		if (FAILED(hr))
@@ -498,7 +228,7 @@ bool InitFence()
 	return true;
 }
 
-bool ExecuteCreateCommand()
+bool FlushCommand()
 {
 	HRESULT hr;
 	// Now we execute the command list to upload the initial assets (triangle data)
@@ -515,14 +245,65 @@ bool ExecuteCreateCommand()
 		return false;
 	}
 
-	// we are done with image data now that we've uploaded it to the gpu, so free it up
-	delete imageData;
+	return true;
+}
+
+bool InitData()
+{
+	// CPU side, read data from disk
+
+	if (!mVertexShader.CreateVertexShaderFromFile(L"VertexShader.hlsl"))
+	{
+		printf("CreateVertexShaderFromFile failed\n");
+		return false;
+	}
+
+	if (!mPixelShader.CreatePixelShaderFromFile(L"PixelShader.hlsl"))
+	{
+		printf("CreatePixelShaderFromFile failed\n");
+		return false;
+	}
+
+	if (!mTexture.LoadTextureBufferFromFile(L"checkerboard.jpg"))
+	{
+		printf("LoadTextureBufferFromFile failed\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool InitScene()
+{
+	mScene.pCamera = &mCamera;
+	mScene.pMeshVec.push_back(&mCube1);
+	mScene.pMeshVec.push_back(&mCube2);
+	mScene.pMeshVec.push_back(&mPlane1);
+	mScene.pMeshVec.push_back(&mPlane2);
+
+	int meshCount = mScene.pMeshVec.size();
+	for (int i = 0; i < meshCount; i++)
+	{
+		if (!mScene.pMeshVec[i]->InitMesh(device))
+		{
+			printf("InitMesh failed\n");
+			return false;
+		}
+	}
+
+	if (!mScene.pCamera->InitCamera(device))
+	{
+		printf("InitCamera failed\n");
+		return false;
+	}
 
 	return true;
 }
 
 bool InitD3D()
 {
+	// Create system level dx12 context
+
 	if (!InitDevice())
 	{
 		printf("InitDevice failed\n");
@@ -541,18 +322,6 @@ bool InitD3D()
 		return false;
 	}
 
-	if (!InitRenderTargetBuffer())
-	{
-		printf("InitRenderTargetBuffer failed\n");
-		return false;
-	}
-
-	if (!mRenderer.CreateDepthStencilBuffer(device, Width, Height))
-	{
-		printf("CreateDepthStencilBuffer failed\n");
-		return false;
-	}
-
 	if (!InitCommandList())
 	{
 		printf("InitCommandList failed\n");
@@ -565,78 +334,39 @@ bool InitD3D()
 		return false;
 	}
 
-	if (!mRenderer.CreateRootSignature(device))
+	// GPU side, upload data to GPU
+
+	if (!mTexture.InitTexture(device))
+	{
+		printf("InitTexture failed\n");
+		return false;
+	}
+
+	if (!InitScene())
+	{
+		printf("InitScene failed\n");
+		return false;
+	}
+
+	// GPU side, create GPU pipeline
+
+	if (!mRenderer.CreateRenderer(device, swapChain, Width, Height))
+	{
+		printf("InitRenderTargetBuffer failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mPixelShader, &mTexture))
 	{
 		printf("CreateRootSignature failed\n");
 		return false;
 	}
 
-	if (!mVertexShader.CreateVertexShaderFromFile(L"VertexShader.hlsl"))
-	{
-		printf("CreateVertexShaderFromFile failed\n");
-		return false;
-	}
-
-	if (!mPixelShader.CreatePixelShaderFromFile(L"PixelShader.hlsl"))
-	{
-		printf("CreatePixelShaderFromFile failed\n");
-		return false;
-	}
-
-	if (!mRenderer.CreatePSO(device, &mVertexShader, &mPixelShader))
-	{
-		printf("CreatePSO failed\n");
-		return false;
-	}
-
-	if (!mTexture.CreateTextureBufferFromFile(device, L"checkerboard.jpg"))
-	{
-		printf("CreateTexture failed\n");
-		return false;
-	}
-
-	if (!mTexture.UpdateTextureBuffer(device))
-	{
-		printf("UpdateTextureBuffer failed\n");
-		return false;
-	}
-
-	if (!mRenderer.CreateMainDescriptorHeap(device))
-	{
-		printf("CreateMainDescriptorHeap failed\n");
-		return false;
-	}
-
-	if (!mRenderer.BindTextureToMainDescriptor(device, &mTexture))
-	{
-		printf("BindTextureToMainDescriptor failed\n");
-		return false;
-	}
-
-	if (!ExecuteCreateCommand())
+	if (!FlushCommand())
 	{
 		printf("ExecuteCreateCommand failed\n");
 		return false;
 	}
-
-	if (!mCube1.InitMesh(device))
-	{
-		printf("InitCube1 failed\n");
-		return false;
-	}
-
-	if (!mCube2.InitMesh(device))
-	{
-		printf("InitCube2 failed\n");
-		return false;
-	}
-	
-	if (!mCamera.InitCamera(device))
-	{
-		printf("InitCamera failed\n");
-		return false;
-	}
-
 
 	return true;
 }
@@ -650,11 +380,43 @@ void Update()
 	mCube1.UpdateUniformBuffer();
 
 	XMFLOAT3 temp = mCube2.GetPosition();
-	temp.y += 0.001f;
+	temp.y = temp.y > 2.f ? 0.f : temp.y + 0.0001f;
 	mCube2.SetPosition(temp);
 	mCube2.UpdateUniform();
 	mCube2.UpdateUniformBuffer();
-	
+
+	XMFLOAT3 tempR = mPlane2.GetRotation();
+	tempR.y += 0.0001f;
+	mPlane2.SetRotation(tempR);
+	mPlane2.UpdateUniform();
+	mPlane2.UpdateUniformBuffer();
+}
+
+void WaitForPreviousFrame()
+{
+	HRESULT hr;
+
+	// swap the current rtv buffer index so we draw on the correct buffer
+	frameIndex = swapChain->GetCurrentBackBufferIndex();
+
+	// if the current fence value is still less than "fenceValue", then we know the GPU has not finished executing
+	// the command queue since it has not reached the "commandQueue->Signal(fence, fenceValue)" command
+	if (fence[frameIndex]->GetCompletedValue() < fenceValue[frameIndex])
+	{
+		// we have the fence create an event which is signaled once the fence's current value is "fenceValue"
+		hr = fence[frameIndex]->SetEventOnCompletion(fenceValue[frameIndex], fenceEvent);
+		if (FAILED(hr))
+		{
+			Running = false;
+		}
+
+		// We will wait until the fence has triggered the event that it's current value has reached "fenceValue". once it's value
+		// has reached "fenceValue", we know the command queue has finished executing
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+
+	// increment fenceValue for next frame
+	fenceValue[frameIndex]++;
 }
 
 void UpdatePipeline()
@@ -682,72 +444,14 @@ void UpdatePipeline()
 	// but in this tutorial we are only clearing the rtv, and do not actually need
 	// anything but an initial default pipeline, which is what we get by setting
 	// the second parameter to NULL
-	hr = commandList->Reset(commandAllocator[frameIndex], mRenderer.GetPSO());
+	hr = commandList->Reset(commandAllocator[frameIndex], mRenderer.GetGraphicsPSO());
 	if (FAILED(hr))
 	{
 		Running = false;
 	}
 
-	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
-
-	// transition the "frameIndex" render target from the present state to the render target state so the command list draws to it starting from here
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargets[frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-	// here we again get the handle to our current render target view so we can set it as the render target in the output merger stage of the pipeline
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), frameIndex, rtvDescriptorSize);
-
-	// get a handle to the depth/stencil buffer
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(mRenderer.GetDsHeap()->GetCPUDescriptorHandleForHeapStart());
-
-	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-	// clear the depth/stencil buffer
-	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	// set root signature
-	commandList->SetGraphicsRootSignature(mRenderer.GetRootSignature()); // set the root signature
-
-	// set the descriptor heap
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mRenderer.GetMainHeap() };
-	commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootDescriptorTable(2, mRenderer.GetMainHeap()->GetGPUDescriptorHandleForHeapStart());
-
-	commandList->RSSetViewports(1, &mCamera.GetViewport()); // set the viewports
-	commandList->RSSetScissorRects(1, &mCamera.GetScissorRect()); // set the scissor rects
-	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // set the primitive topology
-	commandList->IASetVertexBuffers(0, 1, &mCube1.GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
-	commandList->IASetIndexBuffer(&mCube1.GetIndexBufferView());//&indexBufferView);
-
-
-	commandList->SetGraphicsRootConstantBufferView(1, mCamera.GetUniformBufferGpuAddress());
-	// first cube
-
-	// set cube1's constant buffer
-	commandList->SetGraphicsRootConstantBufferView(0, mCube1.GetUniformBufferGpuAddress());//0 can be changed to frameIndex
-
-	// draw first cube
-	commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
-
-	// second cube
-
-	// set cube2's constant buffer. You can see we are adding the size of ConstantBufferPerObject to the constant buffer
-	// resource heaps address. This is because cube1's constant buffer is stored at the beginning of the resource heap, while
-	// cube2's constant buffer data is stored after (256 bits from the start of the heap).
-	commandList->SetGraphicsRootConstantBufferView(0, mCube2.GetUniformBufferGpuAddress());//0 can be changed to frameIndex
-
-	// draw second cube
-	commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
-
-	// transition the "frameIndex" render target from the render target state to the present state. If the debug layer is enabled, you will receive a
-	// warning if present is called on the render target when it's not in the present state
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargets[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	// RECORD GRAPHICS PIPELINE
+	mRenderer.RecordGraphicsPipeline(frameIndex, commandList, &mScene);
 
 	hr = commandList->Close();
 	if (FAILED(hr))
@@ -788,7 +492,7 @@ void Render()
 void Cleanup()
 {
 	// wait for the gpu to finish all frames
-	for (int i = 0; i < frameBufferCount; ++i)
+	for (int i = 0; i < FrameBufferCount; ++i)
 	{
 		frameIndex = i;
 		WaitForPreviousFrame();
@@ -803,41 +507,178 @@ void Cleanup()
 	SAFE_RELEASE(device);
 	SAFE_RELEASE(swapChain);
 	SAFE_RELEASE(commandQueue);
-	SAFE_RELEASE(rtvDescriptorHeap);
 	SAFE_RELEASE(commandList);
 
-	for (int i = 0; i < frameBufferCount; ++i)
+	for (int i = 0; i < FrameBufferCount; ++i)
 	{
-		SAFE_RELEASE(renderTargets[i]);
 		SAFE_RELEASE(commandAllocator[i]);
 		SAFE_RELEASE(fence[i]);
 	};
 
 }
 
-void WaitForPreviousFrame()
+LRESULT CALLBACK WndProc(HWND hwnd,	UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	HRESULT hr;
-
-	// swap the current rtv buffer index so we draw on the correct buffer
-	frameIndex = swapChain->GetCurrentBackBufferIndex();
-
-	// if the current fence value is still less than "fenceValue", then we know the GPU has not finished executing
-	// the command queue since it has not reached the "commandQueue->Signal(fence, fenceValue)" command
-	if (fence[frameIndex]->GetCompletedValue() < fenceValue[frameIndex])
+	switch (msg)
 	{
-		// we have the fence create an event which is signaled once the fence's current value is "fenceValue"
-		hr = fence[frameIndex]->SetEventOnCompletion(fenceValue[frameIndex], fenceEvent);
-		if (FAILED(hr))
-		{
-			Running = false;
+	case WM_KEYDOWN:
+		if (wParam == VK_ESCAPE) {
+			if (MessageBox(0, L"Are you sure you want to exit?",
+				L"Really?", MB_YESNO | MB_ICONQUESTION) == IDYES)
+			{
+				Running = false;
+				DestroyWindow(hwnd);
+			}
 		}
+		return 0;
 
-		// We will wait until the fence has triggered the event that it's current value has reached "fenceValue". once it's value
-		// has reached "fenceValue", we know the command queue has finished executing
-		WaitForSingleObject(fenceEvent, INFINITE);
+	case WM_DESTROY: // x button on top right corner of window was pressed
+		Running = false;
+		PostQuitMessage(0);
+		return 0;
+	}
+	return DefWindowProc(hwnd,
+		msg,
+		wParam,
+		lParam);
+}
+
+// create and show the window
+bool InitializeWindow(HINSTANCE hInstance, int ShowWnd,	bool fullscreen)
+{
+	if (fullscreen)
+	{
+		HMONITOR hmon = MonitorFromWindow(hwnd,
+			MONITOR_DEFAULTTONEAREST);
+		MONITORINFO mi = { sizeof(mi) };
+		GetMonitorInfo(hmon, &mi);
+
+		Width = mi.rcMonitor.right - mi.rcMonitor.left;
+		Height = mi.rcMonitor.bottom - mi.rcMonitor.top;
 	}
 
-	// increment fenceValue for next frame
-	fenceValue[frameIndex]++;
+	WNDCLASSEX wc;
+
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.lpfnWndProc = WndProc;
+	wc.cbClsExtra = NULL;
+	wc.cbWndExtra = NULL;
+	wc.hInstance = hInstance;
+	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 2);
+	wc.lpszMenuName = NULL;
+	wc.lpszClassName = WindowName;
+	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+
+	if (!RegisterClassEx(&wc))
+	{
+		MessageBox(NULL, L"Error registering class",
+			L"Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	hwnd = CreateWindowEx(NULL,
+		WindowName,
+		WindowTitle,
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		Width, Height,
+		NULL,
+		NULL,
+		hInstance,
+		NULL);
+
+	if (!hwnd)
+	{
+		MessageBox(NULL, L"Error creating window",
+			L"Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	if (fullscreen)
+	{
+		SetWindowLong(hwnd, GWL_STYLE, 0);
+	}
+
+	ShowWindow(hwnd, ShowWnd);
+	UpdateWindow(hwnd);
+
+	return true;
+}
+
+void mainloop() 
+{
+	MSG msg;
+	ZeroMemory(&msg, sizeof(MSG));
+
+	while (Running)
+	{
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT)
+				break;
+
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else {
+			// run game code
+			Update(); // update the game logic
+			Render(); // execute the command queue (rendering the scene is the result of the gpu executing the command lists)
+		}
+	}
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+	InitConsole();
+
+	// initialize data
+	if (!InitData())
+	{
+		MessageBox(0, L"Failed to initialize data",
+			L"Error", MB_OK);
+		return 1;
+	}
+
+	// create the window
+	if (!InitializeWindow(hInstance, nShowCmd, FullScreen))
+	{
+		MessageBox(0, L"Window Initialization - Failed",
+			L"Error", MB_OK);
+		return 1;
+	}
+
+	// initialize direct3d
+	if (!InitD3D())
+	{
+		MessageBox(0, L"Failed to initialize direct3d 12",
+			L"Error", MB_OK);
+		Cleanup();
+		return 1;
+	}
+
+	// initialize scene
+	if (!InitScene())
+	{
+		MessageBox(0, L"Failed to initialize scene",
+			L"Error", MB_OK);
+		return 1;
+	}
+
+	// start the main loop
+	mainloop();
+
+	// we want to wait for the gpu to finish executing the command list before we start releasing everything
+	WaitForPreviousFrame();
+
+	// close the fence event
+	CloseHandle(fenceEvent);
+
+	// clean up everything
+	Cleanup();
+
+	return 0;
 }

@@ -1,9 +1,4 @@
-﻿  Renderer.cpp
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(189): warning C4244: 'argument': conversion from 'float' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(189): warning C4244: 'argument': conversion from 'float' to 'UINT64', possible loss of data
-  Texture.cpp
-  main.cpp
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(550): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-  Generating Code...
-e:\projects\visual_studio_projects\wpwiv\wpwiv\texture.cpp(367): warning C4715: 'Texture::GetDXGIFormatBitsPerPixel': not all control paths return a value
+﻿  main.cpp
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(284): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(353): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

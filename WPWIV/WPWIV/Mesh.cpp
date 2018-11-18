@@ -11,7 +11,7 @@ Mesh::Mesh(MeshType _type,
 {
 	if (type == MeshType::Plane)
 	{
-
+		InitPlane();
 	}
 	else if (type == MeshType::Cube)
 	{
@@ -332,9 +332,24 @@ void Mesh::SetPosition(const XMFLOAT3& _position)
 	position = _position;
 }
 
+void Mesh::SetRotation(const XMFLOAT3& _rotation)
+{
+	rotation = _rotation;
+}
+
 XMFLOAT3 Mesh::GetPosition()
 {
 	return position;
+}
+
+XMFLOAT3 Mesh::GetRotation()
+{
+	return rotation;
+}
+
+int Mesh::GetIndexCount()
+{
+	return iList.size();
 }
 
 void Mesh::InitCube()
@@ -438,4 +453,27 @@ void Mesh::InitCube()
 	iList[33] = 20;
 	iList[34] = 23;
 	iList[35] = 21;
+}
+
+void Mesh::InitPlane()
+{
+	vList.resize(4);
+
+	// front face
+	vList[0] = { -0.5f,  0.f, -0.5f, 0.0f, 0.0f };
+	vList[1] = { -0.5f, 0.f, 0.5f, 0.0f, 1.0f };
+	vList[2] = { 0.5f, 0.f, 0.5f, 1.0f, 1.0f };
+	vList[3] = { 0.5f,  0.f, -0.5f, 1.0f, 0.0f };
+
+	iList.resize(6);
+
+	// front face 
+	// first triangle
+	iList[0] = 0;
+	iList[1] = 1;
+	iList[2] = 2;
+	// second triangle
+	iList[3] = 0;
+	iList[4] = 2;
+	iList[5] = 3;
 }

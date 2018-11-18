@@ -10,7 +10,7 @@ Texture::~Texture()
 	ReleaseBuffer();
 }
 
-bool Texture::CreateTextureBufferFromFile(ID3D12Device* device, const wstring& fileName)
+bool Texture::LoadTextureBufferFromFile(const wstring& fileName)
 {
 	// load the image, create a texture resource and descriptor heap
 
@@ -23,6 +23,11 @@ bool Texture::CreateTextureBufferFromFile(ID3D12Device* device, const wstring& f
 		return false;
 	}
 
+	return true;
+}
+
+bool Texture::CreateTextureBuffer(ID3D12Device* device)
+{
 	HRESULT hr;
 	// create a default heap where the upload heap will copy its contents into (contents being the texture)
 	hr = device->CreateCommittedResource(
@@ -32,6 +37,7 @@ bool Texture::CreateTextureBufferFromFile(ID3D12Device* device, const wstring& f
 		D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
 		nullptr, // used for render targets and depth/stencil buffers
 		IID_PPV_ARGS(&textureBuffer));
+
 	if (FAILED(hr))
 	{
 		return false;
@@ -143,6 +149,23 @@ void Texture::ReleaseBuffer()
 {
 	SAFE_RELEASE(textureBuffer);
 	free(imageData);
+}
+
+bool Texture::InitTexture(ID3D12Device* device)
+{
+	if (!CreateTextureBuffer(device))
+	{
+		printf("CreateTextureBuffer failed\n");
+		return false;
+	}
+
+	if (!UpdateTextureBuffer(device))
+	{
+		printf("UpdateTextureBuffer failed\n");
+		return false;
+	}
+
+	return true;
 }
 
 int Texture::LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int &bytesPerRow)

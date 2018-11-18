@@ -9,12 +9,15 @@ public:
 	Texture();
 	~Texture();
 
-	bool CreateTextureBufferFromFile(ID3D12Device* device, const wstring& fileName);
+	bool LoadTextureBufferFromFile(const wstring& fileName);
+	bool CreateTextureBuffer(ID3D12Device* device);
 	bool UpdateTextureBuffer(ID3D12Device* device);
 	ID3D12Resource* GetTextureBuffer();
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSrvDesc();
 	//void ReleaseBufferCPU();//in our demo there is no need to free CPU memory before delete this object
 	void ReleaseBuffer();
+
+	bool InitTexture(ID3D12Device* device);
 
 private:
 	ID3D12Resource* textureBuffer;

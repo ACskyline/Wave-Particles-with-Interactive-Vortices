@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GlobalInclude.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "Scene.h"
 
 class Renderer
 {
@@ -10,25 +10,39 @@ public:
 	Renderer();
 	~Renderer();
 	
-	bool CreateRootSignature(ID3D12Device* device);
-	bool CreatePSO(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader);
+	ID3D12PipelineState* GetGraphicsPSO();
+	ID3D12RootSignature* GetGraphicsRootSignature();
+	ID3D12DescriptorHeap* GetGraphicsHeap();
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetDsvHandle();
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtvHandle(int frameIndex);
+	ID3D12Resource* GetRenderTargetBuffer(int frameIndex);
+
+	bool CreateRenderer(ID3D12Device* device, IDXGISwapChain3* swapChain, float Width, float Height);
 	bool CreateDepthStencilBuffer(ID3D12Device* device, float Width, float Height);
-	bool CreateMainDescriptorHeap(ID3D12Device* device);
-	bool BindTextureToMainDescriptor(ID3D12Device* device, Texture* texture);
+	bool CreateRenderTargetBuffer(ID3D12Device* device, IDXGISwapChain3* swapChain);
 
-	ID3D12PipelineState* GetPSO();
-	ID3D12DescriptorHeap* GetDsHeap();
-	ID3D12RootSignature* GetRootSignature();
-	ID3D12DescriptorHeap* GetMainHeap();
+	bool CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader, Texture* texture);
+	bool CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader);
+	bool CreateGraphicsRootSignature(ID3D12Device* device);
+	bool CreateGraphicsDescriptorHeap(ID3D12Device* device);
+	bool BindTextureToGraphicsDescriptor(ID3D12Device* device, Texture* texture);
 
+	void RecordGraphicsPipeline(int frameIndex, ID3D12GraphicsCommandList* commandList, Scene* pScene);
+	
 	void Release();
 
 private:
-	DXGI_SAMPLE_DESC sampleDesc;
-	ID3D12PipelineState* pipelineStateObject; // pso containing a pipeline state
-	ID3D12RootSignature* rootSignature; // root signature defines data shaders will access
-	ID3D12DescriptorHeap* mainDescriptorHeap;
-	ID3D12Resource* depthStencilBuffer; // This is the memory for our depth buffer. it will also be used for a stencil buffer in a later tutorial
-	ID3D12DescriptorHeap* dsDescriptorHeap; // This is a heap for our depth/stencil buffer descriptor
+	ID3D12PipelineState* graphicsPSO;
+	ID3D12RootSignature* graphicsRootSignature;
+	ID3D12DescriptorHeap* graphicsDescriptorHeap;
+
+	ID3D12Resource* depthStencilBuffer;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+	ID3D12DescriptorHeap* dsvDescriptorHeap; 
+
+	ID3D12Resource* renderTargetBuffers[FrameBufferCount];
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandles[FrameBufferCount];
+	ID3D12DescriptorHeap* rtvDescriptorHeap; 
 };
 

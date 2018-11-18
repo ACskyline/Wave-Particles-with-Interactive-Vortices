@@ -42,7 +42,10 @@ public:
 	D3D12_GPU_VIRTUAL_ADDRESS GetUniformBufferGpuAddress();
 
 	void SetPosition(const XMFLOAT3& _position);
+	void SetRotation(const XMFLOAT3& _rotation);
 	XMFLOAT3 GetPosition();
+	XMFLOAT3 GetRotation();
+	int GetIndexCount();
 
 private:
 	MeshType type;
@@ -65,5 +68,6 @@ private:
 	UINT indexBufferSizeInBytes;
 
 	void InitCube();
+	void InitPlane();
 };
 
