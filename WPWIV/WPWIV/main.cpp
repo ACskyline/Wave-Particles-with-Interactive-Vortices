@@ -1,13 +1,23 @@
 #include <windows.h>
 #include <wincodec.h>
+#include <dinput.h>
 #include "Scene.h"
 #include "Renderer.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx12.h"
 
 HWND hwnd = NULL;// Handle to the window
 LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
 LPCTSTR WindowTitle = L"WPWIV_1.0";// title of the window
-int Width = 800;// width and height of the window
-int Height = 600;
+int Width = 1024;// width and height of the window
+int Height = 768;
+IDirectInputDevice8* DIKeyboard;
+IDirectInputDevice8* DIMouse;
+DIMOUSESTATE mouseLastState;
+BYTE keyboardLastState[256];
+bool mouseAcquired = false;
+LPDIRECTINPUT8 DirectInput;
 bool FullScreen = false; // is window full screen?
 bool Running = true; // we will exit the program when this becomes false
 IDXGIFactory4* dxgiFactory;
@@ -21,19 +31,26 @@ HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
 UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. each fence will have its own value
 int frameIndex; // current rtv we are on
 
-Camera mCamera(XMFLOAT3(0.0f, 2.0f, -4.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
+//Camera mCamera(XMFLOAT3(0.0f, 2.0f, -4.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 //Mesh mCube1(Mesh::MeshType::Cube, XMFLOAT3(-2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 //Mesh mCube2(Mesh::MeshType::Cube, XMFLOAT3(2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 //Mesh mPlane1(Mesh::MeshType::Plane, XMFLOAT3(-2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 //Mesh mPlane2(Mesh::MeshType::Plane, XMFLOAT3(2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 Renderer mRenderer;
-Shader mVertexShader;
-Shader mHullShader;
-Shader mDomainShader;
-Shader mPixelShader;
-Texture mTexture;
+Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
+Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
+Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
+Shader mPixelShader(Shader::ShaderType::PixelShader, L"PixelShader.hlsl");
+Texture mTexture(L"wave.jpg");
 Scene mScene;
+
+//imgui stuff
+ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
+bool show_demo_window = true;
+bool show_another_window = false;
+ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 void InitConsole()
 {
@@ -43,9 +60,97 @@ void InitConsole()
 	freopen_s(&stream, "CON", "w", stdout);
 }
 
+bool InitDirectInput(HINSTANCE hInstance)
+{
+	HRESULT hr;
+
+	hr = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&DirectInput, NULL);
+	if (!CheckError(hr, nullptr)) return false;
+
+	hr = DirectInput->CreateDevice(GUID_SysKeyboard, &DIKeyboard, NULL);
+	if (!CheckError(hr, nullptr)) return false;
+
+	hr = DirectInput->CreateDevice(GUID_SysMouse, &DIMouse, NULL);
+	if (!CheckError(hr, nullptr)) return false;
+
+	hr = DIKeyboard->SetDataFormat(&c_dfDIKeyboard);
+	if (!CheckError(hr, nullptr)) return false;
+
+	hr = DIKeyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+	if (!CheckError(hr, nullptr)) return false;
+
+	hr = DIMouse->SetDataFormat(&c_dfDIMouse);
+	if (!CheckError(hr, nullptr)) return false;
+
+	hr = DIMouse->SetCooperativeLevel(hwnd, DISCL_EXCLUSIVE | DISCL_NOWINKEY | DISCL_FOREGROUND);
+	if (!CheckError(hr, nullptr)) return false;
+
+	return true;
+}
+
+void DetectInput()
+{
+	BYTE keyboardCurrState[256];
+
+	DIKeyboard->Acquire();
+	
+	DIKeyboard->GetDeviceState(sizeof(keyboardCurrState), (LPVOID)&keyboardCurrState);
+
+	//keyboard control
+	if (KEYDOWN(keyboardCurrState, DIK_ESCAPE))
+	{
+		PostMessage(hwnd, WM_DESTROY, 0, 0);
+	}
+
+	//mouse control
+	if (KEYDOWN(keyboardCurrState, DIK_C))//control camera
+	{
+		if (!mouseAcquired)
+		{
+			DIMouse->Acquire();
+			mouseAcquired = true;
+		}
+
+	}
+	else
+	{
+		DIMouse->Unacquire();
+		mouseAcquired = false;
+	}
+
+	if (mouseAcquired)
+	{
+		DIMOUSESTATE mouseCurrState;
+		DIMouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseCurrState);
+		if (mouseCurrState.lX != 0)
+		{
+			mCamera.SetHorizontalAngle(mCamera.GetHorizontalAngle() + mouseCurrState.lX * 0.1);
+		}
+		if (mouseCurrState.lY != 0)
+		{
+			float tempVerticalAngle = mCamera.GetVerticalAngle() + mouseCurrState.lY * 0.1;
+			if (tempVerticalAngle > 90 - EPSILON) tempVerticalAngle = 89 - EPSILON;
+			if (tempVerticalAngle < -90 + EPSILON) tempVerticalAngle = -89 + EPSILON;
+			mCamera.SetVerticalAngle(tempVerticalAngle);
+		}
+		if (mouseCurrState.lZ != 0)
+		{
+			float tempDistance = mCamera.GetDistance() - mouseCurrState.lZ * 0.01;
+			if (tempDistance < 0 + EPSILON) tempDistance = 0.1 + EPSILON;
+			mCamera.SetDistance(tempDistance);
+		}
+		mouseLastState = mouseCurrState;
+		mCamera.UpdateUniform();
+		mCamera.UpdateUniformBuffer();
+	}
+
+	memcpy(keyboardLastState, keyboardCurrState, 256 * sizeof(BYTE));
+
+	return;
+}
+
 bool InitDevice()
 {
-
 	HRESULT hr;
 
 	// -- Create the Device -- //
@@ -251,44 +356,7 @@ bool FlushCommand()
 	return true;
 }
 
-bool InitData()
-{
-	// CPU side, read data from disk
-
-	if (!mVertexShader.CreateVertexShaderFromFile(L"VertexShader.hlsl"))
-	{
-		printf("CreateVertexShaderFromFile failed\n");
-		return false;
-	}
-
-	if (!mHullShader.CreateHullShaderFromFile(L"HullShader.hlsl"))
-	{
-		printf("CreateHullShaderFromFile failed\n");
-		return false;
-	}
-
-	if (!mDomainShader.CreateDomainShaderFromFile(L"DomainShader.hlsl"))
-	{
-		printf("CreateDomainShaderFromFile failed\n");
-		return false;
-	}
-
-	if (!mPixelShader.CreatePixelShaderFromFile(L"PixelShader.hlsl"))
-	{
-		printf("CreatePixelShaderFromFile failed\n");
-		return false;
-	}
-
-	if (!mTexture.LoadTextureBufferFromFile(L"wave.jpg"))
-	{
-		printf("LoadTextureBufferFromFile failed\n");
-		return false;
-	}
-
-	return true;
-}
-
-bool InitScene()
+bool CreateScene()
 {
 	mScene.pCamera = &mCamera;
 	//mScene.pMeshVec.push_back(&mCube1);
@@ -296,6 +364,46 @@ bool InitScene()
 	//mScene.pMeshVec.push_back(&mPlane1);
 	//mScene.pMeshVec.push_back(&mPlane2);
 	mScene.pMeshVec.push_back(&mPlane);
+	mScene.pShaderVec.push_back(&mVertexShader);
+	mScene.pShaderVec.push_back(&mHullShader);
+	mScene.pShaderVec.push_back(&mDomainShader);
+	mScene.pShaderVec.push_back(&mPixelShader);
+	mScene.pTextureVec.push_back(&mTexture);
+
+	// CPU side, read data from disk
+	int shaderCount = mScene.pShaderVec.size();
+	for (int i = 0; i < shaderCount; i++)
+	{
+		if (!mScene.pShaderVec[i]->CreateShader())
+		{
+			printf("CreateShader %d failed\n", i);
+			return false;
+		}
+	}
+
+	int textureCount = mScene.pTextureVec.size();
+	for (int i = 0; i < textureCount; i++)
+	{
+		if (!mScene.pTextureVec[i]->LoadTextureBuffer())
+		{
+			printf("LoadTexture failed\n");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool InitScene()
+{
+	if (!mScene.InitScene(device))
+		return false;
+
+	if (!mScene.pCamera->InitCamera(device))
+	{
+		printf("InitCamera failed\n");
+		return false;
+	}
 
 	int meshCount = mScene.pMeshVec.size();
 	for (int i = 0; i < meshCount; i++)
@@ -307,12 +415,59 @@ bool InitScene()
 		}
 	}
 
-	if (!mScene.pCamera->InitCamera(device))
+	int textureCount = mScene.pTextureVec.size();
+	for (int i = 0; i < textureCount; i++)
 	{
-		printf("InitCamera failed\n");
-		return false;
+		if (!mScene.pTextureVec[i]->InitTexture(device))
+		{
+			printf("InitTexture failed\n");
+			return false;
+		}
 	}
 
+	return true;
+}
+
+bool InitImgui()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	desc.NumDescriptors = 1;
+	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	if (device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&g_pd3dSrvDescHeap)) != S_OK)
+		return false;
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+
+	// Setup Platform/Renderer bindings
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX12_Init(device, FrameBufferCount,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		g_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
+		g_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart());
+
+	// Setup Style
+	// ImGui::StyleColorsDark();
+	ImGui::StyleColorsClassic();
+
+	// Load Fonts
+	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them. 
+	// - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple. 
+	// - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
+	// - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
+	// - Read 'misc/fonts/README.txt' for more instructions and details.
+	// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
+	//io.Fonts->AddFontDefault();
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
+	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+	//IM_ASSERT(font != NULL);
 	return true;
 }
 
@@ -351,13 +506,6 @@ bool InitD3D()
 	}
 
 	// GPU side, upload data to GPU
-
-	if (!mTexture.InitTexture(device))
-	{
-		printf("InitTexture failed\n");
-		return false;
-	}
-
 	if (!InitScene())
 	{
 		printf("InitScene failed\n");
@@ -385,13 +533,18 @@ bool InitD3D()
 		return false;
 	}
 
+	// Create imgui context
+	if (!InitImgui())
+	{
+		printf("ExecuteCreateCommand failed\n");
+		return false;
+	}
+
 	return true;
 }
 
 void Update()
 {
-	mCamera.UpdateUniform();
-	mCamera.UpdateUniformBuffer();
 
 	//mCube1.UpdateUniform();
 	//mCube1.UpdateUniformBuffer();
@@ -467,8 +620,25 @@ void UpdatePipeline()
 		Running = false;
 	}
 
-	// RECORD GRAPHICS PIPELINE
+	// RECORD GRAPHICS PIPELINE BEGIN //
+	mRenderer.RecordBegin(frameIndex, commandList);
+
+	///////// MY PIPELINE /////////
+	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	mRenderer.RecordGraphicsPipelinePatch(frameIndex, commandList, &mScene); ;// mRenderer.RecordGraphicsPipeline(frameIndex, commandList, &mScene);
+	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+	///////// MY PIPELINE /////////
+
+	///////// IMGUI PIPELINE /////////
+	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
+	ImGui::Render();
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+	///////// IMGUI PIPELINE /////////
+	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+
+	mRenderer.RecordEnd(frameIndex, commandList);
+	// RECORD GRAPHICS PIPELINE END //
 
 	hr = commandList->Close();
 	if (FAILED(hr))
@@ -506,8 +676,76 @@ void Render()
 	}
 }
 
+void Gui()
+{
+	////////////////////////////////////
+	////////// IMGUI EXAMPLES///////////
+	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+	// Start the Dear ImGui frame
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+	//if (show_demo_window)
+	//	ImGui::ShowDemoWindow(&show_demo_window);
+
+	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+	{
+		static float f = 0.5f;
+		//static int counter = 0;
+
+		ImGui::Begin("Control Panel ");                          // Create a window called "Hello, world!" and append into it.
+
+		ImGui::Text("Wave Particles Scale ");               // Display some text (you can use a format strings too)
+		//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+		//ImGui::Checkbox("Another Window", &show_another_window);
+
+		ImGui::SliderFloat("float ", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
+
+		if (f != mScene.GetWaveParticleScale())
+		{
+			mScene.SetWaveParticleScale(f);
+			mScene.UpdateUniformBuffer();
+		}
+
+		//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+		//if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			//counter++;
+		//ImGui::SameLine();
+		//ImGui::Text("counter = %d", counter);
+
+		ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
+	}
+
+	// 3. Show another simple window.
+	//if (show_another_window)
+	//{
+	//	ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+	//	ImGui::Text("Hello from another window!");
+	//	if (ImGui::Button("Close Me"))
+	//		show_another_window = false;
+	//	ImGui::End();
+	//}
+	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+	////////// IMGUI EXAMPLES///////////
+	////////////////////////////////////
+}
+
 void Cleanup()
 {
+	//imgui stuff
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
+	//direct input stuff
+	DIKeyboard->Unacquire();
+	DIMouse->Unacquire();
+	DirectInput->Release();
+
 	// wait for the gpu to finish all frames
 	for (int i = 0; i < FrameBufferCount; ++i)
 	{
@@ -531,11 +769,16 @@ void Cleanup()
 		SAFE_RELEASE(commandAllocator[i]);
 		SAFE_RELEASE(fence[i]);
 	};
-
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProc(HWND hwnd,	UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	//vv imgui vv//
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+		return true;
+	//^^ imgui ^^//
+
 	switch (msg)
 	{
 	case WM_KEYDOWN:
@@ -641,7 +884,10 @@ void mainloop()
 			DispatchMessage(&msg);
 		}
 		else {
+			// run gui code
+			Gui();
 			// run game code
+			DetectInput();
 			Update(); // update the game logic
 			Render(); // execute the command queue (rendering the scene is the result of the gpu executing the command lists)
 		}
@@ -653,35 +899,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	InitConsole();
 
 	// initialize data
-	if (!InitData())
+	if (!CreateScene())
 	{
-		MessageBox(0, L"Failed to initialize data",
-			L"Error", MB_OK);
+		MessageBox(0, L"Failed to initialize data",	L"Error", MB_OK);
 		return 1;
 	}
 
 	// create the window
 	if (!InitializeWindow(hInstance, nShowCmd, FullScreen))
 	{
-		MessageBox(0, L"Window Initialization - Failed",
-			L"Error", MB_OK);
+		MessageBox(0, L"Window Initialization - Failed", L"Error", MB_OK);
+		return 1;
+	}
+
+	//Initialize input device
+	if (!InitDirectInput(hInstance))
+	{
+		MessageBox(0, L"Failed to initialize input", L"Error", MB_OK);
 		return 1;
 	}
 
 	// initialize direct3d
 	if (!InitD3D())
 	{
-		MessageBox(0, L"Failed to initialize direct3d 12",
-			L"Error", MB_OK);
+		MessageBox(0, L"Failed to initialize direct3d 12", L"Error", MB_OK);
 		Cleanup();
-		return 1;
-	}
-
-	// initialize scene
-	if (!InitScene())
-	{
-		MessageBox(0, L"Failed to initialize scene",
-			L"Error", MB_OK);
 		return 1;
 	}
 
@@ -698,4 +940,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Cleanup();
 
 	return 0;
+}
+
+bool CheckError(HRESULT hr, ID3D10Blob* error_message)
+{
+	if (FAILED(hr))
+	{
+		printf("FAILED:0x%x\n", hr);
+		if (error_message != nullptr)
+		{
+			printf("return value: %d, error message: %s\n", hr, (char*)error_message->GetBufferPointer());
+		}
+		return false;
+	}
+	return true;
 }

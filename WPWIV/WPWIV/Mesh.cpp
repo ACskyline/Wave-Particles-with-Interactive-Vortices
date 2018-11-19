@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-Mesh::Mesh(MeshType _type, 
+Mesh::Mesh(const MeshType& _type, 
 	const XMFLOAT3& _position,
 	const XMFLOAT3& _scale,
 	const XMFLOAT3& _rotation) :

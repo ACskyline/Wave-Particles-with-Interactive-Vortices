@@ -6,10 +6,11 @@
 class Texture
 {
 public:
-	Texture();
+	Texture(const wstring& _fileName);
 	~Texture();
 
-	bool LoadTextureBufferFromFile(const wstring& fileName);
+	bool LoadTextureBuffer();
+	bool LoadTextureBufferFromFile(const wstring& _fileName);
 	bool CreateTextureBuffer(ID3D12Device* device);
 	bool UpdateTextureBuffer(ID3D12Device* device);
 	ID3D12Resource* GetTextureBuffer();
@@ -20,6 +21,8 @@ public:
 	bool InitTexture(ID3D12Device* device);
 
 private:
+	wstring fileName;
+
 	ID3D12Resource* textureBuffer;
 	D3D12_RESOURCE_DESC textureDesc;
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -32,9 +35,7 @@ private:
 		int &bytesPerRow);
 
 	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
-
 	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
-
 	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
 };
 

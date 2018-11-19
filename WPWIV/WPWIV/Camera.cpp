@@ -144,3 +144,74 @@ D3D12_RECT Camera::GetScissorRect()
 {
 	return scissorRect;
 }
+
+OrbitCamera::OrbitCamera(float _distance,
+	float _horizontalAngle,
+	float _verticalAngle,
+	const XMFLOAT3 &_target,
+	const XMFLOAT3 &_up,
+	float _width,
+	float _height,
+	float _fov,
+	float _nearClipPlane,
+	float _farClipPlane) :
+	distance(_distance),
+	horizontalAngle(_horizontalAngle),
+	verticalAngle(_verticalAngle),
+	Camera(XMFLOAT3{0,0,0}, 
+		_target, 
+		_up, 
+		_width, 
+		_height,
+		_fov, 
+		_nearClipPlane, 
+		_farClipPlane)
+{
+	UpdatePosition();
+}
+
+OrbitCamera::~OrbitCamera()
+{
+}
+
+void OrbitCamera::UpdatePosition()
+{
+	float y = distance * XMScalarSin(XMConvertToRadians(verticalAngle));
+	float x = distance * XMScalarCos(XMConvertToRadians(verticalAngle)) * XMScalarSin(XMConvertToRadians(horizontalAngle));
+	float z = -distance * XMScalarCos(XMConvertToRadians(verticalAngle)) * XMScalarCos(XMConvertToRadians(horizontalAngle));
+
+	position = XMFLOAT3(target.x + x, target.y + y, target.z + z);
+}
+
+float OrbitCamera::GetDistance()
+{
+	return distance;
+}
+
+float OrbitCamera::GetHorizontalAngle()
+{
+	return horizontalAngle;
+}
+
+float OrbitCamera::GetVerticalAngle()
+{
+	return verticalAngle;
+}
+
+void OrbitCamera::SetDistance(float _distance)
+{
+	distance = _distance;
+	UpdatePosition();
+}
+
+void OrbitCamera::SetHorizontalAngle(float _horizontalAngle)
+{
+	horizontalAngle = _horizontalAngle;
+	UpdatePosition();
+}
+
+void OrbitCamera::SetVerticalAngle(float _verticalAngle)
+{
+	verticalAngle = _verticalAngle;
+	UpdatePosition();
+}

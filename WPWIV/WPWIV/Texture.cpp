@@ -1,6 +1,6 @@
 #include "Texture.h"
 
-Texture::Texture()
+Texture::Texture(const wstring& _fileName) : fileName(_fileName)
 {
 }
 
@@ -10,12 +10,28 @@ Texture::~Texture()
 	ReleaseBuffer();
 }
 
-bool Texture::LoadTextureBufferFromFile(const wstring& fileName)
+bool Texture::LoadTextureBuffer()
 {
 	// load the image, create a texture resource and descriptor heap
 
 	// Load the image from file
 	int imageSize = LoadImageDataFromFile(&imageData, textureDesc, fileName.c_str(), imageBytesPerRow);
+
+	// make sure we have data
+	if (imageSize <= 0)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool Texture::LoadTextureBufferFromFile(const wstring& _fileName)
+{
+	// load the image, create a texture resource and descriptor heap
+
+	// Load the image from file
+	int imageSize = LoadImageDataFromFile(&imageData, textureDesc, _fileName.c_str(), imageBytesPerRow);
 
 	// make sure we have data
 	if (imageSize <= 0)

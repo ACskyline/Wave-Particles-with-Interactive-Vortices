@@ -1,15 +1,36 @@
 #include "Shader.h"
 
-Shader::Shader()
+Shader::Shader(const ShaderType& _type, const wstring& _fileName) :
+	type(_type),
+	fileName(_fileName)
 {
 }
-
 
 Shader::~Shader()
 {
 }
 
-bool Shader::CreateVertexShaderFromFile(const wstring& fileName)
+bool Shader::CreateShader()
+{
+	if (type == ShaderType::VertexShader)
+	{
+		return CreateVertexShaderFromFile(fileName);
+	}
+	else if (type == ShaderType::HullShader)
+	{
+		return CreateHullShaderFromFile(fileName);
+	}
+	else if (type == ShaderType::DomainShader)
+	{
+		return CreateDomainShaderFromFile(fileName);
+	}
+	else if (type == ShaderType::PixelShader)
+	{
+		return CreatePixelShaderFromFile(fileName);
+	}
+}
+
+bool Shader::CreateVertexShaderFromFile(const wstring& _fileName)
 {
 	HRESULT hr;
 	// create vertex and pixel shaders
@@ -24,7 +45,7 @@ bool Shader::CreateVertexShaderFromFile(const wstring& fileName)
 	// compile vertex shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
 	ID3DBlob* shader; // d3d blob for holding vertex shader bytecode
-	hr = D3DCompileFromFile(fileName.c_str(),
+	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		"main",
@@ -48,7 +69,7 @@ bool Shader::CreateVertexShaderFromFile(const wstring& fileName)
 }
 
 
-bool Shader::CreateHullShaderFromFile(const wstring& fileName)
+bool Shader::CreateHullShaderFromFile(const wstring& _fileName)
 {
 	HRESULT hr;
 	// create vertex and pixel shaders
@@ -63,7 +84,7 @@ bool Shader::CreateHullShaderFromFile(const wstring& fileName)
 	// compile vertex shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
 	ID3DBlob* shader; // d3d blob for holding vertex shader bytecode
-	hr = D3DCompileFromFile(fileName.c_str(),
+	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		"main",
@@ -86,7 +107,7 @@ bool Shader::CreateHullShaderFromFile(const wstring& fileName)
 	return true;
 }
 
-bool Shader::CreateDomainShaderFromFile(const wstring& fileName)
+bool Shader::CreateDomainShaderFromFile(const wstring& _fileName)
 {
 	HRESULT hr;
 	// create vertex and pixel shaders
@@ -101,7 +122,7 @@ bool Shader::CreateDomainShaderFromFile(const wstring& fileName)
 	// compile vertex shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
 	ID3DBlob* shader; // d3d blob for holding vertex shader bytecode
-	hr = D3DCompileFromFile(fileName.c_str(),
+	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		"main",
@@ -124,7 +145,7 @@ bool Shader::CreateDomainShaderFromFile(const wstring& fileName)
 	return true;
 }
 
-bool Shader::CreatePixelShaderFromFile(const wstring& fileName)
+bool Shader::CreatePixelShaderFromFile(const wstring& _fileName)
 {
 	HRESULT hr;
 	// create vertex and pixel shaders
@@ -140,7 +161,7 @@ bool Shader::CreatePixelShaderFromFile(const wstring& fileName)
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
 	ID3DBlob* shader; // d3d blob for holding pixel shader bytecode
 	
-	hr = D3DCompileFromFile(L"PixelShader.hlsl",
+	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		"main",

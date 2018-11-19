@@ -12,7 +12,7 @@ DS_OUTPUT main(
     float2 texCoord = patch[0].texCoord * domain.x + patch[1].texCoord * domain.y + patch[2].texCoord * domain.z;
     
     float4 texColor = t1.SampleLevel(s1, texCoord, 0);
-    pos.y += texColor.r * 0.5;
+    pos.y += texColor.r * waveParticleScale;
 
     Output.pos = mul(mul(viewProj, model), float4(pos, 1));
     Output.texCoord = texCoord;

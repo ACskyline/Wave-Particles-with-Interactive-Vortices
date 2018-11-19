@@ -29,6 +29,11 @@ cbuffer CameraUniform : register(b1)
     float4x4 viewProj;
     float4x4 viewProjInv;
 }
+
+cbuffer SceneUniform : register(b2)
+{
+    float waveParticleScale;
+}
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////
 

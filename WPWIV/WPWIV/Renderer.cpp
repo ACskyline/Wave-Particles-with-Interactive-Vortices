@@ -29,8 +29,8 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
 	descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
 	// create a root parameter for the root descriptor and fill it out
-	D3D12_ROOT_PARAMETER  rootParameters[3]; // 3 root parameters
-	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[2]; // 2 of 3 are cbv
+	D3D12_ROOT_PARAMETER  rootParameters[4]; // 3 root parameters
+	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[3]; // 2 of 3 are cbv
 
 	rootCBVDescriptors[0].RegisterSpace = 0;
 	rootCBVDescriptors[0].ShaderRegister = 0;
@@ -44,11 +44,17 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
 	rootParameters[1].Descriptor = rootCBVDescriptors[1]; // this is the root descriptor for this root parameter
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
+	rootCBVDescriptors[2].RegisterSpace = 0;
+	rootCBVDescriptors[2].ShaderRegister = 2;
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[2].Descriptor = rootCBVDescriptors[2]; // this is the root descriptor for this root parameter
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+
 	// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
 	// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-	rootParameters[2].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+	rootParameters[3].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -438,13 +444,22 @@ void Renderer::Release()
 	};
 }
 
+void Renderer::RecordBegin(int frameIndex, ID3D12GraphicsCommandList* commandList)
+{
+	// transition the "frameIndex" render target from the present state to the render target state so the command list draws to it starting from here
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+}
+
+void Renderer::RecordEnd(int frameIndex, ID3D12GraphicsCommandList* commandList)
+{
+	// transition the "frameIndex" render target from the render target state to the present state. If the debug layer is enabled, you will receive a
+	// warning if present is called on the render target when it's not in the present state
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+}
 
 void Renderer::RecordGraphicsPipeline(int frameIndex, ID3D12GraphicsCommandList* commandList, Scene* pScene)
 {
 	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
-
-	// transition the "frameIndex" render target from the present state to the render target state so the command list draws to it starting from here
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	// set the render target for the output merger stage (the output of the pipeline)
 	commandList->OMSetRenderTargets(1, &GetRtvHandle(frameIndex), FALSE, &GetDsvHandle());
@@ -465,11 +480,11 @@ void Renderer::RecordGraphicsPipeline(int frameIndex, ID3D12GraphicsCommandList*
 
 	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
 	commandList->SetGraphicsRootConstantBufferView(1, pScene->pCamera->GetUniformBufferGpuAddress());
-	commandList->SetGraphicsRootDescriptorTable(2, GetGraphicsHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandList->SetGraphicsRootDescriptorTable(3, GetGraphicsHeap()->GetGPUDescriptorHandleForHeapStart());
 	commandList->RSSetViewports(1, &pScene->pCamera->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pScene->pCamera->GetScissorRect()); // set the scissor rects
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // set the primitive topology
-
+	commandList->SetGraphicsRootConstantBufferView(2, pScene->GetUniformBufferGpuAddress());
 	int meshCount = pScene->pMeshVec.size();
 	for (int i = 0; i < meshCount; i++)
 	{
@@ -478,10 +493,6 @@ void Renderer::RecordGraphicsPipeline(int frameIndex, ID3D12GraphicsCommandList*
 		commandList->SetGraphicsRootConstantBufferView(0, pScene->pMeshVec[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
 		commandList->DrawIndexedInstanced(pScene->pMeshVec[i]->GetIndexCount(), 1, 0, 0, 0);
 	}
-
-	// transition the "frameIndex" render target from the render target state to the present state. If the debug layer is enabled, you will receive a
-	// warning if present is called on the render target when it's not in the present state
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
 }
 
@@ -489,9 +500,6 @@ void Renderer::RecordGraphicsPipelinePatch(int frameIndex, ID3D12GraphicsCommand
 {
 	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
 
-	// transition the "frameIndex" render target from the present state to the render target state so the command list draws to it starting from here
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
 	// set the render target for the output merger stage (the output of the pipeline)
 	commandList->OMSetRenderTargets(1, &GetRtvHandle(frameIndex), FALSE, &GetDsvHandle());
 
@@ -511,11 +519,11 @@ void Renderer::RecordGraphicsPipelinePatch(int frameIndex, ID3D12GraphicsCommand
 
 	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
 	commandList->SetGraphicsRootConstantBufferView(1, pScene->pCamera->GetUniformBufferGpuAddress());
-	commandList->SetGraphicsRootDescriptorTable(2, GetGraphicsHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandList->SetGraphicsRootDescriptorTable(3, GetGraphicsHeap()->GetGPUDescriptorHandleForHeapStart());
 	commandList->RSSetViewports(1, &pScene->pCamera->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pScene->pCamera->GetScissorRect()); // set the scissor rects
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST); // set the primitive topology
-
+	commandList->SetGraphicsRootConstantBufferView(2, pScene->GetUniformBufferGpuAddress());
 	int meshCount = pScene->pMeshVec.size();
 	for (int i = 0; i < meshCount; i++)
 	{
@@ -524,9 +532,5 @@ void Renderer::RecordGraphicsPipelinePatch(int frameIndex, ID3D12GraphicsCommand
 		commandList->SetGraphicsRootConstantBufferView(0, pScene->pMeshVec[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
 		commandList->DrawIndexedInstanced(pScene->pMeshVec[i]->GetIndexCount(), 1, 0, 0, 0);
 	}
-
-	// transition the "frameIndex" render target from the render target state to the present state. If the debug layer is enabled, you will receive a
-	// warning if present is called on the render target when it's not in the present state
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTargetBuffer(frameIndex), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
 }

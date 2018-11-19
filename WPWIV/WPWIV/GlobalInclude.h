@@ -7,6 +7,8 @@
 #include "Dependencies/d3dx12.h"
 
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
+#define KEYDOWN(name, key) ((name)[(key)] & 0x80)
+#define EPSILON 0.00000001
 
 using namespace DirectX;
 using namespace std;
@@ -26,3 +28,5 @@ struct Vertex {
 	XMFLOAT3 pos;
 	XMFLOAT2 texCoord;
 };
+
+bool CheckError(HRESULT hr, ID3D10Blob* error_message);

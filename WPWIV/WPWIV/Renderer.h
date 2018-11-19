@@ -30,6 +30,8 @@ public:
 	bool CreateGraphicsDescriptorHeap(ID3D12Device* device);
 	bool BindTextureToGraphicsDescriptor(ID3D12Device* device, Texture* texture);
 
+	void RecordBegin(int frameIndex, ID3D12GraphicsCommandList* commandList);
+	void RecordEnd(int frameIndex, ID3D12GraphicsCommandList* commandList);
 	void RecordGraphicsPipeline(int frameIndex, ID3D12GraphicsCommandList* commandList, Scene* pScene);
 	void RecordGraphicsPipelinePatch(int frameIndex, ID3D12GraphicsCommandList* commandList, Scene* pScene);
 

@@ -6,17 +6,21 @@
 class Shader
 {
 public:
-	Shader();
+	enum ShaderType { VertexShader, HullShader, DomainShader, PixelShader };
+
+	Shader(const ShaderType& _type, const wstring& _fileName);
 	~Shader();
 
-	bool CreateVertexShaderFromFile(const wstring& fileName);
-	bool CreateHullShaderFromFile(const wstring& fileName);
-	bool CreateDomainShaderFromFile(const wstring& fileName);
-	bool CreatePixelShaderFromFile(const wstring& fileName);
+	bool CreateShader();
+	bool CreateVertexShaderFromFile(const wstring& _fileName);
+	bool CreateHullShaderFromFile(const wstring& _fileName);
+	bool CreateDomainShaderFromFile(const wstring& _fileName);
+	bool CreatePixelShaderFromFile(const wstring& _fileName);
 	D3D12_SHADER_BYTECODE GetShaderByteCode();
 
 private:
-
+	ShaderType type;
+	wstring fileName;
 	D3D12_SHADER_BYTECODE shaderBytecode;
 };
 

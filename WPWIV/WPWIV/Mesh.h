@@ -13,7 +13,7 @@ public:
 		XMFLOAT4X4 modelInv;
 	};
 
-	Mesh(MeshType _type,
+	Mesh(const MeshType& _type,
 		const XMFLOAT3& _position,
 		const XMFLOAT3& _scale,
 		const XMFLOAT3& _rotation);
