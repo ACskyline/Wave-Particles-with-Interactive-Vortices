@@ -41,21 +41,21 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ## Milestones
 
-- [ ] Milestone 1
+- [x] Milestone 1
 
-  - [ ] DX12 frame work
+  - [x] DX12 frame work
   
     - [ ] Compute shader
 
-    - [ ] Tessellation shader
+    - [x] Tessellation shader
 
-    - [ ] Basic Interaction
+    - [x] Basic Interaction
 
-    - [ ] Basic UI
+    - [x] Basic UI
 
-  - [ ] Basic wave particle rendering
+  - [x] Basic wave particle rendering
 
-    - [ ] Single particle
+    - [x] Single particle
 
 - [ ] Milestone 2
 
@@ -94,6 +94,20 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
   - [ ] Finish unfinished work
 
   - [ ] Identify and solve the problems caused by advection of height, uv, normal
+
+## Milestone 1 Update
+
+* Camera Interaction
+
+![](img/m1-1.gif)
+
+* Wave Praticle Scale
+
+![](img/m1-2.gif)
+
+* Tessellation level
+
+![](img/m1-3.gif)
 
 ## References
 

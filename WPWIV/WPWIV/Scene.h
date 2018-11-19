@@ -11,13 +11,16 @@ public:
 	struct SceneUniform
 	{
 		float waveParticleScale;
+		uint32_t tessellationFactor;
 	};
 
 	Scene();
 	~Scene();
 
 	void SetWaveParticleScale(float _waveParticleScale);
+	void SetTessellationFactor(uint32_t _tessellationFactor);
 	float GetWaveParticleScale();
+	uint32_t GetTessellationFactor();
 
 	bool InitScene(ID3D12Device* device);
 	bool CreateUniformBuffer(ID3D12Device* device);

@@ -33,6 +33,7 @@ cbuffer CameraUniform : register(b1)
 cbuffer SceneUniform : register(b2)
 {
     float waveParticleScale;
+    uint tessellationFactor;
 }
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////

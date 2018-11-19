@@ -1,6 +1,7 @@
 #include "Scene.h"
 
-Scene::Scene()
+Scene::Scene() :
+	uniform({ 0.5, 32 })
 {
 }
 
@@ -14,9 +15,19 @@ void Scene::SetWaveParticleScale(float _waveParticleScale)
 	uniform.waveParticleScale = _waveParticleScale;
 }
 
+void Scene::SetTessellationFactor(uint32_t _tessellationFactor)
+{
+	uniform.tessellationFactor = _tessellationFactor;
+}
+
 float Scene::GetWaveParticleScale()
 {
 	return uniform.waveParticleScale;
+}
+
+uint32_t Scene::GetTessellationFactor()
+{
+	return uniform.tessellationFactor;
 }
 
 bool Scene::CreateUniformBuffer(ID3D12Device* device)
