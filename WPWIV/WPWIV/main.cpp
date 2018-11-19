@@ -22,10 +22,11 @@ UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. ea
 int frameIndex; // current rtv we are on
 
 Camera mCamera(XMFLOAT3(0.0f, 2.0f, -4.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
-Mesh mCube1(Mesh::MeshType::Cube, XMFLOAT3(-2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
-Mesh mCube2(Mesh::MeshType::Cube, XMFLOAT3(2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
-Mesh mPlane1(Mesh::MeshType::Plane, XMFLOAT3(-2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
-Mesh mPlane2(Mesh::MeshType::Plane, XMFLOAT3(2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+//Mesh mCube1(Mesh::MeshType::Cube, XMFLOAT3(-2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+//Mesh mCube2(Mesh::MeshType::Cube, XMFLOAT3(2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+//Mesh mPlane1(Mesh::MeshType::Plane, XMFLOAT3(-2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+//Mesh mPlane2(Mesh::MeshType::Plane, XMFLOAT3(2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 Renderer mRenderer;
 Shader mVertexShader;
 Shader mHullShader;
@@ -278,7 +279,7 @@ bool InitData()
 		return false;
 	}
 
-	if (!mTexture.LoadTextureBufferFromFile(L"checkerboard.jpg"))
+	if (!mTexture.LoadTextureBufferFromFile(L"wave.jpg"))
 	{
 		printf("LoadTextureBufferFromFile failed\n");
 		return false;
@@ -290,10 +291,11 @@ bool InitData()
 bool InitScene()
 {
 	mScene.pCamera = &mCamera;
-	mScene.pMeshVec.push_back(&mCube1);
-	mScene.pMeshVec.push_back(&mCube2);
-	mScene.pMeshVec.push_back(&mPlane1);
-	mScene.pMeshVec.push_back(&mPlane2);
+	//mScene.pMeshVec.push_back(&mCube1);
+	//mScene.pMeshVec.push_back(&mCube2);
+	//mScene.pMeshVec.push_back(&mPlane1);
+	//mScene.pMeshVec.push_back(&mPlane2);
+	mScene.pMeshVec.push_back(&mPlane);
 
 	int meshCount = mScene.pMeshVec.size();
 	for (int i = 0; i < meshCount; i++)
@@ -391,20 +393,20 @@ void Update()
 	mCamera.UpdateUniform();
 	mCamera.UpdateUniformBuffer();
 
-	mCube1.UpdateUniform();
-	mCube1.UpdateUniformBuffer();
+	//mCube1.UpdateUniform();
+	//mCube1.UpdateUniformBuffer();
 
-	XMFLOAT3 temp = mCube2.GetPosition();
-	temp.y = temp.y > 2.f ? 0.f : temp.y + 0.0001f;
-	mCube2.SetPosition(temp);
-	mCube2.UpdateUniform();
-	mCube2.UpdateUniformBuffer();
+	//XMFLOAT3 temp = mCube2.GetPosition();
+	//temp.y = temp.y > 2.f ? 0.f : temp.y + 0.0001f;
+	//mCube2.SetPosition(temp);
+	//mCube2.UpdateUniform();
+	//mCube2.UpdateUniformBuffer();
 
-	XMFLOAT3 tempR = mPlane2.GetRotation();
-	tempR.y += 0.0001f;
-	mPlane2.SetRotation(tempR);
-	mPlane2.UpdateUniform();
-	mPlane2.UpdateUniformBuffer();
+	//XMFLOAT3 tempR = mPlane2.GetRotation();
+	//tempR.y += 0.0001f;
+	//mPlane2.SetRotation(tempR);
+	//mPlane2.UpdateUniform();
+	//mPlane2.UpdateUniformBuffer();
 }
 
 void WaitForPreviousFrame()
