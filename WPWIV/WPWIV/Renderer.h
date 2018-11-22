@@ -22,13 +22,12 @@ public:
 	bool CreateDepthStencilBuffer(ID3D12Device* device, float Width, float Height);
 	bool CreateRenderTargetBuffer(ID3D12Device* device, IDXGISwapChain3* swapChain);
 
-	bool CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader, Texture* texture);
-	bool CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader, Texture* texture);
-	bool CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader);
-	bool CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader);
-	bool CreateGraphicsRootSignature(ID3D12Device* device);
-	bool CreateGraphicsDescriptorHeap(ID3D12Device* device);
-	bool BindTextureToGraphicsDescriptor(ID3D12Device* device, Texture* texture);
+	bool CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* geometryShader, Shader* pixelShader, const vector<Texture*> textures);
+	bool CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* geometryShader, Shader* pixelShader);
+	bool CreateGraphicsRootSignature(ID3D12Device* device, int descriptorNum);
+	bool CreateGraphicsDescriptorHeap(ID3D12Device* device, int descriptorNum);
+
+	bool BindTextureToDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap* descriptorHeap, Texture* texture, int slot);
 
 	void RecordBegin(int frameIndex, ID3D12GraphicsCommandList* commandList);
 	void RecordEnd(int frameIndex, ID3D12GraphicsCommandList* commandList);
@@ -48,6 +47,7 @@ private:
 
 	ID3D12Resource* renderTargetBuffers[FrameBufferCount];
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandles[FrameBufferCount];
-	ID3D12DescriptorHeap* rtvDescriptorHeap; 
+	ID3D12DescriptorHeap* rtvDescriptorHeap;
+
 };
 

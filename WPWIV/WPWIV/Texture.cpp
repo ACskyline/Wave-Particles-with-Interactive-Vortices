@@ -1,6 +1,13 @@
 #include "Texture.h"
 
-Texture::Texture(const wstring& _fileName) : fileName(_fileName)
+Texture::Texture(const wstring& _fileName) : 
+	fileName(_fileName),
+	imageData(nullptr)
+{
+}
+
+Texture::Texture() : 
+	Texture(L"no file")
 {
 }
 
@@ -403,4 +410,72 @@ int Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	else if (dxgiFormat == DXGI_FORMAT_R16_UNORM) return 16;
 	else if (dxgiFormat == DXGI_FORMAT_R8_UNORM) return 8;
 	else if (dxgiFormat == DXGI_FORMAT_A8_UNORM) return 8;
+}
+
+///////////////////////////////////////////////////////////////
+/////////////// RENDER TEXTURE STARTS FROM HERE ///////////////
+///////////////////////////////////////////////////////////////
+
+RenderTexture::RenderTexture(int _width, int _height)
+	: width(_width), 
+	height(_height)
+{
+}
+
+bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)
+{
+	textureDesc = {};
+	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureDesc.Alignment = 0; // may be 0, 4KB, 64KB, or 4MB. 0 will let runtime decide between 64KB and 4MB (4MB for multi-sampled textures)
+	textureDesc.Width = width; // width of the texture
+	textureDesc.Height = height; // height of the texture
+	textureDesc.DepthOrArraySize = 1; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures (we only have one image, so we set 1)
+	textureDesc.MipLevels = 1; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
+	textureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // This is the dxgi format of the image (format of the pixels)
+	textureDesc.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
+	textureDesc.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
+	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE; // no flags
+	
+	HRESULT hr;
+	// create a default heap where the upload heap will copy its contents into (contents being the texture)
+	hr = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
+		D3D12_HEAP_FLAG_NONE, // no flags
+		&textureDesc, // the description of our texture
+		D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
+		nullptr, // used for render targets and depth/stencil buffers
+		IID_PPV_ARGS(&textureBuffer));
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+	textureBuffer->SetName(L"Texture Buffer Resource Heap");
+
+	return true;
+}
+
+bool RenderTexture::UpdateTextureBuffer(ID3D12Device* device)
+{
+	HRESULT hr;
+
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	//Render Target Handle
+	//rtvDesc.Format = textureDesc.Format;
+	//rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	//rtvDesc.Texture2D.MipSlice = 0;
+	//device->CreateRenderTargetView(textureBuffer, rtvDesc, rtvHandle);
+	device->CreateRenderTargetView(textureBuffer, nullptr, rtvHandle);
+	
+	return true;
+}
+
+CD3DX12_CPU_DESCRIPTOR_HANDLE RenderTexture::GetRtvHandle()
+{
+	return rtvHandle;
 }

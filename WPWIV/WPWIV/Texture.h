@@ -7,12 +7,12 @@ class Texture
 {
 public:
 	Texture(const wstring& _fileName);
-	~Texture();
+	virtual ~Texture();
 
 	bool LoadTextureBuffer();
 	bool LoadTextureBufferFromFile(const wstring& _fileName);
-	bool CreateTextureBuffer(ID3D12Device* device);
-	bool UpdateTextureBuffer(ID3D12Device* device);
+	virtual bool CreateTextureBuffer(ID3D12Device* device);
+	virtual bool UpdateTextureBuffer(ID3D12Device* device);
 	ID3D12Resource* GetTextureBuffer();
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSrvDesc();
 	//void ReleaseBufferCPU();//in our demo there is no need to free CPU memory before delete this object
@@ -20,7 +20,7 @@ public:
 
 	bool InitTexture(ID3D12Device* device);
 
-private:
+protected:
 	wstring fileName;
 
 	ID3D12Resource* textureBuffer;
@@ -28,6 +28,8 @@ private:
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	int imageBytesPerRow;
 	BYTE* imageData;
+
+	Texture();
 
 	int LoadImageDataFromFile(BYTE** imageData, 
 		D3D12_RESOURCE_DESC& resourceDescription, 
@@ -39,3 +41,18 @@ private:
 	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
 };
 
+class RenderTexture : public Texture
+{
+public:
+	RenderTexture(int _width, int _height);
+	virtual bool CreateTextureBuffer(ID3D12Device* device);
+	virtual bool UpdateTextureBuffer(ID3D12Device* device);
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtvHandle();
+
+private:
+	int width;
+	int height;
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle;//not used currently
+};

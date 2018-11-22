@@ -9,7 +9,7 @@ Renderer::~Renderer()
 	Release();
 }
 
-bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
+bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device, int descriptorNum)
 {
 	HRESULT hr;
 	// create root signature
@@ -18,7 +18,7 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
 	// this is a range of descriptors inside a descriptor heap
 	D3D12_DESCRIPTOR_RANGE  descriptorTableRanges[1]; // only one range right now
 	descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of shader resource views (descriptors)
-	descriptorTableRanges[0].NumDescriptors = 1; // we only have one texture right now, so the range is only 1
+	descriptorTableRanges[0].NumDescriptors = descriptorNum; // we only have one texture right now, so the range is only 1
 	descriptorTableRanges[0].BaseShaderRegister = 0; // start index of the shader registers in the range
 	descriptorTableRanges[0].RegisterSpace = 0; // space 0. can usually be zero
 	descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
@@ -99,7 +99,7 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device)
 	return true;
 }
 
-bool Renderer::CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader)
+bool Renderer::CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* geometryShader, Shader* pixelShader)
 {
 	HRESULT hr;
 	// create input layout
@@ -129,61 +129,11 @@ bool Renderer::CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Sha
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {}; // a structure to define a pso
 	psoDesc.InputLayout = inputLayoutDesc; // the structure describing our input layout
 	psoDesc.pRootSignature = graphicsRootSignature; // the root signature that describes the input data this pso needs
-	psoDesc.VS = vertexShader->GetShaderByteCode(); // structure describing where to find the vertex shader bytecode and how large it is
-	psoDesc.PS = pixelShader->GetShaderByteCode(); // same as VS but for pixel shader
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
-	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // format of the render target
-	psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
-	psoDesc.SampleMask = 0xffffffff; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
-	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
-	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT); // a default blent state.
-	psoDesc.NumRenderTargets = 1; // we are only binding one render target
-	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
-
-	// create the pso
-	hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&graphicsPSO));
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool Renderer::CreateGraphicsPSO(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader)
-{
-	HRESULT hr;
-	// create input layout
-
-	// fill out an input layout description structure
-	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = {};
-
-	// we can get the number of elements in an array by "sizeof(array) / sizeof(arrayElementType)"
-	inputLayoutDesc.NumElements = sizeof(VertexInputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
-	inputLayoutDesc.pInputElementDescs = VertexInputLayout;
-
-	// create a pipeline state object (PSO)
-
-	// In a real application, you will have many pso's. for each different shader
-	// or different combinations of shaders, different blend states or different rasterizer states,
-	// different topology types (point, line, triangle, patch), or a different number
-	// of render targets you will need a pso
-
-	// VS is the only required shader for a pso. You might be wondering when a case would be where
-	// you only set the VS. It's possible that you have a pso that only outputs data with the stream
-	// output, and not on a render target, which means you would not need anything after the stream
-	// output.
-
-	DXGI_SAMPLE_DESC sampleDesc = {};
-	sampleDesc.Count = MultiSampleCount;
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {}; // a structure to define a pso
-	psoDesc.InputLayout = inputLayoutDesc; // the structure describing our input layout
-	psoDesc.pRootSignature = graphicsRootSignature; // the root signature that describes the input data this pso needs
-	psoDesc.VS = vertexShader->GetShaderByteCode(); // structure describing where to find the vertex shader bytecode and how large it is
-	psoDesc.HS = hullShader->GetShaderByteCode();
-	psoDesc.DS = domainShader->GetShaderByteCode();
-	psoDesc.PS = pixelShader->GetShaderByteCode(); // same as VS but for pixel shader
+	if (vertexShader != nullptr) psoDesc.VS = vertexShader->GetShaderByteCode(); // structure describing where to find the vertex shader bytecode and how large it is
+	if (hullShader != nullptr) psoDesc.HS = hullShader->GetShaderByteCode();
+	if (domainShader != nullptr) psoDesc.DS = domainShader->GetShaderByteCode();
+	if (geometryShader != nullptr) psoDesc.GS = geometryShader->GetShaderByteCode();
+	if (pixelShader != nullptr) psoDesc.PS = pixelShader->GetShaderByteCode(); // same as VS but for pixel shader
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;// D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // format of the render target
 	psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
@@ -250,11 +200,11 @@ bool Renderer::CreateDepthStencilBuffer(ID3D12Device* device, float Width, float
 	return true;
 }
 
-bool Renderer::CreateGraphicsDescriptorHeap(ID3D12Device* device)
+bool Renderer::CreateGraphicsDescriptorHeap(ID3D12Device* device, int descriptorNum)
 {
 	HRESULT hr;
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-	heapDesc.NumDescriptors = 1;
+	heapDesc.NumDescriptors = descriptorNum;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	hr = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&graphicsDescriptorHeap));
@@ -316,9 +266,12 @@ bool Renderer::CreateRenderTargetBuffer(ID3D12Device* device, IDXGISwapChain3* s
 	return true;
 }
 
-bool Renderer::BindTextureToGraphicsDescriptor(ID3D12Device* device, Texture* texture)
+bool Renderer::BindTextureToDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap* descriptorHeap, Texture* texture, int slot)
 {
-	device->CreateShaderResourceView(texture->GetTextureBuffer(), &texture->GetSrvDesc(), graphicsDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(descriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	int srvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descriptorHandle.Offset(slot, srvDescriptorSize);
+	device->CreateShaderResourceView(texture->GetTextureBuffer(), &texture->GetSrvDesc(), descriptorHandle);
 	return true;
 }
 
@@ -369,63 +322,36 @@ bool Renderer::CreateRenderer(ID3D12Device* device, IDXGISwapChain3* swapChain, 
 	return true;
 }
 
-bool Renderer::CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* pixelShader, Texture* texture)
+bool Renderer::CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* geometryShader, Shader* pixelShader, const vector<Texture*> textures)
 {
+	int texCount = textures.size();
 
-	if (!CreateGraphicsRootSignature(device))
+	if (!CreateGraphicsRootSignature(device, texCount))
 	{
 		printf("CreateRootSignature failed\n");
 		return false;
 	}
 
-	if (!CreateGraphicsPSO(device, vertexShader, pixelShader))
+	if (!CreateGraphicsPSO(device, vertexShader, hullShader, domainShader, geometryShader, pixelShader))
 	{
 		printf("CreatePSO failed\n");
 		return false;
 	}
 
-	if (!CreateGraphicsDescriptorHeap(device))
+	if (!CreateGraphicsDescriptorHeap(device, texCount))
 	{
 		printf("CreateMainDescriptorHeap failed\n");
 		return false;
 	}
 
-	if (!BindTextureToGraphicsDescriptor(device, texture))
+	for (int i = 0; i < texCount; i++)
 	{
-		printf("BindTextureToMainDescriptor failed\n");
-		return false;
+		if (!BindTextureToDescriptorHeap(device, graphicsDescriptorHeap, textures[i], i))
+		{
+			printf("BindTextureToMainDescriptor failed\n");
+			return false;
+		}
 	}
-
-	return true;
-}
-
-bool Renderer::CreateGraphicsPipeline(ID3D12Device* device, Shader* vertexShader, Shader* hullShader, Shader* domainShader, Shader* pixelShader, Texture* texture)
-{
-
-	if (!CreateGraphicsRootSignature(device))
-	{
-		printf("CreateRootSignature failed\n");
-		return false;
-	}
-
-	if (!CreateGraphicsPSO(device, vertexShader, hullShader, domainShader, pixelShader))
-	{
-		printf("CreatePSO failed\n");
-		return false;
-	}
-
-	if (!CreateGraphicsDescriptorHeap(device))
-	{
-		printf("CreateMainDescriptorHeap failed\n");
-		return false;
-	}
-
-	if (!BindTextureToGraphicsDescriptor(device, texture))
-	{
-		printf("BindTextureToMainDescriptor failed\n");
-		return false;
-	}
-
 	return true;
 }
 

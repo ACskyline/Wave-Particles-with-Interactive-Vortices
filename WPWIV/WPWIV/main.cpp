@@ -43,7 +43,8 @@ Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
 Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
 Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
 Shader mPixelShader(Shader::ShaderType::PixelShader, L"PixelShader.hlsl");
-Texture mTexture(L"wave.jpg");
+Texture mTextureHeightMap(L"wave.jpg");
+Texture mTextureAlbedo(L"checkerboard.jpg");
 Scene mScene;
 
 //imgui stuff
@@ -368,7 +369,8 @@ bool CreateScene()
 	mScene.pShaderVec.push_back(&mHullShader);
 	mScene.pShaderVec.push_back(&mDomainShader);
 	mScene.pShaderVec.push_back(&mPixelShader);
-	mScene.pTextureVec.push_back(&mTexture);
+	mScene.pTextureVec.push_back(&mTextureHeightMap);
+	mScene.pTextureVec.push_back(&mTextureAlbedo);
 
 	// CPU side, read data from disk
 	int shaderCount = mScene.pShaderVec.size();
@@ -520,8 +522,7 @@ bool InitD3D()
 		return false;
 	}
 
-	//if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mPixelShader, &mTexture))
-	if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mHullShader, &mDomainShader, &mPixelShader, &mTexture))
+	if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mHullShader, &mDomainShader, nullptr, &mPixelShader, mScene.pTextureVec))
 	{
 		printf("CreateGraphicsPipeline failed\n");
 		return false;
@@ -691,6 +692,8 @@ void Gui()
 	static int u = 32;
 	bool needToUpdateSceneUniform = false;
 
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImVec2(200, 120));
 
 	ImGui::Begin("Control Panel ");                          // Create a window called "Hello, world!" and append into it.
 

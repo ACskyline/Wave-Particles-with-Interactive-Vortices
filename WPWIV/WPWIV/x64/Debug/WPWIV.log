@@ -1,14 +1,1 @@
-﻿  main.cpp
-  c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(127): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(131): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(132): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(133): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(138): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(139): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(374): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(384): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(408): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(418): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(517): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe
+﻿  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

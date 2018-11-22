@@ -72,7 +72,8 @@ struct DS_OUTPUT
 
 ///////////////// PS /////////////////
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-Texture2D t1 : register(t0);
-SamplerState s1 : register(s0);
+Texture2D t0 : register(t0);
+Texture2D t1 : register(t1);
+SamplerState s0 : register(s0);
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// PS /////////////////
