@@ -130,3 +130,5 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 [GPU Gems: Fast Fluid Dynamics Simulation on the GPU](https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch38.html)
 
 [A Similar Workflow](https://pdfs.semanticscholar.org/f548/cc7476e2e7e53b42befa19a376b61d12c7e9.pdf)
+
+[Caustics](http://madebyevan.com/webgl-water/)
