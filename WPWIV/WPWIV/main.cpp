@@ -1,11 +1,11 @@
 #include <windows.h>
 #include <wincodec.h>
 #include <dinput.h>
-#include "Scene.h"
 #include "Renderer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
+#include "Scene.h"
 
 HWND hwnd = NULL;// Handle to the window
 LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
@@ -31,20 +31,22 @@ HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
 UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. each fence will have its own value
 int frameIndex; // current rtv we are on
 
-//Camera mCamera(XMFLOAT3(0.0f, 2.0f, -4.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
-//Mesh mCube1(Mesh::MeshType::Cube, XMFLOAT3(-2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
-//Mesh mCube2(Mesh::MeshType::Cube, XMFLOAT3(2, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
-//Mesh mPlane1(Mesh::MeshType::Plane, XMFLOAT3(-2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
-//Mesh mPlane2(Mesh::MeshType::Plane, XMFLOAT3(2, -1, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
 OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
-Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), XMFLOAT3(0, 0, 0));
+Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Renderer mRenderer;
 Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
 Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
 Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
 Shader mPixelShader(Shader::ShaderType::PixelShader, L"PixelShader.hlsl");
+Shader mVS(Shader::ShaderType::VertexShader, L"vs.hlsl");
+Shader mPS(Shader::ShaderType::PixelShader, L"ps.hlsl");
 Texture mTextureHeightMap(L"wave.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
+RenderTexture mRenderTexture(500, 500);
+OrbitCamera mCameraRenderTexture(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 500, 500, 45.0f, 0.1f, 1000.0f);
+Mesh mPlaneRenderTexture(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(-90, 0, 0), XMFLOAT3(1, 1, 1));
+Frame mFrameGraphics;
+Frame mFramePostProcess;
 Scene mScene;
 
 //imgui stuff
@@ -52,6 +54,45 @@ ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
 bool show_demo_window = true;
 bool show_another_window = false;
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+bool CreateScene()
+{
+	mFrameGraphics.AddCamera(&mCameraRenderTexture);
+	mFrameGraphics.AddMesh(&mPlane);
+	mFrameGraphics.AddTexture(&mTextureHeightMap);
+	mFrameGraphics.AddTexture(&mTextureAlbedo);
+	mFrameGraphics.AddRenderTexture(&mRenderTexture);
+
+	mFramePostProcess.AddCamera(&mCamera);
+	mFramePostProcess.AddMesh(&mPlaneRenderTexture);
+	mFramePostProcess.AddTexture(&mRenderTexture);
+
+	mScene.AddFrame(&mFrameGraphics);
+	mScene.AddFrame(&mFramePostProcess);
+	mScene.AddCamera(&mCamera);
+	mScene.AddCamera(&mCameraRenderTexture);
+	mScene.AddMesh(&mPlane);
+	mScene.AddMesh(&mPlaneRenderTexture);
+	mScene.AddShader(&mVertexShader);
+	mScene.AddShader(&mHullShader);
+	mScene.AddShader(&mDomainShader);
+	mScene.AddShader(&mPixelShader);
+	mScene.AddShader(&mVS);
+	mScene.AddShader(&mPS);
+	mScene.AddTexture(&mTextureHeightMap);
+	mScene.AddTexture(&mTextureAlbedo);
+	mScene.AddRenderTexture(&mRenderTexture);
+
+	if (!mScene.LoadScene())
+		return false;
+	
+	return true;
+}
+
+bool InitScene()
+{
+	return mScene.InitScene(device);
+}
 
 void InitConsole()
 {
@@ -125,24 +166,24 @@ void DetectInput()
 		DIMouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseCurrState);
 		if (mouseCurrState.lX != 0)
 		{
-			mCamera.SetHorizontalAngle(mCamera.GetHorizontalAngle() + mouseCurrState.lX * 0.1);
+			mCameraRenderTexture.SetHorizontalAngle(mCameraRenderTexture.GetHorizontalAngle() + mouseCurrState.lX * 0.1);
 		}
 		if (mouseCurrState.lY != 0)
 		{
-			float tempVerticalAngle = mCamera.GetVerticalAngle() + mouseCurrState.lY * 0.1;
+			float tempVerticalAngle = mCameraRenderTexture.GetVerticalAngle() + mouseCurrState.lY * 0.1;
 			if (tempVerticalAngle > 90 - EPSILON) tempVerticalAngle = 89 - EPSILON;
 			if (tempVerticalAngle < -90 + EPSILON) tempVerticalAngle = -89 + EPSILON;
-			mCamera.SetVerticalAngle(tempVerticalAngle);
+			mCameraRenderTexture.SetVerticalAngle(tempVerticalAngle);
 		}
 		if (mouseCurrState.lZ != 0)
 		{
-			float tempDistance = mCamera.GetDistance() - mouseCurrState.lZ * 0.01;
+			float tempDistance = mCameraRenderTexture.GetDistance() - mouseCurrState.lZ * 0.01;
 			if (tempDistance < 0 + EPSILON) tempDistance = 0.1 + EPSILON;
-			mCamera.SetDistance(tempDistance);
+			mCameraRenderTexture.SetDistance(tempDistance);
 		}
 		mouseLastState = mouseCurrState;
-		mCamera.UpdateUniform();
-		mCamera.UpdateUniformBuffer();
+		mCameraRenderTexture.UpdateUniform();
+		mCameraRenderTexture.UpdateUniformBuffer();
 	}
 
 	memcpy(keyboardLastState, keyboardCurrState, 256 * sizeof(BYTE));
@@ -357,79 +398,6 @@ bool FlushCommand()
 	return true;
 }
 
-bool CreateScene()
-{
-	mScene.pCamera = &mCamera;
-	//mScene.pMeshVec.push_back(&mCube1);
-	//mScene.pMeshVec.push_back(&mCube2);
-	//mScene.pMeshVec.push_back(&mPlane1);
-	//mScene.pMeshVec.push_back(&mPlane2);
-	mScene.pMeshVec.push_back(&mPlane);
-	mScene.pShaderVec.push_back(&mVertexShader);
-	mScene.pShaderVec.push_back(&mHullShader);
-	mScene.pShaderVec.push_back(&mDomainShader);
-	mScene.pShaderVec.push_back(&mPixelShader);
-	mScene.pTextureVec.push_back(&mTextureHeightMap);
-	mScene.pTextureVec.push_back(&mTextureAlbedo);
-
-	// CPU side, read data from disk
-	int shaderCount = mScene.pShaderVec.size();
-	for (int i = 0; i < shaderCount; i++)
-	{
-		if (!mScene.pShaderVec[i]->CreateShader())
-		{
-			printf("CreateShader %d failed\n", i);
-			return false;
-		}
-	}
-
-	int textureCount = mScene.pTextureVec.size();
-	for (int i = 0; i < textureCount; i++)
-	{
-		if (!mScene.pTextureVec[i]->LoadTextureBuffer())
-		{
-			printf("LoadTexture failed\n");
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool InitScene()
-{
-	if (!mScene.InitScene(device))
-		return false;
-
-	if (!mScene.pCamera->InitCamera(device))
-	{
-		printf("InitCamera failed\n");
-		return false;
-	}
-
-	int meshCount = mScene.pMeshVec.size();
-	for (int i = 0; i < meshCount; i++)
-	{
-		if (!mScene.pMeshVec[i]->InitMesh(device))
-		{
-			printf("InitMesh failed\n");
-			return false;
-		}
-	}
-
-	int textureCount = mScene.pTextureVec.size();
-	for (int i = 0; i < textureCount; i++)
-	{
-		if (!mScene.pTextureVec[i]->InitTexture(device))
-		{
-			printf("InitTexture failed\n");
-			return false;
-		}
-	}
-
-	return true;
-}
-
 bool InitImgui()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
@@ -518,13 +486,37 @@ bool InitD3D()
 
 	if (!mRenderer.CreateRenderer(device, swapChain, Width, Height))
 	{
-		printf("InitRenderTargetBuffer failed\n");
+		printf("CreateRenderer failed\n");
 		return false;
 	}
 
-	if (!mRenderer.CreateGraphicsPipeline(device, &mVertexShader, &mHullShader, &mDomainShader, nullptr, &mPixelShader, mScene.pTextureVec))
+	if (!mRenderer.CreateGraphicsPipeline(
+		device,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH,
+		&mVertexShader, 
+		&mHullShader, 
+		&mDomainShader, 
+		nullptr, 
+		&mPixelShader, 
+		mFrameGraphics.GetTextureVec(),
+		mFrameGraphics.GetRenderTextureVec()))
 	{
 		printf("CreateGraphicsPipeline failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreatePostProcessPipeline(
+		device,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		&mVS,
+		nullptr,
+		nullptr,
+		nullptr,
+		&mPS,
+		mFramePostProcess.GetTextureVec(),
+		mFramePostProcess.GetRenderTextureVec()))
+	{
+		printf("CreatePostProcessPipeline failed\n");
 		return false;
 	}
 
@@ -615,7 +607,7 @@ void UpdatePipeline()
 	// but in this tutorial we are only clearing the rtv, and do not actually need
 	// anything but an initial default pipeline, which is what we get by setting
 	// the second parameter to NULL
-	hr = commandList->Reset(commandAllocator[frameIndex], mRenderer.GetGraphicsPSO());
+	hr = commandList->Reset(commandAllocator[frameIndex], nullptr);
 	if (FAILED(hr))
 	{
 		Running = false;
@@ -624,11 +616,35 @@ void UpdatePipeline()
 	// RECORD GRAPHICS PIPELINE BEGIN //
 	mRenderer.RecordBegin(frameIndex, commandList);
 
-	///////// MY PIPELINE /////////
+	//seems unnecessary
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexture.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
+
+	///////// MY GRAPHICS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	mRenderer.RecordGraphicsPipelinePatch(frameIndex, commandList, &mScene); ;// mRenderer.RecordGraphicsPipeline(frameIndex, commandList, &mScene);
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO());
+	mRenderer.RecordGraphicsPipeline(
+		mRenderTexture.GetRtvHandle(), 
+		mRenderer.GetDsvHandle(), 
+		commandList, 
+		&mFrameGraphics, 
+		D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-	///////// MY PIPELINE /////////
+	///////// MY GRAPHICS PIPELINE /////////
+
+	//seems unnecessary
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexture.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+	
+	///////// MY POSTPROCESS PIPELINE /////////
+	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
+	commandList->SetPipelineState(mRenderer.GetPostProcessPSO());
+	mRenderer.RecordPostProcessPipeline(
+		mRenderer.GetRtvHandle(frameIndex),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFramePostProcess,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+	///////// MY POSTPROCESS PIPELINE /////////
 
 	///////// IMGUI PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -690,7 +706,7 @@ void Gui()
 
 	static float f = 0.5f;
 	static int u = 32;
-	bool needToUpdateSceneUniform = false;
+	bool needToUpdateFrameUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(ImVec2(200, 120));
@@ -702,21 +718,21 @@ void Gui()
 	ImGui::SliderFloat("float ", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
 	ImGui::SliderInt("uint ", &u, 0, 128);
 
-	if (f != mScene.GetWaveParticleScale())
+	if (f != mFrameGraphics.GetWaveParticleScale())
 	{
-		mScene.SetWaveParticleScale(f);
-		needToUpdateSceneUniform = true;
+		mFrameGraphics.SetWaveParticleScale(f);
+		needToUpdateFrameUniform = true;
 	}
 
-	if (u != mScene.GetWaveParticleScale())
+	if (u != mFrameGraphics.GetWaveParticleScale())
 	{
-		mScene.SetTessellationFactor(u);
-		needToUpdateSceneUniform = true;
+		mFrameGraphics.SetTessellationFactor(u);
+		needToUpdateFrameUniform = true;
 	}
 
-	if (needToUpdateSceneUniform)
+	if (needToUpdateFrameUniform)
 	{
-		mScene.UpdateUniformBuffer();
+		mFrameGraphics.UpdateUniformBuffer();
 	}
 
 	ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -882,7 +898,7 @@ void mainloop()
 			// run game code
 			DetectInput();
 			Update(); // update the game logic
-			Render(); // execute the command queue (rendering the scene is the result of the gpu executing the command lists)
+			Render(); // execute the command queue (rendering the frame is the result of the gpu executing the command lists)
 		}
 	}
 }

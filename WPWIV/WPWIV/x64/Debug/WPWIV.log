@@ -1,1 +1,5 @@
-﻿  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe
+﻿  Mesh.cpp
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(111): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(140): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(358): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

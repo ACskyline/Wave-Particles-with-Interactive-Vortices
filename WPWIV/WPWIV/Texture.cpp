@@ -418,7 +418,8 @@ int Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 
 RenderTexture::RenderTexture(int _width, int _height)
 	: width(_width), 
-	height(_height)
+	height(_height),
+	rtvHandle()
 {
 }
 
@@ -435,7 +436,7 @@ bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)
 	textureDesc.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
 	textureDesc.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
-	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE; // no flags
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	
 	HRESULT hr;
 	// create a default heap where the upload heap will copy its contents into (contents being the texture)
@@ -443,7 +444,7 @@ bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
 		D3D12_HEAP_FLAG_NONE, // no flags
 		&textureDesc, // the description of our texture
-		D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
+		D3D12_RESOURCE_STATE_RENDER_TARGET, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
 		nullptr, // used for render targets and depth/stencil buffers
 		IID_PPV_ARGS(&textureBuffer));
 
@@ -466,16 +467,24 @@ bool RenderTexture::UpdateTextureBuffer(ID3D12Device* device)
 	srvDesc.Texture2D.MipLevels = 1;
 
 	//Render Target Handle
-	//rtvDesc.Format = textureDesc.Format;
-	//rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	//rtvDesc.Texture2D.MipSlice = 0;
-	//device->CreateRenderTargetView(textureBuffer, rtvDesc, rtvHandle);
-	device->CreateRenderTargetView(textureBuffer, nullptr, rtvHandle);
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	rtvDesc.Texture2D.MipSlice = 0;
 	
 	return true;
+}
+
+void RenderTexture::SetRtvHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE _rtvHandle)
+{
+	rtvHandle = _rtvHandle;
 }
 
 CD3DX12_CPU_DESCRIPTOR_HANDLE RenderTexture::GetRtvHandle()
 {
 	return rtvHandle;
+}
+
+D3D12_RENDER_TARGET_VIEW_DESC RenderTexture::GetRtvDesc()
+{
+	return rtvDesc;
 }

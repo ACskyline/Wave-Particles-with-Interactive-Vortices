@@ -15,8 +15,8 @@ public:
 
 	Mesh(const MeshType& _type,
 		const XMFLOAT3& _position,
-		const XMFLOAT3& _scale,
-		const XMFLOAT3& _rotation);
+		const XMFLOAT3& _rotation,
+		const XMFLOAT3& _scale);
 	~Mesh();
 
 	void ResetMesh(MeshType _type,
@@ -40,6 +40,7 @@ public:
 	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView();
 	D3D12_INDEX_BUFFER_VIEW GetIndexBufferView();
 	D3D12_GPU_VIRTUAL_ADDRESS GetUniformBufferGpuAddress();
+	D3D_PRIMITIVE_TOPOLOGY GetPrimitiveType();
 
 	void SetPosition(const XMFLOAT3& _position);
 	void SetRotation(const XMFLOAT3& _rotation);
@@ -63,9 +64,11 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 	D3D12_INDEX_BUFFER_VIEW indexBufferView;
 	void* cpuUniformBufferAddress;
+	D3D_PRIMITIVE_TOPOLOGY primitiveType;
 
 	UINT vertexBufferSizeInBytes;
 	UINT indexBufferSizeInBytes;
+
 
 	void InitCube();
 	void InitPlane();

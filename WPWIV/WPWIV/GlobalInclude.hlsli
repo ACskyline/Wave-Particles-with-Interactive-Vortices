@@ -30,7 +30,7 @@ cbuffer CameraUniform : register(b1)
     float4x4 viewProjInv;
 }
 
-cbuffer SceneUniform : register(b2)
+cbuffer FrameUniform : register(b2)
 {
     float waveParticleScale;
     uint tessellationFactor;

@@ -2,8 +2,8 @@
 
 Mesh::Mesh(const MeshType& _type, 
 	const XMFLOAT3& _position,
-	const XMFLOAT3& _scale,
-	const XMFLOAT3& _rotation) :
+	const XMFLOAT3& _rotation,
+	const XMFLOAT3& _scale) :
 	type(_type),
 	position(_position),
 	scale(_scale),
@@ -64,9 +64,9 @@ void Mesh::UpdateUniform()
 {
 	XMStoreFloat4x4(&uniform.model,
 		XMMatrixScaling(scale.x, scale.y, scale.z) *
-		XMMatrixRotationX(rotation.x) *
-		XMMatrixRotationY(rotation.y) *
-		XMMatrixRotationZ(rotation.z) *
+		XMMatrixRotationX(XMConvertToRadians(rotation.x)) *
+		XMMatrixRotationY(XMConvertToRadians(rotation.y)) *
+		XMMatrixRotationZ(XMConvertToRadians(rotation.z)) *
 		XMMatrixTranslation(position.x, position.y, position.z));
 
 	XMStoreFloat4x4(&uniform.modelInv, XMMatrixInverse(nullptr, XMLoadFloat4x4(&uniform.model)));
@@ -327,6 +327,12 @@ D3D12_GPU_VIRTUAL_ADDRESS Mesh::GetUniformBufferGpuAddress()
 	return gpuUniformBuffer->GetGPUVirtualAddress();
 }
 
+
+D3D_PRIMITIVE_TOPOLOGY Mesh::GetPrimitiveType()
+{
+	return primitiveType;
+}
+
 void Mesh::SetPosition(const XMFLOAT3& _position)
 {
 	position = _position;
@@ -354,6 +360,8 @@ int Mesh::GetIndexCount()
 
 void Mesh::InitCube()
 {
+	primitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
 	vList.resize(24);
 
 	// front face
@@ -457,13 +465,15 @@ void Mesh::InitCube()
 
 void Mesh::InitPlane()
 {
+	primitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
 	vList.resize(4);
 
 	// front face
-	vList[0] = { -0.5f,  0.f, -0.5f, 0.0f, 0.0f };
-	vList[1] = { -0.5f, 0.f, 0.5f, 0.0f, 1.0f };
-	vList[2] = { 0.5f, 0.f, 0.5f, 1.0f, 1.0f };
-	vList[3] = { 0.5f,  0.f, -0.5f, 1.0f, 0.0f };
+	vList[0] = { -0.5f,  0.f, -0.5f, 0.0f, 1.0f };
+	vList[1] = { -0.5f, 0.f, 0.5f, 0.0f, 0.0f };
+	vList[2] = { 0.5f, 0.f, 0.5f, 1.0f, 0.0f };
+	vList[3] = { 0.5f,  0.f, -0.5f, 1.0f, 1.0f };
 
 	iList.resize(6);
 

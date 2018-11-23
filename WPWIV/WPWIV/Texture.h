@@ -45,10 +45,12 @@ class RenderTexture : public Texture
 {
 public:
 	RenderTexture(int _width, int _height);
-	virtual bool CreateTextureBuffer(ID3D12Device* device);
-	virtual bool UpdateTextureBuffer(ID3D12Device* device);
+	bool CreateTextureBuffer(ID3D12Device* device);
+	bool UpdateTextureBuffer(ID3D12Device* device);
 
+	void SetRtvHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE _rtvHandle);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtvHandle();
+	D3D12_RENDER_TARGET_VIEW_DESC GetRtvDesc();
 
 private:
 	int width;

@@ -145,6 +145,10 @@ D3D12_RECT Camera::GetScissorRect()
 	return scissorRect;
 }
 
+////////////////////////////////////////////
+/////////////// Orbit Camera ///////////////
+////////////////////////////////////////////
+
 OrbitCamera::OrbitCamera(float _distance,
 	float _horizontalAngle,
 	float _verticalAngle,

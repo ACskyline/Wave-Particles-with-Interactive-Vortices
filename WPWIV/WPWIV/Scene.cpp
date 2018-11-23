@@ -1,82 +1,123 @@
 #include "Scene.h"
 
-Scene::Scene() :
-	uniform({ 0.5, 32 })
+
+
+Scene::Scene()
 {
 }
+
 
 Scene::~Scene()
 {
-	ReleaseBuffer();
 }
 
-void Scene::SetWaveParticleScale(float _waveParticleScale)
+void Scene::AddFrame(Frame* pFrame)
 {
-	uniform.waveParticleScale = _waveParticleScale;
+	pFrameVec.push_back(pFrame);
 }
 
-void Scene::SetTessellationFactor(uint32_t _tessellationFactor)
+void Scene::AddCamera(Camera* pCamera)
 {
-	uniform.tessellationFactor = _tessellationFactor;
+	pCameraVec.push_back(pCamera);
 }
 
-float Scene::GetWaveParticleScale()
+void Scene::AddMesh(Mesh* pMesh)
 {
-	return uniform.waveParticleScale;
+	pMeshVec.push_back(pMesh);
 }
 
-uint32_t Scene::GetTessellationFactor()
+void Scene::AddTexture(Texture* pTexture)
 {
-	return uniform.tessellationFactor;
+	pTextureVec.push_back(pTexture);
 }
 
-bool Scene::CreateUniformBuffer(ID3D12Device* device)
+void Scene::AddShader(Shader* pShader)
 {
+	pShaderVec.push_back(pShader);
+}
 
-	HRESULT hr;
+void Scene::AddRenderTexture(RenderTexture* pRenderTexture)
+{
+	pRenderTextureVec.push_back(pRenderTexture);
+}
 
-	hr = device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // this heap will be used to upload the constant buffer data
-		D3D12_HEAP_FLAG_NONE, // no flags
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(SceneUniform)), // size of the resource heap. Must be a multiple of 64KB for single-textures and constant buffers
-		D3D12_RESOURCE_STATE_GENERIC_READ, // will be data that is read from so we keep it in the generic read state
-		nullptr, // we do not have use an optimized clear value for constant buffers
-		IID_PPV_ARGS(&gpuUniformBuffer));
-
-	if (FAILED(hr))
+bool Scene::LoadScene()
+{
+	// CPU side, load data from disk
+	int shaderCount = pShaderVec.size();
+	for (int i = 0; i < shaderCount; i++)
 	{
-		return false;
+		if (!pShaderVec[i]->CreateShader())
+		{
+			printf("CreateShader %d failed\n", i);
+			return false;
+		}
 	}
 
-	gpuUniformBuffer->SetName(L"scene uniform buffer");
-
-	CD3DX12_RANGE readRange(0, 0);    // We do not intend to read from this resource on the CPU. (so end is less than or equal to begin)
-
-	// map the resource heap to get a gpu virtual address to the beginning of the heap
-	hr = gpuUniformBuffer->Map(0, &readRange, &cpuUniformBufferAddress);
+	int textureCount = pTextureVec.size();
+	for (int i = 0; i < textureCount; i++)
+	{
+		if (!pTextureVec[i]->LoadTextureBuffer())
+		{
+			printf("LoadTexture failed\n");
+			return false;
+		}
+	}
 
 	return true;
 }
 
-void Scene::UpdateUniformBuffer()
-{
-	memcpy(cpuUniformBufferAddress, &uniform, sizeof(uniform));
-}
-
-void Scene::ReleaseBuffer()
-{
-	SAFE_RELEASE(gpuUniformBuffer);
-}
-
-D3D12_GPU_VIRTUAL_ADDRESS Scene::GetUniformBufferGpuAddress()
-{
-	return gpuUniformBuffer->GetGPUVirtualAddress();
-}
-
 bool Scene::InitScene(ID3D12Device* device)
 {
-	if (!CreateUniformBuffer(device))
-		return false;
-	UpdateUniformBuffer();
+	int frameCount = pFrameVec.size();
+	for (int i = 0; i < frameCount; i++)
+	{
+		if (!pFrameVec[i]->InitFrame(device))
+		{
+			printf("InitFrame failed\n");
+			return false;
+		}
+	}
+
+	int cameraCount = pCameraVec.size();
+	for (int i = 0; i < cameraCount; i++)
+	{
+		if (!pCameraVec[i]->InitCamera(device))
+		{
+			printf("InitCamera failed\n");
+			return false;
+		}
+	}
+
+	int meshCount = pMeshVec.size();
+	for (int i = 0; i < meshCount; i++)
+	{
+		if (!pMeshVec[i]->InitMesh(device))
+		{
+			printf("InitMesh failed\n");
+			return false;
+		}
+	}
+
+	int textureCount = pTextureVec.size();
+	for (int i = 0; i < textureCount; i++)
+	{
+		if (!pTextureVec[i]->InitTexture(device))
+		{
+			printf("InitTexture failed\n");
+			return false;
+		}
+	}
+
+	int renderTextureCount = pRenderTextureVec.size();
+	for (int i = 0; i < renderTextureCount; i++)
+	{
+		if (!pRenderTextureVec[i]->InitTexture(device))
+		{
+			printf("InitRenderTexture failed\n");
+			return false;
+		}
+	}
+
 	return true;
 }
