@@ -35,6 +35,10 @@ int frameIndex; // current rtv we are on
 OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 
+
+
+
+//fluid stuff- -------------------------------------------------
 Fluid mFluid;
 struct velocitypingpong {
 	RenderTexture* ping;
@@ -43,6 +47,12 @@ struct velocitypingpong {
 	{
 		ping = new RenderTexture(500, 500);
 		pong = new RenderTexture(500, 500);
+	}
+	void swapTex()
+	{
+		auto* tmp = ping;
+		ping = pong;
+		pong = tmp;
 	}
 }mVelocitypingpong;
 
@@ -54,6 +64,12 @@ struct temperaturepingpong {
 		ping = new RenderTexture(500, 500);
 		pong = new RenderTexture(500, 500);
 	}
+	void swapTex()
+	{
+		auto* tmp = ping;
+		ping = pong;
+		pong = tmp;
+	}
 }mTemperaturepingpong;
 
 struct pressurepingpong {
@@ -63,6 +79,12 @@ struct pressurepingpong {
 	{
 		ping = new RenderTexture(500, 500);
 		pong = new RenderTexture(500, 500);
+	}
+	void swapTex()
+	{
+		auto* tmp = ping;
+		ping = pong;
+		pong = tmp;
 	}
 }mPressurepingpong;
 
@@ -74,8 +96,14 @@ struct densitypingpong {
 		ping = new RenderTexture(500, 500);
 		pong = new RenderTexture(500, 500);
 	}
+	void swapTex()
+	{
+		auto* tmp = ping;
+		ping = pong;
+		pong = tmp;
+	}
 }mDensitypingpong;
-
+//-------------------------------------------------------------------
 
 
 Renderer mRenderer;
@@ -110,11 +138,32 @@ bool CreateScene()
 {
 	mFrameGraphics.AddCamera(&mCameraRenderTexture);
 	mFrameGraphics.AddMesh(&mPlane);
-	mFrameGraphics.AddTexture(&mTextureHeightMap);
-	mFrameGraphics.AddTexture(&mTextureAlbedo);
-	mFrameGraphics.AddTexture(&mRenderTexture);
-	mFrameGraphics.AddRenderTexture(&mRenderTexture);
+	mFrameGraphics.AddTexture(&mTextureHeightMap);//0
+	mFrameGraphics.AddTexture(&mTextureAlbedo);//1
 
+	mFrameGraphics.AddTexture(&mRenderTexture);//2
+	mFrameGraphics.AddRenderTexture(&mRenderTexture);
+	//fluid tex
+
+	mFrameGraphics.AddTexture(mVelocitypingpong.ping);//4
+	mFrameGraphics.AddTexture(mVelocitypingpong.pong);//5
+	mFrameGraphics.AddTexture(mTemperaturepingpong.ping);//6
+	mFrameGraphics.AddTexture(mTemperaturepingpong.pong);//7
+	mFrameGraphics.AddTexture(mPressurepingpong.ping);//8
+	mFrameGraphics.AddTexture(mPressurepingpong.pong);//9
+	mFrameGraphics.AddTexture(mDensitypingpong.ping);//10
+	mFrameGraphics.AddTexture(mDensitypingpong.pong);//11
+
+	mFrameGraphics.AddRenderTexture(mVelocitypingpong.ping);
+	mFrameGraphics.AddRenderTexture(mVelocitypingpong.pong);
+	mFrameGraphics.AddRenderTexture(mTemperaturepingpong.ping);
+	mFrameGraphics.AddRenderTexture(mTemperaturepingpong.pong);
+	mFrameGraphics.AddRenderTexture(mPressurepingpong.ping);
+	mFrameGraphics.AddRenderTexture(mPressurepingpong.pong);
+	mFrameGraphics.AddRenderTexture(mDensitypingpong.ping);
+	mFrameGraphics.AddRenderTexture(mDensitypingpong.pong);
+
+	//++++++++++++++++++++++++++++++++
 	
 
 	mFramePostProcess.AddCamera(&mCamera);
