@@ -3,6 +3,16 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "Frame.h"
+#include "fluid2D.h"
+
+enum fluidPSOstate {
+	fluidadvection,
+	fluidbuoyancy,
+	fluidcomputedivergence,
+	fluidjacobi,
+	fluidsplat,
+	fluidsubtractgradient
+};
 
 class Renderer
 {
@@ -37,6 +47,12 @@ public:
 		Shader* domainShader, 
 		Shader* geometryShader, 
 		Shader* pixelShader, 
+		Shader* fluidadvection,
+		Shader* fluidbuoyancy,
+		Shader* fluidcomputedivergence,
+		Shader* fluidjacobi,
+		Shader* fluidsplat,
+		Shader* fluidsubtractgradient,
 		const vector<Texture*>& textures,
 		const vector<RenderTexture*>& renderTextures);
 
@@ -45,9 +61,10 @@ public:
 		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
 		ID3D12GraphicsCommandList* commandList,
 		Frame* pFrame,
+		Fluid* pFluid,
 		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
 
-	ID3D12PipelineState* GetGraphicsPSO();
+	ID3D12PipelineState* GetGraphicsPSO(fluidPSOstate state);
 
 	// Post Process Pipeline
 	bool CreatePostProcessPipeline(
@@ -85,6 +102,13 @@ private:
 	ID3D12RootSignature* graphicsRootSignature;
 	ID3D12DescriptorHeap* graphicsDescriptorHeap;
 	ID3D12DescriptorHeap* graphicsRtvDescriptorHeap;
+
+	ID3D12PipelineState* fluidadvectionPSO;
+	ID3D12PipelineState* fluidbuoyancyPSO;
+	ID3D12PipelineState* fluidcomputedivergencePSO;
+	ID3D12PipelineState* fluidjacobiPSO;
+	ID3D12PipelineState* fluidsplatPSO;
+	ID3D12PipelineState* fluidsubtractgradientPSO;
 
 	bool CreateGraphicsPSO(
 		ID3D12Device* device,

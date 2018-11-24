@@ -38,11 +38,12 @@ public:
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetUniformBufferGpuAddress();
 
+	vector<Texture*> pTextureVec;
+	vector<RenderTexture*> pRenderTextureVec;
 private:
 	vector<Camera*> pCameraVec;
 	vector<Mesh*> pMeshVec;
-	vector<Texture*> pTextureVec;
-	vector<RenderTexture*> pRenderTextureVec;
+
 
 	FrameUniform uniform;
 	ID3D12Resource* gpuUniformBuffer;

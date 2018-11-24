@@ -149,6 +149,13 @@ void Renderer::Release()
 	SAFE_RELEASE(postProcessRootSignature);
 	SAFE_RELEASE(postProcessDescriptorHeap);
 
+	SAFE_RELEASE(fluidadvectionPSO);
+	SAFE_RELEASE(fluidbuoyancyPSO);
+	SAFE_RELEASE(fluidcomputedivergencePSO);
+	SAFE_RELEASE(fluidjacobiPSO);
+	SAFE_RELEASE(fluidsplatPSO);
+	SAFE_RELEASE(fluidsubtractgradientPSO);
+
 	SAFE_RELEASE(depthStencilBuffer);
 	SAFE_RELEASE(dsvDescriptorHeap);
 
@@ -233,6 +240,12 @@ bool Renderer::CreateGraphicsPipeline(
 	Shader* domainShader,
 	Shader* geometryShader,
 	Shader* pixelShader,
+	Shader* fluidadvection,
+	Shader* fluidbuoyancy,
+	Shader* fluidcomputedivergence,
+	Shader* fluidjacobi,
+	Shader* fluidsplat,
+	Shader* fluidsubtractgradient,
 	const vector<Texture*>& textures,
 	const vector<RenderTexture*>& renderTextures)
 {
@@ -245,11 +258,52 @@ bool Renderer::CreateGraphicsPipeline(
 		return false;
 	}
 
-	if (!CreateGraphicsPSO(device, &graphicsPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, pixelShader))
+	//if (!CreateGraphicsPSO(device, &graphicsPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, pixelShader))
+	//{
+	//	printf("CreatePSO failed\n");
+	//	return false;
+	//}
+	hullShader = nullptr;
+	domainShader = nullptr;
+	geometryShader = nullptr;
+
+	if (!CreateGraphicsPSO(device, &fluidadvectionPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidadvection))
 	{
 		printf("CreatePSO failed\n");
 		return false;
 	}
+
+	if (!CreateGraphicsPSO(device, &fluidbuoyancyPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidbuoyancy))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, &fluidcomputedivergencePSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidcomputedivergence))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, &fluidjacobiPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidjacobi))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, &fluidsplatPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidsplat))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, &fluidsubtractgradientPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidsubtractgradient))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+
 
 	if (!CreateDescriptorHeap(device, &graphicsDescriptorHeap, texCount))
 	{
@@ -352,6 +406,7 @@ void Renderer::RecordGraphicsPipeline(
 	CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil, 
 	ID3D12GraphicsCommandList* commandList, 
 	Frame* pFrame, 
+	Fluid* pFluid,
 	D3D_PRIMITIVE_TOPOLOGY primitiveType)
 {
 	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
@@ -375,11 +430,14 @@ void Renderer::RecordGraphicsPipeline(
 
 	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
 	commandList->SetGraphicsRootConstantBufferView(1, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
-	commandList->SetGraphicsRootDescriptorTable(3, graphicsDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	commandList->SetGraphicsRootDescriptorTable(4, graphicsDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
 	if(primitiveType!=D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
 	commandList->SetGraphicsRootConstantBufferView(2, pFrame->GetUniformBufferGpuAddress());
+
+	//passing fluid uniforms
+	commandList->SetGraphicsRootConstantBufferView(3, pFluid->GetUniformBufferGpuAddress());
 	int meshCount = pFrame->GetMeshVec().size();
 	for (int i = 0; i < meshCount; i++)
 	{
@@ -411,8 +469,8 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device, int descriptorN
 	descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
 	// create a root parameter for the root descriptor and fill it out
-	D3D12_ROOT_PARAMETER  rootParameters[4]; // 3 root parameters
-	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[3]; // 2 of 3 are cbv
+	D3D12_ROOT_PARAMETER  rootParameters[5]; // 3 root parameters
+	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[4]; // 2 of 3 are cbv
 
 	rootCBVDescriptors[0].RegisterSpace = 0;
 	rootCBVDescriptors[0].ShaderRegister = 0;
@@ -432,11 +490,18 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device, int descriptorN
 	rootParameters[2].Descriptor = rootCBVDescriptors[2]; // this is the root descriptor for this root parameter
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
+	//added fluid uniforms
+	rootCBVDescriptors[3].RegisterSpace = 0;
+	rootCBVDescriptors[3].ShaderRegister = 3;
+	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[3].Descriptor = rootCBVDescriptors[3]; // this is the root descriptor for this root parameter
+	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+
 	// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
 	// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
-	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-	rootParameters[3].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+	rootParameters[4].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+	rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -481,9 +546,31 @@ bool Renderer::CreateGraphicsRootSignature(ID3D12Device* device, int descriptorN
 	return true;
 }
 
-ID3D12PipelineState* Renderer::GetGraphicsPSO()
+ID3D12PipelineState* Renderer::GetGraphicsPSO(fluidPSOstate state)
 {
-	return graphicsPSO;
+	ID3D12PipelineState* returnstate = nullptr;
+	switch (state)
+	{
+	case fluidadvection:
+		returnstate = fluidadvectionPSO;
+		break;
+	case fluidbuoyancy:
+		returnstate = fluidbuoyancyPSO;
+		break;
+	case fluidcomputedivergence:
+		returnstate = fluidcomputedivergencePSO;
+		break;
+	case fluidjacobi:
+		returnstate = fluidjacobiPSO;
+		break;
+	case fluidsplat:
+		returnstate = fluidsplatPSO;
+		break;
+	case fluidsubtractgradient:
+		returnstate = fluidsubtractgradientPSO;
+		break;
+	}
+	return returnstate;
 }
 
 ///////////////////////////////////////////

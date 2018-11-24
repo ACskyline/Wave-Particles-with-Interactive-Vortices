@@ -6,6 +6,7 @@
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "Scene.h"
+#include "fluid2D.h"
 
 HWND hwnd = NULL;// Handle to the window
 LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
@@ -33,6 +34,50 @@ int frameIndex; // current rtv we are on
 
 OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
+
+Fluid mFluid;
+struct velocitypingpong {
+	RenderTexture* ping;
+	RenderTexture* pong;
+	velocitypingpong()
+	{
+		ping = new RenderTexture(500, 500);
+		pong = new RenderTexture(500, 500);
+	}
+}mVelocitypingpong;
+
+struct temperaturepingpong {
+	RenderTexture* ping;
+	RenderTexture* pong;
+	temperaturepingpong()
+	{
+		ping = new RenderTexture(500, 500);
+		pong = new RenderTexture(500, 500);
+	}
+}mTemperaturepingpong;
+
+struct pressurepingpong {
+	RenderTexture* ping;
+	RenderTexture* pong;
+	pressurepingpong()
+	{
+		ping = new RenderTexture(500, 500);
+		pong = new RenderTexture(500, 500);
+	}
+}mPressurepingpong;
+
+struct densitypingpong {
+	RenderTexture* ping;
+	RenderTexture* pong;
+	densitypingpong()
+	{
+		ping = new RenderTexture(500, 500);
+		pong = new RenderTexture(500, 500);
+	}
+}mDensitypingpong;
+
+
+
 Renderer mRenderer;
 Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
 Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
@@ -40,10 +85,16 @@ Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
 Shader mPixelShader(Shader::ShaderType::PixelShader, L"PixelShader.hlsl");
 Shader mVS(Shader::ShaderType::VertexShader, L"vs.hlsl");
 Shader mPS(Shader::ShaderType::PixelShader, L"ps.hlsl");
+Shader mfluidadvection(Shader::ShaderType::PixelShader, L"fluidadvection.hlsl");
+Shader mfluidbuoyancy(Shader::ShaderType::PixelShader, L"fluidbuoyancy.hlsl");
+Shader mfluidcomputedivergence(Shader::ShaderType::PixelShader, L"fluidcomputedivergence.hlsl");
+Shader mfluidjacobi(Shader::ShaderType::PixelShader, L"fluidjacobi.hlsl");
+Shader mfluidsplat(Shader::ShaderType::PixelShader, L"fluidsplat.hlsl");
+Shader mfluidsubtractgradient(Shader::ShaderType::PixelShader, L"fluidsubtractgradient.hlsl");
 Texture mTextureHeightMap(L"wave.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
 RenderTexture mRenderTexture(500, 500);
-OrbitCamera mCameraRenderTexture(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 500, 500, 45.0f, 0.1f, 1000.0f);
+OrbitCamera mCameraRenderTexture(0.11f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 500, 500, 45.0f, 0.1f, 1000.0f);
 Mesh mPlaneRenderTexture(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(-90, 0, 0), XMFLOAT3(1, 1, 1));
 Frame mFrameGraphics;
 Frame mFramePostProcess;
@@ -61,11 +112,15 @@ bool CreateScene()
 	mFrameGraphics.AddMesh(&mPlane);
 	mFrameGraphics.AddTexture(&mTextureHeightMap);
 	mFrameGraphics.AddTexture(&mTextureAlbedo);
+	mFrameGraphics.AddTexture(&mRenderTexture);
 	mFrameGraphics.AddRenderTexture(&mRenderTexture);
+
+	
 
 	mFramePostProcess.AddCamera(&mCamera);
 	mFramePostProcess.AddMesh(&mPlaneRenderTexture);
 	mFramePostProcess.AddTexture(&mRenderTexture);
+	mFramePostProcess.AddTexture(&mTextureHeightMap);
 
 	mScene.AddFrame(&mFrameGraphics);
 	mScene.AddFrame(&mFramePostProcess);
@@ -79,8 +134,16 @@ bool CreateScene()
 	mScene.AddShader(&mPixelShader);
 	mScene.AddShader(&mVS);
 	mScene.AddShader(&mPS);
+	mScene.AddShader(&mfluidadvection);
+	mScene.AddShader(&mfluidbuoyancy);
+	mScene.AddShader(&mfluidcomputedivergence);
+	mScene.AddShader(&mfluidjacobi);
+	mScene.AddShader(&mfluidsplat);
+	mScene.AddShader(&mfluidsubtractgradient);
+
 	mScene.AddTexture(&mTextureHeightMap);
 	mScene.AddTexture(&mTextureAlbedo);
+	//mScene.AddTexture(&mRenderTexture);
 	mScene.AddRenderTexture(&mRenderTexture);
 
 	if (!mScene.LoadScene())
@@ -92,6 +155,12 @@ bool CreateScene()
 bool InitScene()
 {
 	return mScene.InitScene(device);
+
+}
+
+bool InitFluid()
+{
+	return mFluid.initFluid(device);
 }
 
 void InitConsole()
@@ -166,24 +235,24 @@ void DetectInput()
 		DIMouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseCurrState);
 		if (mouseCurrState.lX != 0)
 		{
-			mCameraRenderTexture.SetHorizontalAngle(mCameraRenderTexture.GetHorizontalAngle() + mouseCurrState.lX * 0.1);
+			mCamera.SetHorizontalAngle(mCamera.GetHorizontalAngle() + mouseCurrState.lX * 0.1);
 		}
 		if (mouseCurrState.lY != 0)
 		{
-			float tempVerticalAngle = mCameraRenderTexture.GetVerticalAngle() + mouseCurrState.lY * 0.1;
+			float tempVerticalAngle = mCamera.GetVerticalAngle() + mouseCurrState.lY * 0.1;
 			if (tempVerticalAngle > 90 - EPSILON) tempVerticalAngle = 89 - EPSILON;
 			if (tempVerticalAngle < -90 + EPSILON) tempVerticalAngle = -89 + EPSILON;
-			mCameraRenderTexture.SetVerticalAngle(tempVerticalAngle);
+			mCamera.SetVerticalAngle(tempVerticalAngle);
 		}
 		if (mouseCurrState.lZ != 0)
 		{
-			float tempDistance = mCameraRenderTexture.GetDistance() - mouseCurrState.lZ * 0.01;
+			float tempDistance = mCamera.GetDistance() - mouseCurrState.lZ * 0.01;
 			if (tempDistance < 0 + EPSILON) tempDistance = 0.1 + EPSILON;
-			mCameraRenderTexture.SetDistance(tempDistance);
+			mCamera.SetDistance(tempDistance);
 		}
 		mouseLastState = mouseCurrState;
-		mCameraRenderTexture.UpdateUniform();
-		mCameraRenderTexture.UpdateUniformBuffer();
+		mCamera.UpdateUniform();
+		mCamera.UpdateUniformBuffer();
 	}
 
 	memcpy(keyboardLastState, keyboardCurrState, 256 * sizeof(BYTE));
@@ -482,6 +551,12 @@ bool InitD3D()
 		return false;
 	}
 
+	if (!InitFluid())
+	{
+		printf("intitfluid failed\n");
+		return false;
+	}
+
 	// GPU side, create GPU pipeline
 
 	if (!mRenderer.CreateRenderer(device, swapChain, Width, Height))
@@ -492,12 +567,18 @@ bool InitD3D()
 
 	if (!mRenderer.CreateGraphicsPipeline(
 		device,
-		D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
 		&mVertexShader, 
 		&mHullShader, 
 		&mDomainShader, 
 		nullptr, 
 		&mPixelShader, 
+		&mfluidadvection,
+		&mfluidbuoyancy,
+		&mfluidcomputedivergence,
+		&mfluidjacobi,
+		&mfluidsplat,
+		&mfluidsubtractgradient,
 		mFrameGraphics.GetTextureVec(),
 		mFrameGraphics.GetRenderTextureVec()))
 	{
@@ -621,14 +702,37 @@ void UpdatePipeline()
 
 	///////// MY GRAPHICS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetPipelineState(mRenderer.GetGraphicsPSO());
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
 	mRenderer.RecordGraphicsPipeline(
 		mRenderTexture.GetRtvHandle(), 
 		mRenderer.GetDsvHandle(), 
 		commandList, 
-		&mFrameGraphics, 
-		D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+
+
+
+
+	//mFluid.increamenthandle();
+
+	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexture.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+
+	//commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
+	//mRenderer.RecordGraphicsPipeline(
+	//	mRenderTexture.GetRtvHandle(),
+	//	mRenderer.GetDsvHandle(),
+	//	commandList,
+	//	&mFrameGraphics,
+	//	&mFluid,
+	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+
+
+
 	///////// MY GRAPHICS PIPELINE /////////
 
 	//seems unnecessary
@@ -643,6 +747,8 @@ void UpdatePipeline()
 		commandList,
 		&mFramePostProcess,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	mFluid.resetincreament();
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS PIPELINE /////////
 

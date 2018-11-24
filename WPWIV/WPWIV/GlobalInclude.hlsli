@@ -6,6 +6,11 @@ struct VS_INPUT
     float2 texCoord : TEXCOORD;
 };
 
+struct VSQuadOut {
+	float4 position : SV_Position;
+	float2 uv: TexCoord;
+};
+
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
@@ -34,6 +39,23 @@ cbuffer FrameUniform : register(b2)
 {
     float waveParticleScale;
     uint tessellationFactor;
+}
+
+cbuffer FluidUniform : register(b3)
+{
+	float AmbientTemperature;
+	  float ImpulseTemperature;
+	  float ImpulseDensity;
+	  int NumJacobiIterations;
+	  float TimeStep;
+	  float SmokeBuoyancy;
+	  float SmokeWeight;
+	  float GradientScale;
+	  float TemperatureDissipation;
+	  float VelocityDissipation;
+	  float DensityDissipation;
+	  float2 ImpulsePosition;
+	  uint increament;
 }
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////
@@ -74,6 +96,7 @@ struct DS_OUTPUT
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 Texture2D t0 : register(t0);
 Texture2D t1 : register(t1);
+Texture2D t2 : register(t2);
 SamplerState s0 : register(s0);
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// PS /////////////////

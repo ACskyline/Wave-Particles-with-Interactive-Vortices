@@ -470,10 +470,10 @@ void Mesh::InitPlane()
 	vList.resize(4);
 
 	// front face
-	vList[0] = { -0.5f,  0.f, -0.5f, 0.0f, 1.0f };
-	vList[1] = { -0.5f, 0.f, 0.5f, 0.0f, 0.0f };
-	vList[2] = { 0.5f, 0.f, 0.5f, 1.0f, 0.0f };
-	vList[3] = { 0.5f,  0.f, -0.5f, 1.0f, 1.0f };
+	vList[0] = { -0.5f, -0.5f, 0.f,  0.0f, 1.0f };
+	vList[1] = { -0.5f,0.5f, 0.f,  0.0f, 0.0f };
+	vList[2] = { 0.5f, 0.5f,0.f,  1.0f, 0.0f };
+	vList[3] = { 0.5f, -0.5f, 0.f,  1.0f, 1.0f };
 
 	iList.resize(6);
 
