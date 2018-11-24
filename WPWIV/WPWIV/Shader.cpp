@@ -60,7 +60,7 @@ bool Shader::CreateVertexShaderFromFile(const wstring& _fileName)
 		&errorBuff);
 	if (FAILED(hr))
 	{
-		OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+		CheckError(hr, errorBuff);
 		return false;
 	}
 
@@ -99,7 +99,7 @@ bool Shader::CreateHullShaderFromFile(const wstring& _fileName)
 		&errorBuff);
 	if (FAILED(hr))
 	{
-		OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+		CheckError(hr, errorBuff);
 		return false;
 	}
 
@@ -137,7 +137,7 @@ bool Shader::CreateDomainShaderFromFile(const wstring& _fileName)
 		&errorBuff);
 	if (FAILED(hr))
 	{
-		OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+		CheckError(hr, errorBuff);
 		return false;
 	}
 
@@ -175,7 +175,7 @@ bool Shader::CreateGeometryShaderFromFile(const wstring& _fileName)
 		&errorBuff);
 	if (FAILED(hr))
 	{
-		OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+		CheckError(hr, errorBuff);
 		return false;
 	}
 
@@ -214,7 +214,7 @@ bool Shader::CreatePixelShaderFromFile(const wstring& _fileName)
 		&errorBuff);
 	if (FAILED(hr))
 	{
-		OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+		CheckError(hr, errorBuff);
 		return false;
 	}
 

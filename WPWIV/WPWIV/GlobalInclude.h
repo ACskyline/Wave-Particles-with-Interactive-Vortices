@@ -29,4 +29,4 @@ struct Vertex {
 	XMFLOAT2 texCoord;
 };
 
-bool CheckError(HRESULT hr, ID3D10Blob* error_message);
+bool CheckError(HRESULT hr, ID3D10Blob* error_message = nullptr);

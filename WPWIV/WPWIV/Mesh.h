@@ -5,7 +5,7 @@
 class Mesh
 {
 public:
-	enum MeshType { Plane, Cube };
+	enum MeshType { Plane, Cube, WaveParticle, WaterSurface, FullScreenQuad };
 
 	struct ObjectUniform
 	{
@@ -14,6 +14,17 @@ public:
 	};
 
 	Mesh(const MeshType& _type,
+		const XMFLOAT3& _position,
+		const XMFLOAT3& _rotation,
+		const XMFLOAT3& _scale);
+	Mesh(const MeshType& _type,
+		int waveParticleCount,
+		const XMFLOAT3& _position,
+		const XMFLOAT3& _rotation,
+		const XMFLOAT3& _scale);
+	Mesh(const MeshType& _type,
+		int cellCountX,
+		int cellCountZ,
 		const XMFLOAT3& _position,
 		const XMFLOAT3& _rotation,
 		const XMFLOAT3& _scale);
@@ -69,8 +80,10 @@ private:
 	UINT vertexBufferSizeInBytes;
 	UINT indexBufferSizeInBytes;
 
-
 	void InitCube();
 	void InitPlane();
+	void InitWaveParticles(int waveParticleCount);
+	void InitWaterSurface(int cellCountX, int cellCountZ);
+	void InitFullScreenQuad();
 };
 

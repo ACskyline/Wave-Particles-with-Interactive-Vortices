@@ -17,6 +17,43 @@ Mesh::Mesh(const MeshType& _type,
 	{
 		InitCube();
 	}
+	else if (type == MeshType::FullScreenQuad)
+	{
+		InitFullScreenQuad();
+	}
+}
+
+Mesh::Mesh(const MeshType& _type,
+	int waveParticleCount,
+	const XMFLOAT3& _position,
+	const XMFLOAT3& _rotation,
+	const XMFLOAT3& _scale) :
+	type(_type),
+	position(_position),
+	scale(_scale),
+	rotation(_rotation)
+{
+	if (type == MeshType::WaveParticle)
+	{
+		InitWaveParticles(waveParticleCount);
+	}
+}
+
+Mesh::Mesh(const MeshType& _type,
+	int cellCountX,
+	int cellCountZ,
+	const XMFLOAT3& _position,
+	const XMFLOAT3& _rotation,
+	const XMFLOAT3& _scale) :
+	type(_type),
+	position(_position),
+	scale(_scale),
+	rotation(_rotation)
+{
+	if (type == MeshType::WaterSurface)
+	{
+		InitWaterSurface(cellCountX, cellCountZ);
+	}
 }
 
 Mesh::~Mesh()
@@ -474,6 +511,82 @@ void Mesh::InitPlane()
 	vList[1] = { -0.5f, 0.f, 0.5f, 0.0f, 0.0f };
 	vList[2] = { 0.5f, 0.f, 0.5f, 1.0f, 0.0f };
 	vList[3] = { 0.5f,  0.f, -0.5f, 1.0f, 1.0f };
+
+	iList.resize(6);
+
+	// front face 
+	// first triangle
+	iList[0] = 0;
+	iList[1] = 1;
+	iList[2] = 2;
+	// second triangle
+	iList[3] = 0;
+	iList[4] = 2;
+	iList[5] = 3;
+}
+
+void Mesh::InitWaveParticles(int waveParticleCount)
+{
+	primitiveType = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+
+	vList.resize(waveParticleCount);
+	iList.resize(waveParticleCount);
+
+	int waveParticlePerRow = sqrt(waveParticleCount);
+
+	for (int i = 0; i < waveParticlePerRow; i++)
+	{
+		for (int j = 0; j < waveParticlePerRow; j++)
+		{
+			int index = i * waveParticlePerRow + j;
+			vList[index] = { i / (float)waveParticlePerRow * 2.f - 1.f, j / (float)waveParticlePerRow * 2.f - 1.f, 1, 1, 1 };
+			iList[index] = index;
+		}
+	}
+}
+
+void Mesh::InitWaterSurface(int cellCountX, int cellCountZ)
+{
+	primitiveType = D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST;
+
+	int cellCount = cellCountX * cellCountZ;
+	int vertexCount = (cellCountX + 1) * (cellCountZ + 1);
+	vList.resize(vertexCount);
+	iList.resize(cellCount * 4);
+
+	for (int i = 0; i <= cellCountX; i++)
+	{
+		for (int j = 0; j <= cellCountZ; j++)
+		{
+			int index = i * cellCountZ + j;
+			vList[index] = { i / (float)cellCountX, 0, j / (float)cellCountZ, 1, 1 };
+		}
+	}
+
+	for (int i = 0; i < cellCountX; i++)
+	{
+		for (int j = 0; j < cellCountZ; j++)
+		{
+			int index = i * cellCountZ + j;
+			iList[index * 4 + 0] = i * cellCountZ + j;
+			iList[index * 4 + 1] = (i + 1) * cellCountZ + j;
+			iList[index * 4 + 2] = (i + 1) * cellCountZ + j + 1;
+			iList[index * 4 + 3] = i * cellCountZ + j + 1;
+		}
+	}
+}
+
+void Mesh::InitFullScreenQuad()
+{
+	primitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+	vList.resize(4);
+
+	// front face
+	vList[0] = { -1.f,  -1.f, 0.5f, 0.0f, 1.0f };
+	vList[1] = { -1.f, 1.f, 0.5f, 0.0f, 0.0f };
+	vList[2] = { 1.f, 1.f, 0.5f, 1.0f, 0.0f };
+	vList[3] = { 1.f,  -1.f, 0.5f, 1.0f, 1.0f };
 
 	iList.resize(6);
 

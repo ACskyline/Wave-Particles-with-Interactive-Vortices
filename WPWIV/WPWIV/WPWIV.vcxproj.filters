@@ -83,6 +83,21 @@
     <FxCompile Include="ps.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
+    <FxCompile Include="WaveParticleVS.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="WaveParticlePS.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PostProcessVS.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PostProcessPS_H.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PostProcessPS_V.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h">

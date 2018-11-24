@@ -12,6 +12,14 @@ struct VS_OUTPUT
     float2 texCoord : TEXCOORD;
 };
 
+struct WAVE_PARTICLE
+{
+    float4 pos : SV_POSITION;
+    float2 direction : DIRECTION;
+    float height : HEIGHT;
+    float speed : SPEED;
+};
+
 struct VS_CONTROL_POINT_OUTPUT
 {
     float3 pos : MODELPOS;

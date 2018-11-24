@@ -1,5 +1,13 @@
-﻿  Mesh.cpp
-e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(111): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(140): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(358): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+﻿  Renderer.cpp
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(73): warning C4244: 'argument': conversion from 'float' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(73): warning C4244: 'argument': conversion from 'float' to 'UINT64', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(329): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(330): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(409): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(552): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(553): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(632): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(773): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(774): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(853): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
   WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe
