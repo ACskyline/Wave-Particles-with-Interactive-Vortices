@@ -16,7 +16,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 	float2 coord = input.uv;
 	float2 invsize = float2(1/size.x,1/size.y);
 	float solid = t2.Sample(s0, coord).x;
-	float scale = 10.0;
+	float scale = 1;
 	if (solid == 0)
 	{
 		col = float4(0, 0, 0, 0);

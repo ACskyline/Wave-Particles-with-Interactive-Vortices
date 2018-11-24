@@ -859,7 +859,7 @@ void UpdatePipeline()
 	mFluid.setadvectiondens();
 	mFluid.UpdateUniformBuffer();
 	RenderTexture* rdens;
-	if (mFluid.gettempstate() == 0)
+	if (mFluid.getdenstate() == 0)
 		rdens = mDensitypingpong.pong;
 	else
 		rdens = mDensitypingpong.ping;
@@ -899,11 +899,106 @@ void UpdatePipeline()
 
 	//apply impulses======================================================================
 
+	mFluid.setimpulsetemp();
+	mFluid.UpdateUniformBuffer();
+
+	RenderTexture* itemp;
+	if (mFluid.gettempstate() == 0)
+		itemp = mTemperaturepingpong.ping;
+	else
+		itemp = mTemperaturepingpong.pong;
+
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
+	mRenderer.RecordGraphicsPipeline(
+		itemp->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	mFluid.setimpulsedens();
+	mFluid.UpdateUniformBuffer();
+
+	RenderTexture* idens;
+	if (mFluid.getdenstate() == 0)
+		idens = mDensitypingpong.ping;
+	else
+		idens = mDensitypingpong.pong;
+
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
+	mRenderer.RecordGraphicsPipeline(
+		idens->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//compute divergence====================================================
 
 
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidcomputedivergence));
+	mRenderer.RecordGraphicsPipeline(
+		mDivergence.GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//clear state=====================================================
+	RenderTexture* cpre;
+	if (mFluid.getprestate() == 0)
+		cpre = mPressurepingpong.ping;
+	else
+		cpre = mPressurepingpong.pong;
+	resetFluidtextures(cpre);
+	//apply jacobian=====================================================
+	for (int i = 0; i < 40; ++i)
+	{
+		RenderTexture* jpre;
+		if (mFluid.getprestate() == 0)
+			jpre = mPressurepingpong.pong;
+		else
+			jpre = mPressurepingpong.ping;
+		resetFluidtextures(jpre);
+		commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidjacobi));
+		mRenderer.RecordGraphicsPipeline(
+			jpre->GetRtvHandle(),
+			mRenderer.GetDsvHandle(),
+			commandList,
+			&mFrameGraphics,
+			&mFluid,
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		mFluid.swapprestate();
+		mFluid.UpdateUniformBuffer();
+
+	}
+	//subtract gradient=======================================================
+	RenderTexture* svel;
+
+	if (mFluid.getvelstate() == 0)
+		svel = mVelocitypingpong.pong;
+	else
+		svel = mVelocitypingpong.ping;
 
 
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsubtractgradient));
+	mRenderer.RecordGraphicsPipeline(
+		svel->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+
+	mFluid.swapvelstate();
+	mFluid.UpdateUniformBuffer();
+
+
+	//display fluid=========================================================================
 	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluiddisplay));
 	mRenderer.RecordGraphicsPipeline(
 		mRenderer.GetRtvHandle(frameIndex),
