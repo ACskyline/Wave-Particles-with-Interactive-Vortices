@@ -32,8 +32,8 @@ struct Vertex {
 bool CheckError(HRESULT hr, ID3D10Blob* error_message);
 
 #define CellSize (1.25f)
-#define ViewportWidth (1024)
-#define ViewportHeight (768)
+#define ViewportWidth (500)
+#define ViewportHeight (500)
 #define GridWidth (ViewportWidth / 2)
 #define GridHeight (ViewportHeight / 2)
 #define SplatRadius ((float) GridWidth / 8.0f)

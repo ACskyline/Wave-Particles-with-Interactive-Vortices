@@ -1,10 +1,1 @@
-﻿  main.cpp
-  c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
-e:\cis565\wavev3\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(238): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-e:\cis565\wavev3\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(242): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\cis565\wavev3\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(243): warning C4305: '=': truncation from 'double' to 'float'
-e:\cis565\wavev3\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(244): warning C4305: '=': truncation from 'double' to 'float'
-e:\cis565\wavev3\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(249): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\cis565\wavev3\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(250): warning C4305: '=': truncation from 'double' to 'float'
-e:\cis565\wavev3\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(562): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-  WPWIV.vcxproj -> E:\cis565\wavev3\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Debug\WPWIV.exe
+﻿  compilation object save succeeded; see E:\cis565\wavev3\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Debug\fluidbuoyancy.cso

@@ -246,6 +246,8 @@ bool Renderer::CreateGraphicsPipeline(
 	Shader* fluidjacobi,
 	Shader* fluidsplat,
 	Shader* fluidsubtractgradient,
+	Shader* fluidclear,
+	Shader* fluiddisplay,
 	const vector<Texture*>& textures,
 	const vector<RenderTexture*>& renderTextures)
 {
@@ -303,6 +305,18 @@ bool Renderer::CreateGraphicsPipeline(
 		return false;
 	}
 
+
+	if (!CreateGraphicsPSO(device, &fluidclearPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidclear))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, &fluiddisplayPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluiddisplay))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
 
 
 	if (!CreateDescriptorHeap(device, &graphicsDescriptorHeap, texCount))
@@ -415,8 +429,8 @@ void Renderer::RecordGraphicsPipeline(
 	commandList->OMSetRenderTargets(1, &renderTarget, FALSE, &depthStencil);
 
 	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { 0.8f, 0.2f, 0.4f, 1.0f };
-	commandList->ClearRenderTargetView(renderTarget, clearColor, 0, nullptr);
+	//const float clearColor[] = { 0.8f, 0.2f, 0.4f, 1.0f };
+	//commandList->ClearRenderTargetView(renderTarget, clearColor, 0, nullptr);
 
 	// clear the depth/stencil buffer
 	commandList->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -568,6 +582,12 @@ ID3D12PipelineState* Renderer::GetGraphicsPSO(fluidPSOstate state)
 		break;
 	case fluidsubtractgradient:
 		returnstate = fluidsubtractgradientPSO;
+		break;
+	case fluidclear:
+		returnstate = fluidclearPSO;
+		break;
+	case fluiddisplay:
+		returnstate = fluiddisplayPSO;
 		break;
 	}
 	return returnstate;

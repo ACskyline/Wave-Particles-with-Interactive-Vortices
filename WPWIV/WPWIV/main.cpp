@@ -8,11 +8,13 @@
 #include "Scene.h"
 #include "fluid2D.h"
 
+bool firstclear = true;
+
 HWND hwnd = NULL;// Handle to the window
 LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
 LPCTSTR WindowTitle = L"WPWIV_1.0";// title of the window
-int Width = 1024;// width and height of the window
-int Height = 768;
+int Width = 1000;// width and height of the window
+int Height = 1000;
 IDirectInputDevice8* DIKeyboard;
 IDirectInputDevice8* DIMouse;
 DIMOUSESTATE mouseLastState;
@@ -32,7 +34,7 @@ HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
 UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. each fence will have its own value
 int frameIndex; // current rtv we are on
 
-OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
+OrbitCamera mCamera(4.f, 180.f, -90.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 
 
@@ -45,8 +47,8 @@ struct velocitypingpong {
 	RenderTexture* pong;
 	velocitypingpong()
 	{
-		ping = new RenderTexture(500, 500);
-		pong = new RenderTexture(500, 500);
+		ping = new RenderTexture(1000, 1000);
+		pong = new RenderTexture(1000, 1000);
 	}
 	void swapTex()
 	{
@@ -61,8 +63,8 @@ struct temperaturepingpong {
 	RenderTexture* pong;
 	temperaturepingpong()
 	{
-		ping = new RenderTexture(500, 500);
-		pong = new RenderTexture(500, 500);
+		ping = new RenderTexture(1000, 1000);
+		pong = new RenderTexture(1000, 1000);
 	}
 	void swapTex()
 	{
@@ -77,8 +79,8 @@ struct pressurepingpong {
 	RenderTexture* pong;
 	pressurepingpong()
 	{
-		ping = new RenderTexture(500, 500);
-		pong = new RenderTexture(500, 500);
+		ping = new RenderTexture(1000, 1000);
+		pong = new RenderTexture(1000, 1000);
 	}
 	void swapTex()
 	{
@@ -93,8 +95,8 @@ struct densitypingpong {
 	RenderTexture* pong;
 	densitypingpong()
 	{
-		ping = new RenderTexture(500, 500);
-		pong = new RenderTexture(500, 500);
+		ping = new RenderTexture(1000, 1000);
+		pong = new RenderTexture(1000, 1000);
 	}
 	void swapTex()
 	{
@@ -103,6 +105,8 @@ struct densitypingpong {
 		pong = tmp;
 	}
 }mDensitypingpong;
+
+RenderTexture mDivergence(1000, 1000);
 //-------------------------------------------------------------------
 
 
@@ -119,10 +123,14 @@ Shader mfluidcomputedivergence(Shader::ShaderType::PixelShader, L"fluidcomputedi
 Shader mfluidjacobi(Shader::ShaderType::PixelShader, L"fluidjacobi.hlsl");
 Shader mfluidsplat(Shader::ShaderType::PixelShader, L"fluidsplat.hlsl");
 Shader mfluidsubtractgradient(Shader::ShaderType::PixelShader, L"fluidsubtractgradient.hlsl");
+Shader mfluidclear(Shader::ShaderType::PixelShader, L"fluidclear.hlsl");
+Shader mfluiddisplay(Shader::ShaderType::PixelShader, L"fluiddisplay.hlsl");
+
 Texture mTextureHeightMap(L"wave.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
-RenderTexture mRenderTexture(500, 500);
-OrbitCamera mCameraRenderTexture(0.11f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 500, 500, 45.0f, 0.1f, 1000.0f);
+Texture mObstacles(L"nicerobstacle.png");
+RenderTexture mRenderTexture(1000, 1000);
+OrbitCamera mCameraRenderTexture(0.11f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 1000, 1000, 45.0f, 0.1f, 1000.0f);
 Mesh mPlaneRenderTexture(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(-90, 0, 0), XMFLOAT3(1, 1, 1));
 Frame mFrameGraphics;
 Frame mFramePostProcess;
@@ -141,18 +149,25 @@ bool CreateScene()
 	mFrameGraphics.AddTexture(&mTextureHeightMap);//0
 	mFrameGraphics.AddTexture(&mTextureAlbedo);//1
 
-	mFrameGraphics.AddTexture(&mRenderTexture);//2
+	mFrameGraphics.AddTexture(&mObstacles);//2
+
+	mFrameGraphics.AddTexture(&mRenderTexture);//3
 	mFrameGraphics.AddRenderTexture(&mRenderTexture);
 	//fluid tex
 
 	mFrameGraphics.AddTexture(mVelocitypingpong.ping);//4
 	mFrameGraphics.AddTexture(mVelocitypingpong.pong);//5
+
 	mFrameGraphics.AddTexture(mTemperaturepingpong.ping);//6
 	mFrameGraphics.AddTexture(mTemperaturepingpong.pong);//7
+
 	mFrameGraphics.AddTexture(mPressurepingpong.ping);//8
 	mFrameGraphics.AddTexture(mPressurepingpong.pong);//9
+
 	mFrameGraphics.AddTexture(mDensitypingpong.ping);//10
 	mFrameGraphics.AddTexture(mDensitypingpong.pong);//11
+
+	mFrameGraphics.AddTexture(&mDivergence);//divergence texture 12
 
 	mFrameGraphics.AddRenderTexture(mVelocitypingpong.ping);
 	mFrameGraphics.AddRenderTexture(mVelocitypingpong.pong);
@@ -163,12 +178,15 @@ bool CreateScene()
 	mFrameGraphics.AddRenderTexture(mDensitypingpong.ping);
 	mFrameGraphics.AddRenderTexture(mDensitypingpong.pong);
 
+	mFrameGraphics.AddRenderTexture(&mDivergence);
+
 	//++++++++++++++++++++++++++++++++
 	
 
 	mFramePostProcess.AddCamera(&mCamera);
 	mFramePostProcess.AddMesh(&mPlaneRenderTexture);
 	mFramePostProcess.AddTexture(&mRenderTexture);
+	mFramePostProcess.AddTexture(mVelocitypingpong.ping);
 	mFramePostProcess.AddTexture(&mTextureHeightMap);
 
 	mScene.AddFrame(&mFrameGraphics);
@@ -189,11 +207,24 @@ bool CreateScene()
 	mScene.AddShader(&mfluidjacobi);
 	mScene.AddShader(&mfluidsplat);
 	mScene.AddShader(&mfluidsubtractgradient);
+	mScene.AddShader(&mfluidclear);
+	mScene.AddShader(&mfluiddisplay);
 
 	mScene.AddTexture(&mTextureHeightMap);
 	mScene.AddTexture(&mTextureAlbedo);
+	mScene.AddTexture(&mObstacles);
 	//mScene.AddTexture(&mRenderTexture);
 	mScene.AddRenderTexture(&mRenderTexture);
+
+	mScene.AddRenderTexture(mVelocitypingpong.ping);
+	mScene.AddRenderTexture(mVelocitypingpong.pong);
+	mScene.AddRenderTexture(mTemperaturepingpong.ping);
+	mScene.AddRenderTexture(mTemperaturepingpong.pong);
+	mScene.AddRenderTexture(mPressurepingpong.ping);
+	mScene.AddRenderTexture(mPressurepingpong.pong);
+	mScene.AddRenderTexture(mDensitypingpong.ping);
+	mScene.AddRenderTexture(mDensitypingpong.pong);
+	mScene.AddRenderTexture(&mDivergence);
 
 	if (!mScene.LoadScene())
 		return false;
@@ -628,6 +659,8 @@ bool InitD3D()
 		&mfluidjacobi,
 		&mfluidsplat,
 		&mfluidsubtractgradient,
+		&mfluidclear,
+		&mfluiddisplay,
 		mFrameGraphics.GetTextureVec(),
 		mFrameGraphics.GetRenderTextureVec()))
 	{
@@ -746,32 +779,72 @@ void UpdatePipeline()
 	// RECORD GRAPHICS PIPELINE BEGIN //
 	mRenderer.RecordBegin(frameIndex, commandList);
 
+	if (firstclear)
+	{
+		commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidclear));
+		mRenderer.RecordGraphicsPipeline(
+			mVelocitypingpong.pong->GetRtvHandle(),
+			mRenderer.GetDsvHandle(),
+			commandList,
+			&mFrameGraphics,
+			&mFluid,
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidclear));
+		mRenderer.RecordGraphicsPipeline(
+			mVelocitypingpong.ping->GetRtvHandle(),
+			mRenderer.GetDsvHandle(),
+			commandList,
+			&mFrameGraphics,
+			&mFluid,
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		firstclear = false;
+	}
+	mVelocitypingpong.ping->UpdateTextureBuffer(device);
+	mVelocitypingpong.pong->UpdateTextureBuffer(device);
+
+	RenderTexture* rvel;
+	
+	int ss = mFluid.getvelstate();
+
+	if (mFluid.getvelstate() == 0)
+		rvel = mVelocitypingpong.pong;
+	else
+		rvel = mVelocitypingpong.ping;
+
 	//seems unnecessary
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexture.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
+	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(rvel->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
 
 	///////// MY GRAPHICS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
 	mRenderer.RecordGraphicsPipeline(
-		mRenderTexture.GetRtvHandle(), 
+		rvel->GetRtvHandle(),
 		mRenderer.GetDsvHandle(), 
 		commandList, 
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
-
-
-
-	//mFluid.increamenthandle();
-
-	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexture.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+	mFluid.swapvelstate();
+	mFluid.UpdateUniformBuffer();
 
 	//commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
 	//mRenderer.RecordGraphicsPipeline(
-	//	mRenderTexture.GetRtvHandle(),
+	//	mRenderer.GetRtvHandle(frameIndex),
+	//	mRenderer.GetDsvHandle(),
+	//	commandList,
+	//	&mFrameGraphics,
+	//	&mFluid,
+	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
+	//mRenderer.RecordGraphicsPipeline(
+	//	rvel->GetRtvHandle(),
 	//	mRenderer.GetDsvHandle(),
 	//	commandList,
 	//	&mFrameGraphics,
@@ -779,25 +852,34 @@ void UpdatePipeline()
 	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluiddisplay));
+	mRenderer.RecordGraphicsPipeline(
+		mRenderer.GetRtvHandle(frameIndex),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 
 
 
 	///////// MY GRAPHICS PIPELINE /////////
 
 	//seems unnecessary
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexture.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mVelocitypingpong.ping->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
 	
 	///////// MY POSTPROCESS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetPipelineState(mRenderer.GetPostProcessPSO());
-	mRenderer.RecordPostProcessPipeline(
-		mRenderer.GetRtvHandle(frameIndex),
-		mRenderer.GetDsvHandle(),
-		commandList,
-		&mFramePostProcess,
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//commandList->SetPipelineState(mRenderer.GetPostProcessPSO());
+	//mRenderer.RecordPostProcessPipeline(
+	//	mRenderer.GetRtvHandle(frameIndex),
+	//	mRenderer.GetDsvHandle(),
+	//	commandList,
+	//	&mFramePostProcess,
+	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	mFluid.resetincreament();
+	mFluid.resettextureOP();
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS PIPELINE /////////
 

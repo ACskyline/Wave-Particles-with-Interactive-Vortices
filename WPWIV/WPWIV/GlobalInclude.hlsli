@@ -56,6 +56,12 @@ cbuffer FluidUniform : register(b3)
 	  float DensityDissipation;
 	  float2 ImpulsePosition;
 	  uint increament;
+	  uint2 velocitystate ;
+	  uint2 temperaturestate ;
+	  uint2 pressurestate ;
+	  uint2 densitystate ;
+	  float2 size;
+	  float cellsize;
 }
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////
@@ -97,6 +103,18 @@ struct DS_OUTPUT
 Texture2D t0 : register(t0);
 Texture2D t1 : register(t1);
 Texture2D t2 : register(t2);
+Texture2D t3 : register(t3);
+Texture2D t4 : register(t4);
+Texture2D t5 : register(t5);
+Texture2D t6 : register(t6);
+Texture2D t7 : register(t7);
+Texture2D t8 : register(t8);
+Texture2D t9 : register(t9);
+Texture2D t10 : register(t10);
+Texture2D t11 : register(t11);
+
+Texture2D t12 : register(t12);//divergence
+
 SamplerState s0 : register(s0);
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// PS /////////////////

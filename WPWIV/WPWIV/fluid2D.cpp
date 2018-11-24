@@ -41,19 +41,67 @@ void Fluid::UpdateUniformBuffer()
 	memcpy(cpuUniformBufferAddress, &uniform, sizeof(uniform));
 }
 
-void Fluid::increamenthandle()
+void Fluid::textureOPhandle()
 {
-	uniform.increament++;
+	uniform.textureOP++;
 }
 
-int Fluid::getincreament()
+int Fluid::gettextureOP()
 {
-	return uniform.increament;
+	return uniform.textureOP;
 }
 
-void Fluid::resetincreament()
+void Fluid::swapvelstate()
 {
-	uniform.increament = 0;
+	int tmp = uniform.velocitystate.x;
+	uniform.velocitystate.x = uniform.velocitystate.y;
+	uniform.velocitystate.y = tmp;
+}
+
+void Fluid::swapprestate()
+{
+	int tmp = uniform.pressurestate.x;
+	uniform.pressurestate.x = uniform.pressurestate.y;
+	uniform.pressurestate.y = tmp;
+}
+
+void Fluid::swaptempstate()
+{
+	int tmp = uniform.temperaturestate.x;
+	uniform.temperaturestate.x = uniform.temperaturestate.y;
+	uniform.temperaturestate.y = tmp;
+}
+
+void Fluid::swapdenstate()
+{
+	int tmp = uniform.densitystate.x;
+	uniform.densitystate.x = uniform.densitystate.y;
+	uniform.densitystate.y = tmp;
+}
+
+int Fluid::getvelstate()
+{
+	return uniform.velocitystate.x;
+}
+
+int Fluid::gettempstate()
+{
+	return uniform.temperaturestate.x;
+}
+
+int Fluid::getprestate()
+{
+	return uniform.pressurestate.x;
+}
+
+int Fluid::getdenstate()
+{
+	return uniform.densitystate.x;
+}
+
+void Fluid::resettextureOP()
+{
+	uniform.textureOP = 0;
 }
 
 void Fluid::ReleaseBuffer()

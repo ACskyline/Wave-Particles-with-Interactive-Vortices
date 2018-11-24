@@ -104,6 +104,12 @@
     <FxCompile Include="fluidadvection.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
+    <FxCompile Include="fluiddisplay.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="fluidclear.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h">

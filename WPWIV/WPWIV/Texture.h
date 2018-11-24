@@ -20,10 +20,11 @@ public:
 
 	bool InitTexture(ID3D12Device* device);
 
+	ID3D12Resource* textureBuffer;
 protected:
 	wstring fileName;
 
-	ID3D12Resource* textureBuffer;
+	
 	D3D12_RESOURCE_DESC textureDesc;
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	int imageBytesPerRow;
