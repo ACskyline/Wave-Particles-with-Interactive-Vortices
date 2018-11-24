@@ -32,6 +32,8 @@ struct FluidUniform
 	XMINT2 densitystate = { 0,1 };
 	XMFLOAT2 size = { 1000,1000 };
 	const float cellsize = 1.125;
+	int Curadvection = 0;//0 vel , 1 temp, 2 density
+	int Curimpulse = 0;//0 temp ,1 density
 };
 
 
@@ -59,6 +61,13 @@ public:
 	int gettempstate();
 	int getprestate();
 	int getdenstate();
+
+	void setadvectionvel();
+	void setadvectiontemp();
+	void setadvectiondens();
+
+	void setimpulsetemp();
+	void setimpulsedens();
 protected:
 
 	FluidUniform uniform;

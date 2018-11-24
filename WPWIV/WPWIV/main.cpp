@@ -745,6 +745,19 @@ void WaitForPreviousFrame()
 	fenceValue[frameIndex]++;
 }
 
+void resetFluidtextures(RenderTexture* tex)
+{
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidclear));
+	mRenderer.RecordGraphicsPipeline(
+		tex->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	tex->UpdateTextureBuffer(device);
+}
+
 void UpdatePipeline()
 {
 	HRESULT hr;
@@ -781,43 +794,32 @@ void UpdatePipeline()
 
 	if (firstclear)
 	{
-		commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidclear));
-		mRenderer.RecordGraphicsPipeline(
-			mVelocitypingpong.pong->GetRtvHandle(),
-			mRenderer.GetDsvHandle(),
-			commandList,
-			&mFrameGraphics,
-			&mFluid,
-			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidclear));
-		mRenderer.RecordGraphicsPipeline(
-			mVelocitypingpong.ping->GetRtvHandle(),
-			mRenderer.GetDsvHandle(),
-			commandList,
-			&mFrameGraphics,
-			&mFluid,
-			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+		resetFluidtextures(mVelocitypingpong.ping);
+		resetFluidtextures(mVelocitypingpong.pong);
+		resetFluidtextures(mTemperaturepingpong.ping);
+		resetFluidtextures(mTemperaturepingpong.pong);
+		resetFluidtextures(mDensitypingpong.ping);
+		resetFluidtextures(mDensitypingpong.pong);
+		resetFluidtextures(mPressurepingpong.ping);
+		resetFluidtextures(mPressurepingpong.pong);
+		resetFluidtextures(&mDivergence);
 		firstclear = false;
 	}
-	mVelocitypingpong.ping->UpdateTextureBuffer(device);
-	mVelocitypingpong.pong->UpdateTextureBuffer(device);
+
+	
+
+	//seems unnecessary
+	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(rvel->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
+
+	//velocity advect=========================================
+
 
 	RenderTexture* rvel;
-	
-	int ss = mFluid.getvelstate();
-
 	if (mFluid.getvelstate() == 0)
 		rvel = mVelocitypingpong.pong;
 	else
 		rvel = mVelocitypingpong.ping;
 
-	//seems unnecessary
-	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(rvel->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
-
-	///////// MY GRAPHICS PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
 	mRenderer.RecordGraphicsPipeline(
 		rvel->GetRtvHandle(),
@@ -827,29 +829,79 @@ void UpdatePipeline()
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	mFluid.swapvelstate();
+	mFluid.UpdateUniformBuffer();
+	// temperature advect==============================================
 
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+	mFluid.setadvectiontemp();
+	mFluid.UpdateUniformBuffer();
+	RenderTexture* rtemp;
+	if (mFluid.gettempstate() == 0)
+		rtemp = mTemperaturepingpong.pong;
+	else
+		rtemp = mTemperaturepingpong.ping;
+
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
+	mRenderer.RecordGraphicsPipeline(
+		rtemp->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	mFluid.swaptempstate();
+	mFluid.UpdateUniformBuffer();
+
+	//density advect=====================================================
+
+
+	mFluid.setadvectiondens();
+	mFluid.UpdateUniformBuffer();
+	RenderTexture* rdens;
+	if (mFluid.gettempstate() == 0)
+		rdens = mDensitypingpong.pong;
+	else
+		rdens = mDensitypingpong.ping;
+
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
+	mRenderer.RecordGraphicsPipeline(
+		rdens->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	mFluid.swapdenstate();
+	mFluid.UpdateUniformBuffer();
+
+
+	//apply buoyancy force ============================================================='
+
+	RenderTexture* bvel;
+	if (mFluid.getvelstate() == 0)
+		bvel = mVelocitypingpong.pong;
+	else
+		bvel = mVelocitypingpong.ping;
+
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidbuoyancy));
+	mRenderer.RecordGraphicsPipeline(
+		bvel->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	mFluid.swapvelstate();
 	mFluid.UpdateUniformBuffer();
 
-	//commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
-	//mRenderer.RecordGraphicsPipeline(
-	//	mRenderer.GetRtvHandle(frameIndex),
-	//	mRenderer.GetDsvHandle(),
-	//	commandList,
-	//	&mFrameGraphics,
-	//	&mFluid,
-	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//apply impulses======================================================================
 
-	//commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
-	//mRenderer.RecordGraphicsPipeline(
-	//	rvel->GetRtvHandle(),
-	//	mRenderer.GetDsvHandle(),
-	//	commandList,
-	//	&mFrameGraphics,
-	//	&mFluid,
-	//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+
 
 
 	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluiddisplay));

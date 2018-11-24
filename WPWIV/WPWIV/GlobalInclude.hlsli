@@ -62,6 +62,8 @@ cbuffer FluidUniform : register(b3)
 	  uint2 densitystate ;
 	  float2 size;
 	  float cellsize;
+	  uint Curadvection;
+	  uint Curimpulse;
 }
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////

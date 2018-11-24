@@ -99,6 +99,32 @@ int Fluid::getdenstate()
 	return uniform.densitystate.x;
 }
 
+void Fluid::setadvectionvel()
+{
+	uniform.Curadvection = 0;
+}
+
+
+void Fluid::setadvectiontemp()
+{
+	uniform.Curadvection = 1;
+}
+
+void Fluid::setadvectiondens()
+{
+	uniform.Curadvection = 2;
+}
+
+void Fluid::setimpulsetemp()
+{
+	uniform.Curimpulse = 0;
+}
+
+void Fluid::setimpulsedens()
+{
+	uniform.Curimpulse = 1;
+}
+
 void Fluid::resettextureOP()
 {
 	uniform.textureOP = 0;
