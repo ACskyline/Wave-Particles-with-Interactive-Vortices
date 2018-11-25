@@ -134,7 +134,7 @@ Shader mfluiddensadvection(Shader::ShaderType::PixelShader, L"fluiddensadvection
 
 Texture mTextureHeightMap(L"wave.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
-Texture mObstacles(L"nicerobstacle.png");
+Texture mObstacles(L"ob2.png");
 RenderTexture mRenderTexture(1000, 1000);
 OrbitCamera mCameraRenderTexture(0.11f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 1000, 1000, 45.0f, 0.1f, 1000.0f);
 Mesh mPlaneRenderTexture(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(-90, 0, 0), XMFLOAT3(1, 1, 1));

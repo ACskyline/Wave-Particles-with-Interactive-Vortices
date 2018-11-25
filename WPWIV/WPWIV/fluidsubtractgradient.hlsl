@@ -68,7 +68,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 		oldV = t5.Sample(s0, T).xy;
 	}
 	
-	float2 grad = float2(pE - pW, pN - pS)*GradientScale*0.08;
+	float2 grad = float2(pE - pW, pN - pS)*GradientScale*0.07;
 	float2 newV = oldV - grad;
 
 	col = float4((vMask*newV) + obstV,0,1);
