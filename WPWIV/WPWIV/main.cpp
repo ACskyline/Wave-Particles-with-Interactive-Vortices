@@ -791,7 +791,6 @@ void advectpipeline(RenderTexture* source)
 	hr = commandList->Reset(commandAllocator[frameIndex], nullptr);
 	mRenderer.RecordBegin(frameIndex, commandList);
 
-
 	
 	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidadvection));
 	mRenderer.RecordGraphicsPipeline(
@@ -801,13 +800,6 @@ void advectpipeline(RenderTexture* source)
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -843,13 +835,7 @@ void advecttemppipeline(RenderTexture* source)
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -885,13 +871,6 @@ void advectdenspipeline(RenderTexture* source)
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -925,13 +904,6 @@ void subtractgradientpipeline(RenderTexture* source)
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -965,13 +937,6 @@ void jacobipipeline(RenderTexture* source)
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -998,13 +963,6 @@ void clearsurfacepipeline(RenderTexture* source)
 	mRenderer.RecordBegin(frameIndex, commandList);
 
 	resetFluidtextures(source);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -1038,13 +996,6 @@ void divergencepipeline()
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -1078,13 +1029,48 @@ void applyimpulsepipeline(RenderTexture* source)
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+
+	mRenderer.RecordEnd(frameIndex, commandList);
+	// RECORD GRAPHICS PIPELINE END //
+
+	hr = commandList->Close();
+	if (FAILED(hr))
+	{
+		Running = false;
+	}
+}
+
+void applyimpulsepipeline(RenderTexture* source, RenderTexture* source2)
+{
+	HRESULT hr;
+
+	// We have to wait for the gpu to finish with the command allocator before we reset it
+	WaitForPreviousFrame();
+	hr = commandAllocator[frameIndex]->Reset();
+	if (FAILED(hr))
+	{
+		Running = false;
+	}
+	hr = commandList->Reset(commandAllocator[frameIndex], nullptr);
+	mRenderer.RecordBegin(frameIndex, commandList);
+
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
+	mRenderer.RecordGraphicsPipeline(
+		source->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
+	mRenderer.RecordGraphicsPipeline(
+		source2->GetRtvHandle(),
+		mRenderer.GetDsvHandle(),
+		commandList,
+		&mFrameGraphics,
+		&mFluid,
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -1158,13 +1144,6 @@ void applaybuoyancypipeline(RenderTexture* source)
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -1210,13 +1189,6 @@ void cleartexpipleline()
 		&mFrameGraphics,
 		&mFluid,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	///////// IMGUI PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	///////// IMGUI PIPELINE /////////
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 	mRenderer.RecordEnd(frameIndex, commandList);
 	// RECORD GRAPHICS PIPELINE END //
@@ -1254,8 +1226,6 @@ void Render()
 	else
 		rvel = mVelocitypingpong.ping;
 
-	cout <<"vel:"<< mFluid.uniform.velocitystate.x << endl;
-
 	advectpipeline(rvel);
 
 	ID3D12CommandList* ppClist2[] = { commandList };
@@ -1273,7 +1243,7 @@ void Render()
 	else
 		rtmp = mTemperaturepingpong.ping;
 
-
+	cout << "vel:" << mFluid.uniform.temperaturestate.x << endl;
 	advecttemppipeline(rtmp);
 
 	ID3D12CommandList* ppClist4[] = { commandList };
@@ -1320,20 +1290,20 @@ void Render()
 //
 ////apply impulse======================================================================
 //
-//
-//	mFluid.setimpulsetemp();
-//	mFluid.UpdateUniformBuffer();
-//
-//	RenderTexture* itemp;
-//	if (mFluid.gettempstate() == 0)
-//		itemp = mTemperaturepingpong.ping;
-//	else
-//		itemp = mTemperaturepingpong.pong;
-//
-//	applyimpulsepipeline(itemp);
-//	ID3D12CommandList* ppClist7[] = { commandList };
-//	commandQueue->ExecuteCommandLists(_countof(ppClist7), ppClist7);
-//	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
+
+	mFluid.setimpulsetemp();
+	mFluid.UpdateUniformBuffer();
+
+	RenderTexture* itemp;
+	if (mFluid.gettempstate() == 0)
+		itemp = mTemperaturepingpong.ping;
+	else
+		itemp = mTemperaturepingpong.pong;
+
+	applyimpulsepipeline(itemp);
+	ID3D12CommandList* ppClist7[] = { commandList };
+	commandQueue->ExecuteCommandLists(_countof(ppClist7), ppClist7);
+	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
 //
 //
 //	//////////////////////////////////////////////////////////////////////////////
@@ -1350,7 +1320,29 @@ void Render()
 	ID3D12CommandList* ppClist8[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist8), ppClist8);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-//
+
+	/////////////////////////////////////////////////////////////////////////////
+	mFluid.setimpulsevel();
+	mFluid.UpdateUniformBuffer();
+	RenderTexture* ivel, *ivel2;
+	ivel = mVelocitypingpong.ping;
+	ivel2 = mVelocitypingpong.pong;
+	applyimpulsepipeline(ivel);
+
+	ID3D12CommandList* ppClistvel[] = { commandList };
+	commandQueue->ExecuteCommandLists(_countof(ppClistvel), ppClistvel);
+	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
+
+	mFluid.swapvelstate();
+	mFluid.UpdateUniformBuffer();
+	applyimpulsepipeline(ivel2);
+
+	ID3D12CommandList* ppClistvel2[] = { commandList };
+	commandQueue->ExecuteCommandLists(_countof(ppClistvel2), ppClistvel2);
+	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
+
+	mFluid.swapvelstate();
+	mFluid.UpdateUniformBuffer();
 //	//divergence============================================================
 	divergencepipeline();
 	
@@ -1374,7 +1366,7 @@ void Render()
 //
 //	//jacobi pipeline=======================================================
 //
-	for (int i = 0; i < 40; ++i)
+	for (int i = 0; i < 41; ++i)
 	{
 
 		RenderTexture* jpre;

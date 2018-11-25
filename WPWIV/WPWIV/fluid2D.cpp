@@ -130,6 +130,8 @@ void Fluid::setimpulsedens()
 	uniform.Curimpulse = 1;
 }
 
+
+
 void Fluid::resettextureOP()
 {
 	return;

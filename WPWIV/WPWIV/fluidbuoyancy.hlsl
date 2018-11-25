@@ -43,8 +43,8 @@ float4 main(VSQuadOut input) : SV_TARGET
 		{
 			D = t11.Sample(s0, TC).x;
 		}
-		col += (TimeStep*(T - AmbientTemperature)*SmokeBuoyancy - D * SmokeWeight*0.1)*float4(0, 8, 0, 0);
-		
+		col += (TimeStep*(T - AmbientTemperature)*SmokeBuoyancy - D * SmokeWeight*0.1)*float4(0, 1, 0, 0);
+		col = float4(1, 1, 1, 1);
 	}
 
 	return col;

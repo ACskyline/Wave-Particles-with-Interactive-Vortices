@@ -50,7 +50,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 	float4 bC = t12.Sample(s0, T);
 
 	float alpha = -cellsize * cellsize;
-	float invbeta = 0.25;
+	float invbeta = 0.24;
 
 	col = (pW + pE + pS + pN + alpha * bC)*invbeta;
 

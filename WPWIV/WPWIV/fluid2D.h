@@ -16,7 +16,7 @@ struct FluidUniform
 	const float AmbientTemperature = 0.0f;
 	const float ImpulseDensity = 1.0f;
 	const uint32_t NumJacobiIterations = 40;
-	const float TimeStep = 0.00825f;
+	const float TimeStep = 0.00725f;
 	const float SmokeBuoyancy = 1.0f;
 	const float SmokeWeight = 0.05f;
 	const float GradientScale = 1.125f / CellSize;

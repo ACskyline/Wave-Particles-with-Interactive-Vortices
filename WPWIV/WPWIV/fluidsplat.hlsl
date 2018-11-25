@@ -38,7 +38,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 		col = t5.Sample(s0, coord);
 	}
  
-	float4 centpt = float4(0.5, 0.5, 0, 1);
+	float4 centpt = float4(0.3, 0.5, 0, 1);
 	float d = distance(centpt, coord);
 	if (Curimpulse == 0)//temp
 	{
@@ -59,11 +59,11 @@ float4 main(VSQuadOut input) : SV_TARGET
 	{
 		if (d < 0.1)
 		{
-			col = float4(0.5, 0.5, 0.5, 1);
+			col = float4(0.5, 0, 0.5, 1);
 		}
 	
 	}
-	
+	col += float4(0.001, 0.001, 0.001, 0);
 	return col;
 
 }
