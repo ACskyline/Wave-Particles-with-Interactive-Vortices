@@ -43,10 +43,10 @@ cbuffer FrameUniform : register(b2)
 
 cbuffer FluidUniform : register(b3)
 {
-	float AmbientTemperature;
-	  float ImpulseTemperature;
+
+	  float AmbientTemperature;
 	  float ImpulseDensity;
-	  int NumJacobiIterations;
+	  uint NumJacobiIterations;
 	  float TimeStep;
 	  float SmokeBuoyancy;
 	  float SmokeWeight;
@@ -54,12 +54,10 @@ cbuffer FluidUniform : register(b3)
 	  float TemperatureDissipation;
 	  float VelocityDissipation;
 	  float DensityDissipation;
-	  float2 ImpulsePosition;
-	  uint increament;
-	  uint2 velocitystate ;
-	  uint2 temperaturestate ;
-	  uint2 pressurestate ;
-	  uint2 densitystate ;
+	  float2 velocitystate ;
+	  float2 temperaturestate ;
+	  float2 pressurestate ;
+	  float2 densitystate ;
 	  float2 size;
 	  float cellsize;
 	  uint Curadvection;

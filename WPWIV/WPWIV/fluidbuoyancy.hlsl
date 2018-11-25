@@ -11,17 +11,17 @@ float4 main(VSQuadOut input) : SV_TARGET
 	float2 TC = input.uv;
 	float T = 0;
 	float D = 0;
-	float2 V = float2(0, 0);
+	float4 V = float4(0, 0,0,1);
 	if (velocitystate.x == 0)
 	{
-		V = t4.Sample(s0, TC).xy;
+		V = t4.Sample(s0, TC);
 	}
 	else if (velocitystate.x == 1)
 	{
-		V = t5.Sample(s0, TC).xy;
+		V = t5.Sample(s0, TC);
 	}
 
-	float4 col = float4(V, 0, 1);
+	float4 col = V;
 
 
 	if (temperaturestate.x == 0)
@@ -43,8 +43,10 @@ float4 main(VSQuadOut input) : SV_TARGET
 		{
 			D = t11.Sample(s0, TC).x;
 		}
-		col += (TimeStep*(T - AmbientTemperature)*SmokeBuoyancy - D * SmokeWeight)*float4(0, 1, 0, 1);
+		col += (TimeStep*(T - AmbientTemperature)*SmokeBuoyancy - D * SmokeWeight*0.1)*float4(0, 8, 0, 0);
+		
 	}
+
 	return col;
 
 }

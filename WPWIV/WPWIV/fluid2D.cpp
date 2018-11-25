@@ -43,38 +43,38 @@ void Fluid::UpdateUniformBuffer()
 
 void Fluid::textureOPhandle()
 {
-	uniform.textureOP++;
+	return;
 }
 
 int Fluid::gettextureOP()
 {
-	return uniform.textureOP;
+	return 1;
 }
 
 void Fluid::swapvelstate()
 {
-	int tmp = uniform.velocitystate.x;
+	float tmp = uniform.velocitystate.x;
 	uniform.velocitystate.x = uniform.velocitystate.y;
 	uniform.velocitystate.y = tmp;
 }
 
 void Fluid::swapprestate()
 {
-	int tmp = uniform.pressurestate.x;
+	float tmp = uniform.pressurestate.x;
 	uniform.pressurestate.x = uniform.pressurestate.y;
 	uniform.pressurestate.y = tmp;
 }
 
 void Fluid::swaptempstate()
 {
-	int tmp = uniform.temperaturestate.x;
+	float tmp = uniform.temperaturestate.x;
 	uniform.temperaturestate.x = uniform.temperaturestate.y;
 	uniform.temperaturestate.y = tmp;
 }
 
 void Fluid::swapdenstate()
 {
-	int tmp = uniform.densitystate.x;
+	float tmp = uniform.densitystate.x;
 	uniform.densitystate.x = uniform.densitystate.y;
 	uniform.densitystate.y = tmp;
 }
@@ -120,6 +120,11 @@ void Fluid::setimpulsetemp()
 	uniform.Curimpulse = 0;
 }
 
+void Fluid::setimpulsevel()
+{
+	uniform.Curimpulse = 2;
+}
+
 void Fluid::setimpulsedens()
 {
 	uniform.Curimpulse = 1;
@@ -127,7 +132,7 @@ void Fluid::setimpulsedens()
 
 void Fluid::resettextureOP()
 {
-	uniform.textureOP = 0;
+	return;
 }
 
 void Fluid::ReleaseBuffer()

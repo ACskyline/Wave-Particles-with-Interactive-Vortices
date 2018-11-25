@@ -14,26 +14,23 @@
 struct FluidUniform
 {
 	const float AmbientTemperature = 0.0f;
-	const float ImpulseTemperature = 10.0f;
 	const float ImpulseDensity = 1.0f;
-	const int NumJacobiIterations = 40;
-	const float TimeStep = 0.0125f;
+	const uint32_t NumJacobiIterations = 40;
+	const float TimeStep = 0.00825f;
 	const float SmokeBuoyancy = 1.0f;
 	const float SmokeWeight = 0.05f;
 	const float GradientScale = 1.125f / CellSize;
 	const float TemperatureDissipation = 0.99f;
 	const float VelocityDissipation = 0.99f;
 	const float DensityDissipation = 0.9999f;
-	const XMFLOAT2 ImpulsePosition = { GridWidth / 2, -(int)SplatRadius / 2 };
-	int textureOP = 0;
-	XMINT2 velocitystate = {0,1};
-	XMINT2 temperaturestate = { 0,1 };
-	XMINT2 pressurestate = { 0,1 };
-	XMINT2 densitystate = { 0,1 };
+	XMFLOAT2 velocitystate = {0,1};
+	XMFLOAT2 temperaturestate = { 0,1 };
+	XMFLOAT2 pressurestate = { 0,1 };
+	XMFLOAT2 densitystate = { 0,1 };
 	XMFLOAT2 size = { 1000,1000 };
 	const float cellsize = 1.125;
-	int Curadvection = 0;//0 vel , 1 temp, 2 density
-	int Curimpulse = 0;//0 temp ,1 density
+	uint32_t Curadvection = 0;//0 vel , 1 temp, 2 density
+	uint32_t Curimpulse = 0;//0 temp ,1 density
 };
 
 
@@ -68,6 +65,7 @@ public:
 
 	void setimpulsetemp();
 	void setimpulsedens();
+	void setimpulsevel();
 protected:
 
 	FluidUniform uniform;

@@ -10,7 +10,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 { 
 
 
-	float4 col = float4(0,0,0,0);
+	float4 col = float4(0,0,0,1);
 
 
 	float2 coord = input.uv;
@@ -19,12 +19,12 @@ float4 main(VSQuadOut input) : SV_TARGET
 	float scale = 1;
 	if (solid == 0)
 	{
-		col = float4(0, 0, 0, 0);
+		col = float4(0, 0, 0, 1);
 		return col;
 	}
 	else
 	{
-		if (Curadvection == 0)
+		if (Curadvection == 0)//vel
 		{
 			if (velocitystate.x == 0)
 			{
@@ -39,38 +39,65 @@ float4 main(VSQuadOut input) : SV_TARGET
 				float2 c = coord - TimeStep * u*scale;
 				col = VelocityDissipation * t5.Sample(s0, c);
 			}
+			//col = float4(1, 1, 1, 1);
 		}
-		else if (Curadvection == 1)
+		if (Curadvection == 1)//temp
 		{
-			if (temperaturestate.x == 0)
+			if (velocitystate.x == 0&& temperaturestate.x==0)
 			{
 				float2 u = t4.Sample(s0, coord).xy;
 				float2 c = coord - TimeStep * u*scale;
-				col = VelocityDissipation * t6.Sample(s0, c);
+				col = TemperatureDissipation * t6.Sample(s0, c);
 			}
 
-			if (temperaturestate.x == 1)
+			 if( velocitystate.x == 1&& temperaturestate.x == 0)
 			{
 				float2 u = t5.Sample(s0, coord).xy;
 				float2 c = coord - TimeStep * u*scale;
-				col = VelocityDissipation * t7.Sample(s0, c);
+				col = TemperatureDissipation * t6.Sample(s0, c);
 			}
-		}
-		else if (Curadvection == 2)
-		{
-			if (densitystate.x == 0)
+			 if (velocitystate.x == 0 && temperaturestate.x == 1)
 			{
 				float2 u = t4.Sample(s0, coord).xy;
 				float2 c = coord - TimeStep * u*scale;
-				col = VelocityDissipation * t10.Sample(s0, c);
+				col = TemperatureDissipation * t7.Sample(s0, c);
 			}
-
-			if (densitystate.x == 1)
+			 if (velocitystate.x == 1 && temperaturestate.x == 1)
 			{
 				float2 u = t5.Sample(s0, coord).xy;
 				float2 c = coord - TimeStep * u*scale;
-				col = VelocityDissipation * t11.Sample(s0, c);
+				col = TemperatureDissipation * t7.Sample(s0, c);
 			}
+			 
+		}
+		if (Curadvection == 2)//density
+		{
+			if (velocitystate.x == 0 && densitystate.x == 0)
+			{
+				float2 u = t4.Sample(s0, coord).xy;
+				float2 c = coord - TimeStep * u*scale;
+				col = DensityDissipation * t10.Sample(s0, c);
+			}
+
+			if (velocitystate.x == 1 && densitystate.x == 0)
+			{
+				float2 u = t5.Sample(s0, coord).xy;
+				float2 c = coord - TimeStep * u*scale;
+				col = DensityDissipation * t10.Sample(s0, c);
+			}
+			 if (velocitystate.x == 0 && densitystate.x == 1)
+			{
+				float2 u = t4.Sample(s0, coord).xy;
+				float2 c = coord - TimeStep * u*scale;
+				col = DensityDissipation * t11.Sample(s0, c);
+			}
+			 if (velocitystate.x == 1 && densitystate.x == 1)
+			{
+				float2 u = t5.Sample(s0, coord).xy;
+				float2 c = coord - TimeStep * u*scale;
+				col = DensityDissipation * t11.Sample(s0, c);
+			}
+
 		}
 
 	}
