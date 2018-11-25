@@ -40,17 +40,19 @@ OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.
 OrbitCamera mCameraRenderTexture(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 500, 500, 45.0f, 0.1f, 1000.0f);
 Camera mDummyCamera(XMFLOAT3{ 4.f,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,1,0 }, 500, 500, 45.0f, 0.1f, 1000.f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
+Mesh mWaterSurface(Mesh::MeshType::WaterSurface, 100, 100, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 1, 10));
 Mesh mQuad(Mesh::MeshType::FullScreenQuad, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 100, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
-Shader mVertexShader(Shader::ShaderType::VertexShader, L"vs.hlsl");
+Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
 Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
 Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
-Shader mPixelShader(Shader::ShaderType::PixelShader, L"ps.hlsl");
+Shader mPixelShader(Shader::ShaderType::PixelShader, L"PixelShader.hlsl");
 Shader mPostProcessVS(Shader::ShaderType::VertexShader, L"PostProcessVS.hlsl");
 Shader mPostProcessPS_H(Shader::ShaderType::PixelShader, L"PostProcessPS_H.hlsl");
 Shader mPostProcessPS_V(Shader::ShaderType::PixelShader, L"PostProcessPS_V.hlsl");
 Shader mWaveParticleVS(Shader::ShaderType::VertexShader, L"WaveParticleVS.hlsl");
 Shader mWaveParticlePS(Shader::ShaderType::PixelShader, L"WaveParticlePS.hlsl");
+Texture mHeightMap(L"wave.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
 RenderTexture mRenderTextureWaveParticle(500, 500);
 RenderTexture mRenderTexturePostProcessH(500, 500);
@@ -64,7 +66,6 @@ ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 bool CreateScene()
 {
-
 	mFrameWaveParticle.AddCamera(&mDummyCamera);
 	mFrameWaveParticle.AddMesh(&mWaveParticle);
 	mFrameWaveParticle.AddRenderTexture(&mRenderTextureWaveParticle);
@@ -76,10 +77,18 @@ bool CreateScene()
 	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH);
 	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV);
 
+	mFramePostProcess.SetUniformTexutureWidthHeight(500, 500);
+	mFramePostProcess.SetUniformBlurRadius(10);
+
 	mFrameGraphics.AddCamera(&mCamera);
-	mFrameGraphics.AddMesh(&mPlane);
+	mFrameGraphics.AddMesh(&mWaterSurface);// (&mPlane);
 	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV);
+	//mFrameGraphics.AddTexture(&mHeightMap);
 	mFrameGraphics.AddTexture(&mTextureAlbedo);
+
+	mFrameGraphics.SetUniformEdgeTessFactor(4);
+	mFrameGraphics.SetUniformInsideTessFactor(2);
+	mFrameGraphics.SetUniformWaveParticleScale(0.5);
 
 	mScene.AddFrame(&mFrameGraphics);
 	mScene.AddFrame(&mFrameWaveParticle);
@@ -90,6 +99,7 @@ bool CreateScene()
 	mScene.AddMesh(&mPlane);
 	mScene.AddMesh(&mQuad);
 	mScene.AddMesh(&mWaveParticle);
+	mScene.AddMesh(&mWaterSurface);
 	mScene.AddShader(&mVertexShader);
 	mScene.AddShader(&mHullShader);
 	mScene.AddShader(&mDomainShader);
@@ -100,6 +110,7 @@ bool CreateScene()
 	mScene.AddShader(&mWaveParticleVS);
 	mScene.AddShader(&mWaveParticlePS);
 	mScene.AddTexture(&mTextureAlbedo);
+	mScene.AddTexture(&mHeightMap);
 	mScene.AddRenderTexture(&mRenderTextureWaveParticle);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessH);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessV);
@@ -328,6 +339,7 @@ bool InitSwapChain()
 	);
 	if (FAILED(hr))
 	{
+		CheckError(hr);
 		Running = false;
 		return false;
 	}
@@ -526,6 +538,7 @@ bool InitD3D()
 		mRenderer.GetWaveParticlePsoPtr(0),
 		mRenderer.GetWaveParticleRootSignature(),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT,
+		DXGI_FORMAT_R16G16B16A16_FLOAT,
 		&mWaveParticleVS,
 		nullptr,
 		nullptr,
@@ -551,6 +564,7 @@ bool InitD3D()
 		mRenderer.GetPostProcessPsoPtr(0),
 		mRenderer.GetPostProcessRootSignature(),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		DXGI_FORMAT_R16G16B16A16_FLOAT,
 		&mPostProcessVS,
 		nullptr,
 		nullptr,
@@ -566,6 +580,7 @@ bool InitD3D()
 		mRenderer.GetPostProcessPsoPtr(1),
 		mRenderer.GetPostProcessRootSignature(),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		DXGI_FORMAT_R16G16B16A16_FLOAT,
 		&mPostProcessVS,
 		nullptr,
 		nullptr,
@@ -590,10 +605,11 @@ bool InitD3D()
 		device,
 		mRenderer.GetGraphicsPsoPtr(0),
 		mRenderer.GetGraphicsRootSignature(),
-		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH,//D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
 		&mVertexShader,
-		nullptr,
-		nullptr,
+		&mHullShader,
+		&mDomainShader,
 		nullptr,
 		&mPixelShader))
 	{
@@ -699,9 +715,6 @@ void UpdatePipeline()
 	// RECORD GRAPHICS PIPELINE BEGIN //
 	mRenderer.RecordBegin(frameIndex, commandList);
 
-	//seems unnecessary
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
-
 	///////// MY WAVE PARTICLE PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	commandList->SetPipelineState(mRenderer.GetWaveParticlePSO(0));
@@ -716,9 +729,7 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY WAVE PARTICLE PIPELINE /////////
 
-	//seems unnecessary
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET,  0));
 	
 	///////// MY POSTPROCESS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -734,13 +745,12 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS PIPELINE /////////
 
-	//seems unnecessary
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
 
 	///////// MY POSTPROCESS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	commandList->SetPipelineState(mRenderer.GetPostProcessPSO(0));
+	commandList->SetPipelineState(mRenderer.GetPostProcessPSO(1));
 	mRenderer.RecordPostProcessPipeline(
 		mRenderTexturePostProcessV.GetRtvHandle(),
 		mRenderer.GetDsvHandle(),
@@ -752,7 +762,7 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS PIPELINE /////////
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0));
 
 	///////// MY GRAPHICS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -764,9 +774,11 @@ void UpdatePipeline()
 		mRenderer.GetGraphicsRootSignature(),
 		mRenderer.GetGraphicsDescriptorHeap(),
 		&mFrameGraphics,
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);// D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+		D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);// D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);// 
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY GRAPHICS PIPELINE /////////
+
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV.GetTextureBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
 
 	///////// IMGUI PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -826,38 +838,57 @@ void Gui()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	static float f = 0.5f;
-	static int u = 32;
+	static float particleScale = mFrameGraphics.GetUniformWaveParticleScale();
+	static int edgeTess = mFrameGraphics.GetUniformEdgeTessFactor();
+	static int insideTess = mFrameGraphics.GetUniformInsideTessFactor();
+	static int blurRadius = mFramePostProcess.GetUniformBlurRadius();
 	bool needToUpdateFrameUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImVec2(200, 120));
+	ImGui::SetNextWindowSize(ImVec2(300, 200));
 
 	ImGui::Begin("Control Panel ");                          // Create a window called "Hello, world!" and append into it.
 
 	ImGui::Text("Wave Particles Scale ");               // Display some text (you can use a format strings too)
 
-	ImGui::SliderFloat("float ", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
-	ImGui::SliderInt("uint ", &u, 0, 128);
+	ImGui::SliderFloat("float ", &particleScale, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
+	ImGui::SliderInt("edge tess ", &edgeTess, 0, 128);
+	ImGui::SliderInt("inside tess ", &insideTess, 0, 128);
+	ImGui::SliderInt("blur radius ", &blurRadius, 0, 128);
 
-	//if (f != mFrameGraphics.GetWaveParticleScale())
-	//{
-	//	mFrameGraphics.SetWaveParticleScale(f);
-	//	needToUpdateFrameUniform = true;
-	//}
+	if (particleScale != mFrameGraphics.GetUniformWaveParticleScale())
+	{
+		mFrameGraphics.SetUniformWaveParticleScale(particleScale);
+		needToUpdateFrameUniform = true;
+	}
 
-	//if (u != mFrameGraphics.GetWaveParticleScale())
-	//{
-	//	mFrameGraphics.SetTessellationFactor(u);
-	//	needToUpdateFrameUniform = true;
-	//}
+	if (edgeTess != mFrameGraphics.GetUniformEdgeTessFactor())
+	{
+		mFrameGraphics.SetUniformEdgeTessFactor(edgeTess);
+		needToUpdateFrameUniform = true;
+	}
 
-	//if (needToUpdateFrameUniform)
-	//{
-	//	mFrameGraphics.UpdateUniformBuffer();
-	//}
+	if (insideTess != mFrameGraphics.GetUniformInsideTessFactor())
+	{
+		mFrameGraphics.SetUniformInsideTessFactor(insideTess);
+		needToUpdateFrameUniform = true;
+	}
+	
+	if (blurRadius != mFramePostProcess.GetUniformBlurRadius())
+	{
+		mFramePostProcess.SetUniformBlurRadius(blurRadius);
+		needToUpdateFrameUniform = true;
+	}
+
+	if (needToUpdateFrameUniform)
+	{
+		mFrameGraphics.UpdateUniformBuffer();
+		mFramePostProcess.UpdateUniformBuffer();
+		mFrameWaveParticle.UpdateUniformBuffer();
+	}
 
 	ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Hold C and use mouse to rotate camera.");
 	ImGui::End();
 
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//

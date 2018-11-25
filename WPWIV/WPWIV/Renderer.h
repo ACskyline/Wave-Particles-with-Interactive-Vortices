@@ -32,6 +32,7 @@ public:
 		ID3D12PipelineState** pso,
 		ID3D12RootSignature* rootSignature,
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTType,
+		DXGI_FORMAT rtvFormat,
 		Shader* vertexShader,
 		Shader* hullShader,
 		Shader* domainShader,

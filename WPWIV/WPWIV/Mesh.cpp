@@ -539,7 +539,7 @@ void Mesh::InitWaveParticles(int waveParticleCount)
 		for (int j = 0; j < waveParticlePerRow; j++)
 		{
 			int index = i * waveParticlePerRow + j;
-			vList[index] = { i / (float)waveParticlePerRow * 2.f - 1.f, j / (float)waveParticlePerRow * 2.f - 1.f, 1, 1, 1 };
+			vList[index] = { i / (float)waveParticlePerRow * 2.f - 1.f, j / (float)waveParticlePerRow * 2.f - 1.f, 1, 0, 0 };
 			iList[index] = index;
 		}
 	}
@@ -558,8 +558,8 @@ void Mesh::InitWaterSurface(int cellCountX, int cellCountZ)
 	{
 		for (int j = 0; j <= cellCountZ; j++)
 		{
-			int index = i * cellCountZ + j;
-			vList[index] = { i / (float)cellCountX, 0, j / (float)cellCountZ, 1, 1 };
+			int vIndex = i * (cellCountZ + 1) + j;
+			vList[vIndex] = { i / (float)cellCountX, 0, j / (float)cellCountZ, i / (float)cellCountX, j / (float)cellCountZ };
 		}
 	}
 
@@ -567,11 +567,11 @@ void Mesh::InitWaterSurface(int cellCountX, int cellCountZ)
 	{
 		for (int j = 0; j < cellCountZ; j++)
 		{
-			int index = i * cellCountZ + j;
-			iList[index * 4 + 0] = i * cellCountZ + j;
-			iList[index * 4 + 1] = (i + 1) * cellCountZ + j;
-			iList[index * 4 + 2] = (i + 1) * cellCountZ + j + 1;
-			iList[index * 4 + 3] = i * cellCountZ + j + 1;
+			int cIndex = i * cellCountZ + j;
+			iList[cIndex * 4 + 0] = i * (cellCountZ + 1) + j;
+			iList[cIndex * 4 + 1] = i * (cellCountZ + 1) + j + 1;
+			iList[cIndex * 4 + 2] = (i + 1) * (cellCountZ + 1) + j + 1;
+			iList[cIndex * 4 + 3] = (i + 1) * (cellCountZ + 1) + j;
 		}
 	}
 }

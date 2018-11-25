@@ -1,7 +1,6 @@
 #include "Frame.h"
 
-Frame::Frame() :
-	uniform({ 0.5, 32 })
+Frame::Frame()
 {
 }
 
@@ -30,24 +29,50 @@ void Frame::AddRenderTexture(RenderTexture* pRenderTexture)
 	pRenderTextureVec.push_back(pRenderTexture);
 }
 
-void Frame::SetWaveParticleScale(float _waveParticleScale)
+void Frame::SetUniformWaveParticleScale(float _waveParticleScale)
 {
 	uniform.waveParticleScale = _waveParticleScale;
 }
 
-void Frame::SetTessellationFactor(uint32_t _tessellationFactor)
+void Frame::SetUniformEdgeTessFactor(uint32_t _tessellationFactor)
 {
-	uniform.tessellationFactor = _tessellationFactor;
+	uniform.edgeTessFactor = _tessellationFactor;
 }
 
-float Frame::GetWaveParticleScale()
+void Frame::SetUniformInsideTessFactor(uint32_t _tessellationFactor)
+{
+	uniform.insideTessFactor = _tessellationFactor;
+}
+
+void Frame::SetUniformTexutureWidthHeight(uint32_t texWidth, uint32_t texHeight)
+{
+	uniform.textureWidth = texWidth;
+	uniform.textureHeight = texHeight;
+}
+
+void Frame::SetUniformBlurRadius(uint32_t blurR)
+{
+	uniform.blurRadius = blurR;
+}
+
+float Frame::GetUniformWaveParticleScale()
 {
 	return uniform.waveParticleScale;
 }
 
-uint32_t Frame::GetTessellationFactor()
+uint32_t Frame::GetUniformEdgeTessFactor()
 {
-	return uniform.tessellationFactor;
+	return uniform.edgeTessFactor;
+}
+
+uint32_t Frame::GetUniformInsideTessFactor()
+{
+	return uniform.insideTessFactor;
+}
+
+uint32_t Frame::GetUniformBlurRadius()
+{
+	return uniform.blurRadius;
 }
 
 bool Frame::CreateUniformBuffer(ID3D12Device* device)

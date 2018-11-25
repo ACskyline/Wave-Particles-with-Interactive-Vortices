@@ -10,7 +10,11 @@ public:
 	struct FrameUniform
 	{
 		float waveParticleScale;
-		uint32_t tessellationFactor;
+		uint32_t edgeTessFactor;
+		uint32_t insideTessFactor;
+		uint32_t textureWidth;
+		uint32_t textureHeight;
+		uint32_t blurRadius;
 	};
 
 	Frame();
@@ -21,10 +25,15 @@ public:
 	void AddTexture(Texture* pTexture);
 	void AddRenderTexture(RenderTexture* pRenderTexture);
 
-	void SetWaveParticleScale(float _waveParticleScale);
-	void SetTessellationFactor(uint32_t _tessellationFactor);
-	float GetWaveParticleScale();
-	uint32_t GetTessellationFactor();
+	void SetUniformWaveParticleScale(float _waveParticleScale);
+	void SetUniformEdgeTessFactor(uint32_t _tessellationFactor);
+	void SetUniformInsideTessFactor(uint32_t _tessellationFactor);
+	void SetUniformTexutureWidthHeight(uint32_t texWidth, uint32_t texHeight);
+	void SetUniformBlurRadius(uint32_t blurR);
+	float GetUniformWaveParticleScale();
+	uint32_t GetUniformEdgeTessFactor();
+	uint32_t GetUniformInsideTessFactor();
+	uint32_t GetUniformBlurRadius();
 
 	vector<Texture*>& GetTextureVec();
 	vector<RenderTexture*>& GetRenderTextureVec();
