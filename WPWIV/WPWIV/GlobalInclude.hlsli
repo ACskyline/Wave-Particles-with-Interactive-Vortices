@@ -44,6 +44,7 @@ cbuffer FrameUniform : register(b2)
 cbuffer FluidUniform : register(b3)
 {
 
+
 	  float AmbientTemperature;
 	  float ImpulseDensity;
 	  uint NumJacobiIterations;
@@ -60,8 +61,8 @@ cbuffer FluidUniform : register(b3)
 	  float2 densitystate ;
 	  float2 size;
 	  float cellsize;
-	  uint Curadvection;
-	  uint Curimpulse;
+	  float Curadvection;
+	  float Curimpulse;
 }
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////

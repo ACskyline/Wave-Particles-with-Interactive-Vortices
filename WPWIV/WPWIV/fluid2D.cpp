@@ -101,18 +101,18 @@ int Fluid::getdenstate()
 
 void Fluid::setadvectionvel()
 {
-	uniform.Curadvection = 0;
+	uniform.Curadvection = 1.0;
 }
 
 
 void Fluid::setadvectiontemp()
 {
-	uniform.Curadvection = 1;
+	uniform.Curadvection = 2.0;
 }
 
 void Fluid::setadvectiondens()
 {
-	uniform.Curadvection = 2;
+	uniform.Curadvection = 3.0;
 }
 
 void Fluid::setimpulsetemp()

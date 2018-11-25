@@ -248,6 +248,8 @@ bool Renderer::CreateGraphicsPipeline(
 	Shader* fluidsubtractgradient,
 	Shader* fluidclear,
 	Shader* fluiddisplay,
+	Shader* fluidtempadvect,
+	Shader* fluiddensadvect,
 	const vector<Texture*>& textures,
 	const vector<RenderTexture*>& renderTextures)
 {
@@ -313,6 +315,18 @@ bool Renderer::CreateGraphicsPipeline(
 	}
 
 	if (!CreateGraphicsPSO(device, &fluiddisplayPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluiddisplay))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, &fluidtempadvectPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluidtempadvect))
+	{
+		printf("CreatePSO failed\n");
+		return false;
+	}
+
+	if (!CreateGraphicsPSO(device, &fluiddensadvectPSO, primitiveTType, vertexShader, hullShader, domainShader, geometryShader, fluiddensadvect))
 	{
 		printf("CreatePSO failed\n");
 		return false;
@@ -588,6 +602,12 @@ ID3D12PipelineState* Renderer::GetGraphicsPSO(fluidPSOstate state)
 		break;
 	case fluiddisplay:
 		returnstate = fluiddisplayPSO;
+		break;
+	case fluidtempadvectflag:
+		returnstate = fluidtempadvectPSO;
+		break;
+	case fluiddensadvectflag:
+		returnstate = fluiddensadvectPSO;
 		break;
 	}
 	return returnstate;

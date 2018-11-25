@@ -13,7 +13,9 @@ enum fluidPSOstate {
 	fluidsplat,
 	fluidsubtractgradient,
 	fluidclear,
-	fluiddisplay
+	fluiddisplay,
+	fluidtempadvectflag,
+	fluiddensadvectflag
 };
 
 class Renderer
@@ -57,6 +59,8 @@ public:
 		Shader* fluidsubtractgradient,
 		Shader* fluidclear,
 		Shader* fluiddisplay,
+		Shader* fluidtempadvect,
+		Shader* fluiddensadvect,
 		const vector<Texture*>& textures,
 		const vector<RenderTexture*>& renderTextures);
 
@@ -115,6 +119,8 @@ private:
 	ID3D12PipelineState* fluidsubtractgradientPSO;
 	ID3D12PipelineState* fluidclearPSO;
 	ID3D12PipelineState* fluiddisplayPSO;
+	ID3D12PipelineState* fluidtempadvectPSO;
+	ID3D12PipelineState* fluiddensadvectPSO;
 
 	bool CreateGraphicsPSO(
 		ID3D12Device* device,

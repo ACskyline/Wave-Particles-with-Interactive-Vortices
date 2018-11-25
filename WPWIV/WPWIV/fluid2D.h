@@ -29,8 +29,8 @@ struct FluidUniform
 	XMFLOAT2 densitystate = { 0,1 };
 	XMFLOAT2 size = { 1000,1000 };
 	const float cellsize = 1.125;
-	uint32_t Curadvection = 0;//0 vel , 1 temp, 2 density
-	uint32_t Curimpulse = 0;//0 temp ,1 density
+	float Curadvection = 1.0;//1 vel , 2 temp, 3 density
+	float Curimpulse = 1;//0 temp ,1 density
 };
 
 
@@ -65,10 +65,10 @@ public:
 
 	void setimpulsetemp();
 	void setimpulsedens();
-	void setimpulsevel();
+	void setimpulsevel();FluidUniform uniform;
 protected:
 
-	FluidUniform uniform;
+	
 	ID3D12Resource* gpuUniformBuffer;
 	void* cpuUniformBufferAddress;
 };
