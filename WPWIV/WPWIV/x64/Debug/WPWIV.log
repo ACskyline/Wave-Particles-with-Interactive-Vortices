@@ -1,10 +1,9 @@
-﻿  main.cpp
-  c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
-e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(334): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(338): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(339): warning C4305: '=': truncation from 'double' to 'float'
-e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(340): warning C4305: '=': truncation from 'double' to 'float'
-e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(345): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(346): warning C4305: '=': truncation from 'double' to 'float'
-e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(659): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+﻿  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidcomputedivergence.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidjacobi.cso
+E:\cis565\wavev4\waveparticle\WPWIV\WPWIV\fluidsubtractgradient.hlsl(54,19-38): warning X3206: implicit truncation of vector type
+E:\cis565\wavev4\waveparticle\WPWIV\WPWIV\fluidsubtractgradient.hlsl(55,19-41): warning X3206: implicit truncation of vector type
+E:\cis565\wavev4\waveparticle\WPWIV\WPWIV\fluidsubtractgradient.hlsl(56,19-41): warning X3206: implicit truncation of vector type
+E:\cis565\wavev4\waveparticle\WPWIV\WPWIV\fluidsubtractgradient.hlsl(57,19-41): warning X3206: implicit truncation of vector type
+  
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidsubtractgradient.cso
   WPWIV.vcxproj -> E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\WPWIV.exe

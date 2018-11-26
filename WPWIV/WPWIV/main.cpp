@@ -777,7 +777,7 @@ void resetFluidtextures(RenderTexture* tex)
 	tex->UpdateTextureBuffer(device);
 }
 
-void advectpipeline(RenderTexture* source)
+void AdvectVelocityPipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -811,7 +811,7 @@ void advectpipeline(RenderTexture* source)
 	}
 }
 
-void advecttemppipeline(RenderTexture* source)
+void AdvectTemperaturePipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -847,7 +847,7 @@ void advecttemppipeline(RenderTexture* source)
 	}
 }
 
-void advectdenspipeline(RenderTexture* source)
+void AdvectDensityPipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -882,7 +882,7 @@ void advectdenspipeline(RenderTexture* source)
 	}
 }
 
-void subtractgradientpipeline(RenderTexture* source)
+void SubtractGradientPipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -915,7 +915,7 @@ void subtractgradientpipeline(RenderTexture* source)
 	}
 }
 
-void jacobipipeline(RenderTexture* source)
+void JacobianPipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -948,7 +948,7 @@ void jacobipipeline(RenderTexture* source)
 	}
 }
 
-void clearsurfacepipeline(RenderTexture* source)
+void ClearPressureSurfacePipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -1007,7 +1007,7 @@ void divergencepipeline()
 	}
 }
 
-void applyimpulsepipeline(RenderTexture* source)
+void ApplyImpulsePipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -1040,49 +1040,7 @@ void applyimpulsepipeline(RenderTexture* source)
 	}
 }
 
-void applyimpulsepipeline(RenderTexture* source, RenderTexture* source2)
-{
-	HRESULT hr;
-
-	// We have to wait for the gpu to finish with the command allocator before we reset it
-	WaitForPreviousFrame();
-	hr = commandAllocator[frameIndex]->Reset();
-	if (FAILED(hr))
-	{
-		Running = false;
-	}
-	hr = commandList->Reset(commandAllocator[frameIndex], nullptr);
-	mRenderer.RecordBegin(frameIndex, commandList);
-
-	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
-	mRenderer.RecordGraphicsPipeline(
-		source->GetRtvHandle(),
-		mRenderer.GetDsvHandle(),
-		commandList,
-		&mFrameGraphics,
-		&mFluid,
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(fluidsplat));
-	mRenderer.RecordGraphicsPipeline(
-		source2->GetRtvHandle(),
-		mRenderer.GetDsvHandle(),
-		commandList,
-		&mFrameGraphics,
-		&mFluid,
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	mRenderer.RecordEnd(frameIndex, commandList);
-	// RECORD GRAPHICS PIPELINE END //
-
-	hr = commandList->Close();
-	if (FAILED(hr))
-	{
-		Running = false;
-	}
-}
-
-void displaypipeline()
+void DisplayFluidPipeline()
 {
 	HRESULT hr;
 
@@ -1122,7 +1080,7 @@ void displaypipeline()
 	}
 }
 
-void applaybuoyancypipeline(RenderTexture* source)
+void ApplyBuoyancyPipeline(RenderTexture* source)
 {
 	HRESULT hr;
 
@@ -1205,92 +1163,70 @@ void Render()
 {
 	HRESULT hr;
 
+//Initialize fluid sim textures
 	cleartexpipleline();
-
 	// create an array of command lists (only one command list here)
 	ID3D12CommandList* ppCommandLists[] = { commandList };
-
 	// execute the array of command lists
 	commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
 
-	
-
-//vel advect============================================
-
-
-
+//Velocity advection============================================
 	RenderTexture* rvel;
 	if (mFluid.getvelstate() == 0)
 		rvel = mVelocitypingpong.pong;
 	else
 		rvel = mVelocitypingpong.ping;
-
-	advectpipeline(rvel);
-
+	AdvectVelocityPipeline(rvel);
 	ID3D12CommandList* ppClist2[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist2), ppClist2);
 	mFluid.swapvelstate();
 	mFluid.UpdateUniformBuffer();
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-
-//temp advect========================================================
-
-
+//Temperature advection========================================================
 	RenderTexture* rtmp;
 	if (mFluid.gettempstate() == 0)
 		rtmp = mTemperaturepingpong.pong;
 	else
 		rtmp = mTemperaturepingpong.ping;
-
-	cout << "vel:" << mFluid.uniform.temperaturestate.x << endl;
-	advecttemppipeline(rtmp);
-
+	AdvectTemperaturePipeline(rtmp);
 	ID3D12CommandList* ppClist4[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist4), ppClist4);	
 	mFluid.swaptempstate();
 	mFluid.UpdateUniformBuffer();
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
 
-
-//
-////density advect=====================================================
-//
-
+//Density advection=====================================================
 	RenderTexture* rdens;
 	if (mFluid.getdenstate() == 0)
 		rdens = mDensitypingpong.pong;
 	else
 		rdens = mDensitypingpong.ping;
 
-	advectdenspipeline(rdens);
+	AdvectDensityPipeline(rdens);
 	ID3D12CommandList* ppClist5[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist5), ppClist5);
 	mFluid.swapdenstate();
 	mFluid.UpdateUniformBuffer();
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
 
-////apply buoyancy pipeline======================================================================
-//
-//
-//
+//apply buoyancy pipeline======================================================================
+
 	RenderTexture* vv;
 	if (mFluid.getvelstate() == 0)
 		vv = mVelocitypingpong.pong;
 	else
 		vv = mVelocitypingpong.ping;
-
-	applaybuoyancypipeline(vv);
-
+	ApplyBuoyancyPipeline(vv);
 	ID3D12CommandList* ppClist6[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist6), ppClist6);
 	mFluid.swapvelstate();
 	mFluid.UpdateUniformBuffer();
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-//
-////apply impulse======================================================================
-//
 
+//apply impulses======================================================================
+
+//### Temperature impulse ######
 	mFluid.setimpulsetemp();
 	mFluid.UpdateUniformBuffer();
 
@@ -1300,14 +1236,11 @@ void Render()
 	else
 		itemp = mTemperaturepingpong.pong;
 
-	applyimpulsepipeline(itemp);
+	ApplyImpulsePipeline(itemp);
 	ID3D12CommandList* ppClist7[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist7), ppClist7);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-//
-//
-//	//////////////////////////////////////////////////////////////////////////////
-//
+//#### Density impulse ##########
 	mFluid.setimpulsedens();
 	mFluid.UpdateUniformBuffer();
 	RenderTexture* idens;
@@ -1316,18 +1249,19 @@ void Render()
 	else
 		idens = mDensitypingpong.pong;
 
-	applyimpulsepipeline(idens);
+	ApplyImpulsePipeline(idens);
 	ID3D12CommandList* ppClist8[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist8), ppClist8);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
 
-	/////////////////////////////////////////////////////////////////////////////
+//###### Velocity ping and pong impulses ###############
 	mFluid.setimpulsevel();
 	mFluid.UpdateUniformBuffer();
 	RenderTexture* ivel, *ivel2;
 	ivel = mVelocitypingpong.ping;
 	ivel2 = mVelocitypingpong.pong;
-	applyimpulsepipeline(ivel);
+
+	ApplyImpulsePipeline(ivel);//ping
 
 	ID3D12CommandList* ppClistvel[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClistvel), ppClistvel);
@@ -1335,7 +1269,8 @@ void Render()
 
 	mFluid.swapvelstate();
 	mFluid.UpdateUniformBuffer();
-	applyimpulsepipeline(ivel2);
+
+	ApplyImpulsePipeline(ivel2);//pong
 
 	ID3D12CommandList* ppClistvel2[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClistvel2), ppClistvel2);
@@ -1343,70 +1278,55 @@ void Render()
 
 	mFluid.swapvelstate();
 	mFluid.UpdateUniformBuffer();
-//	//divergence============================================================
+//divergence============================================================
 	divergencepipeline();
-	
 	ID3D12CommandList* ppClist9[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist9), ppClist9);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-//
-//	//clear surfaces=======================================================
-//
-//
+//clear surfaces=======================================================
 		RenderTexture* cpre;
 	if (mFluid.getprestate() == 0)
 		cpre = mPressurepingpong.ping;
 	else
 		cpre = mPressurepingpong.pong;
-	clearsurfacepipeline(cpre);
+	ClearPressureSurfacePipeline(cpre);
 	ID3D12CommandList* ppClist10[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist10), ppClist10);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-//
-//
-//	//jacobi pipeline=======================================================
-//
+//jacobi pipeline=======================================================
 	for (int i = 0; i < 41; ++i)
 	{
-
 		RenderTexture* jpre;
 		if (mFluid.getprestate() == 0)
 			jpre = mPressurepingpong.pong;
 		else
 			jpre = mPressurepingpong.ping;
-		jacobipipeline(jpre);
+		JacobianPipeline(jpre);
 		mFluid.swapprestate();
 		mFluid.UpdateUniformBuffer();
 		ID3D12CommandList* ppClist11[] = { commandList };
 		commandQueue->ExecuteCommandLists(_countof(ppClist11), ppClist11);
 		hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
 	}
-//	//subtract gradient pipeline================================================
+//subtract gradient pipeline================================================
 	RenderTexture* svel;
-
 	if (mFluid.getvelstate() == 0)
 		svel = mVelocitypingpong.pong;
 	else
 		svel = mVelocitypingpong.ping;
-	subtractgradientpipeline(svel);
-
+	SubtractGradientPipeline(svel);
 	mFluid.swapvelstate();
 	mFluid.UpdateUniformBuffer();
-
 	ID3D12CommandList* ppClist12[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist12), ppClist12);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-//
 //display pipeline =========================================================
-
-	displaypipeline();
+	DisplayFluidPipeline();
 	ID3D12CommandList* ppClist3[] = { commandList };
 	commandQueue->ExecuteCommandLists(_countof(ppClist3), ppClist3);
 	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
+//FLuid sim pipelines end here================================================
 
-
-//================================================
-	
 	// this command goes in at the end of our command queue. we will know when our command queue 
 	// has finished because the fence value will be set to "fenceValue" from the GPU since the command
 	// queue is being executed on the GPU

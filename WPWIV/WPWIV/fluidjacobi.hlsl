@@ -42,15 +42,15 @@ float4 main(VSQuadOut input) : SV_TARGET
 	float3 oW = t2.Sample(s0, T + float2(-1.0 / size.x, 0)).xyz;
 
 	//use center pressure for solid cells
-	if (oN.x == 0) pN = pC;
-	if (oS.x == 0) pS = pC;
-	if (oE.x == 0) pE = pC;
-	if (oW.x == 0) pW = pC;
+	if (oN.x == 0) pN = float4(1,1,1,1);
+	if (oS.x == 0) pS = float4(1, 1, 1, 1);
+	if (oE.x == 0) pE = float4(1, 1, 1, 1);
+	if (oW.x == 0) pW = float4(1, 1, 1, 1);
 
 	float4 bC = t12.Sample(s0, T);
 
 	float alpha = -cellsize * cellsize;
-	float invbeta = 0.24;
+	float invbeta = 0.243;//DO NOT change, very delicate
 
 	col = (pW + pE + pS + pN + alpha * bC)*invbeta;
 

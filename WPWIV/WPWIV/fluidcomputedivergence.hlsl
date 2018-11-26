@@ -42,7 +42,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 	if (oE.x == 0) vE = float2(0, 0);
 	if (oW.x == 0) vW = float2(0, 0);
 
-	float halfinvcellsize = 9.5 / 1.25;
+	float halfinvcellsize = 10 / 1.25;//DO NOT change, very delicate
 
 	float4 col = float4(0, 0, 0, 1);
 	col = halfinvcellsize * (vE.x - vW.x + vN.y - vS.y);

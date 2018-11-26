@@ -55,7 +55,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 		}
 	}
 
-	else if (Curimpulse == 2)//density
+	else if (Curimpulse == 2)//velocity
 	{
 		if (d < 0.1)
 		{
@@ -63,7 +63,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 		}
 	
 	}
-	col += float4(0.001, 0.001, 0.001, 0);
+	col += float4(0.002, 0.002, 0.002, 0);
 	return col;
 
 }

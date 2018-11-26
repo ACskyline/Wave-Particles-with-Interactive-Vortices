@@ -2,21 +2,13 @@
 
 #include "GlobalInclude.h"
 
-//enum texOP {
-//	OPadvection = 0,
-//	OPbuoyancy = 1,
-//	OPcomputedivergence = 2,
-//	OPjacobi = 3,
-//	OPsplat = 4,
-//	OPsubtractgradient = 5
-//};
 
 struct FluidUniform
 {
 	const float AmbientTemperature = 0.0f;
 	const float ImpulseDensity = 1.0f;
 	const uint32_t NumJacobiIterations = 40;
-	const float TimeStep = 0.00725f;
+	const float TimeStep = 0.00825f;
 	const float SmokeBuoyancy = 1.0f;
 	const float SmokeWeight = 0.05f;
 	const float GradientScale = 1.125f / CellSize;
@@ -27,7 +19,7 @@ struct FluidUniform
 	XMFLOAT2 temperaturestate = { 0,1 };
 	XMFLOAT2 pressurestate = { 0,1 };
 	XMFLOAT2 densitystate = { 0,1 };
-	XMFLOAT2 size = { 1000,1000 };
+	XMFLOAT2 size = { 300,300 };//important for adjusting the degree of vorticity for fluid.... Smaller it is, more significant the effect
 	const float cellsize = 1.125;
 	float Curadvection = 1.0;//1 vel , 2 temp, 3 density
 	float Curimpulse = 1;//0 temp ,1 density
@@ -65,10 +57,10 @@ public:
 
 	void setimpulsetemp();
 	void setimpulsedens();
-	void setimpulsevel();FluidUniform uniform;
+	void setimpulsevel();
 protected:
 
-	
+	FluidUniform uniform;
 	ID3D12Resource* gpuUniformBuffer;
 	void* cpuUniformBufferAddress;
 };
