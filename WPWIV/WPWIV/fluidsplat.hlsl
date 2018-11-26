@@ -59,10 +59,12 @@ float4 main(VSQuadOut input) : SV_TARGET
 	{
 		if (d < 0.1)
 		{
-			col = float4(0.5, 0, 0.5, 1);
+			col = float4(0.8, 0, 0.8, 1);
 		}
 	
 	}
+	float4 ob = t2.Sample(s0, coord);
+	if(ob.x!=0)
 	col += float4(0.002, 0.002, 0.002, 0);
 	return col;
 

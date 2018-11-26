@@ -51,10 +51,10 @@ float4 main(VSQuadOut input) : SV_TARGET
 	float2 obstV = float2(0, 0);
 	float2 vMask = float2(1, 1);
 
-	if (oN.x == 0) { pN = float4(1,1,1,1); obstV.y = 0; vMask.y = 0; }
-	if (oS.x == 0) { pS = float4(1, 1, 1, 1); obstV.y = 0; vMask.y = 0; }
-	if (oE.x == 0) { pE = float4(1, 1, 1, 1); obstV.x = 0; vMask.x = 0; }
-	if (oW.x == 0) { pW = float4(1, 1, 1, 1); obstV.x = 0; vMask.x = 0; }
+	if (oN.x == 0) { pN = pC; obstV.y = 0; vMask.y = 0; }
+	if (oS.x == 0) { pS = pC; obstV.y = 0; vMask.y = 0; }
+	if (oE.x == 0) { pE = pC; obstV.x = 0; vMask.x = 0; }
+	if (oW.x == 0) { pW = pC; obstV.x = 0; vMask.x = 0; }
 
 	//enforce the free slip boundary condition
 	float2 oldV = float2(0, 0);

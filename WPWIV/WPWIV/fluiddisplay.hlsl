@@ -8,7 +8,9 @@
 
 float4 main(VSQuadOut input) : SV_TARGET
 {
-	float4 col = t10.Sample(s0,input.uv);
+	float4 foam = t12.Sample(s0,input.uv);
+	foam = float4(foam.x, 0, 0, 1);
+	float4 col = t11.Sample(s0,input.uv);
 	col = float4(col.x, col.x, col.x, 1);
 	return col;
 }

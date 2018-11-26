@@ -19,7 +19,7 @@ struct FluidUniform
 	XMFLOAT2 temperaturestate = { 0,1 };
 	XMFLOAT2 pressurestate = { 0,1 };
 	XMFLOAT2 densitystate = { 0,1 };
-	XMFLOAT2 size = { 300,300 };//important for adjusting the degree of vorticity for fluid.... Smaller it is, more significant the effect
+	XMFLOAT2 size = { 280,280 };//important for adjusting the degree of vorticity for fluid.... Smaller it is, more significant the effect
 	const float cellsize = 1.125;
 	float Curadvection = 1.0;//1 vel , 2 temp, 3 density
 	float Curimpulse = 1;//0 temp ,1 density
