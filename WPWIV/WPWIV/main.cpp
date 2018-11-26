@@ -1159,7 +1159,7 @@ void cleartexpipleline()
 }
 
 
-void Render()
+void RenderFluid()
 {
 	HRESULT hr;
 
@@ -1550,7 +1550,7 @@ void mainloop()
 			// run game code
 			DetectInput();
 			Update(); // update the game logic
-			Render(); // execute the command queue (rendering the frame is the result of the gpu executing the command lists)
+			RenderFluid(); //excute series of fluid rendering pipelines
 		}
 	}
 }
