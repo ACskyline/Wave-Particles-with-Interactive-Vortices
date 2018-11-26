@@ -1,14 +1,16 @@
 #pragma once
 
-#include "Shader.h"
-#include "Texture.h"
-#include "Frame.h"
+#include "Scene.h"
 
 class Renderer
 {
 public:
 	Renderer();
 	~Renderer();
+
+	static D3D12_DEPTH_STENCIL_DESC NoDepthTest();
+	static D3D12_BLEND_DESC AdditiveBlend();
+	static D3D12_BLEND_DESC NoBlend();
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GetDsvHandle();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtvHandle(int frameIndex);
@@ -32,6 +34,8 @@ public:
 		ID3D12PipelineState** pso,
 		ID3D12RootSignature* rootSignature,
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTType,
+		D3D12_BLEND_DESC blendDesc,
+		D3D12_DEPTH_STENCIL_DESC dsDesc,
 		DXGI_FORMAT rtvFormat,
 		Shader* vertexShader,
 		Shader* hullShader,
@@ -52,6 +56,7 @@ public:
 		ID3D12RootSignature* rootSignature,
 		ID3D12DescriptorHeap* descriptorHeap,
 		Frame* pFrame,
+		Scene* pScene,
 		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
 
 	ID3D12PipelineState* GetGraphicsPSO(int index);
@@ -72,6 +77,7 @@ public:
 		ID3D12RootSignature* rootSignature,
 		ID3D12DescriptorHeap* descriptorHeap,
 		Frame* pFrame,
+		Scene* pScene,
 		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
 
 	ID3D12PipelineState* GetWaveParticlePSO(int index);
@@ -92,6 +98,7 @@ public:
 		ID3D12RootSignature* rootSignature,
 		ID3D12DescriptorHeap* descriptorHeap,
 		Frame* pFrame,
+		Scene* pScene,
 		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
 
 	ID3D12PipelineState* GetPostProcessPSO(int index);

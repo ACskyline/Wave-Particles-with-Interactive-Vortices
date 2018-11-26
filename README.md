@@ -44,8 +44,6 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 - [x] Milestone 1
 
   - [x] DX12 frame work
-  
-    - [ ] Compute shader
 
     - [x] Tessellation shader
 
@@ -57,19 +55,15 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
     - [x] Single particle
 
-- [ ] Milestone 2
+- [x] Milestone 2
 
-  - [ ] Advanced wave particle rendering
+  - [x] Advanced wave particle rendering
 
-    - [ ] Multiple particles
-
-    - [ ] Particle boundary interaction
-
-    - [ ] User interaction (create bump or dent) 
+    - [x] Multiple particles
 
   - [ ] Combine flow map with wave particle
 
-    - [ ] Find some interesting flow maps
+    - [x] Find some interesting flow maps
 
     - [ ] Use flow map to advect wave particle
 
@@ -108,6 +102,16 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 * Tessellation level
 
 ![](img/m1-3.gif)
+
+## Milestone 2 Update
+
+* Radius
+
+![](img/m2-1.gif)
+
+* Speed
+
+![](img/m2-2.gif)
 
 ## References
 

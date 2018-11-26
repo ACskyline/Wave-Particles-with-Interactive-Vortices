@@ -9,6 +9,52 @@ Renderer::~Renderer()
 	Release();
 }
 
+D3D12_DEPTH_STENCIL_DESC Renderer::NoDepthTest()
+{
+	D3D12_DEPTH_STENCIL_DESC result = {};
+	ZeroMemory(&result, sizeof(D3D12_DEPTH_STENCIL_DESC));
+	result.DepthEnable = FALSE;
+	result.StencilEnable = FALSE;
+	return result;
+} 	
+
+D3D12_BLEND_DESC Renderer::AdditiveBlend()
+{
+	D3D12_BLEND_DESC result = {};
+	ZeroMemory(&result, sizeof(D3D12_BLEND_DESC));
+	result.AlphaToCoverageEnable = FALSE;
+	result.IndependentBlendEnable = FALSE;
+	result.RenderTarget[0].BlendEnable = TRUE;
+	result.RenderTarget[0].LogicOpEnable = FALSE;
+	result.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+	result.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	result.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	result.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	result.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+	result.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	result.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_CLEAR;
+	result.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	return result;
+}
+
+D3D12_BLEND_DESC Renderer::NoBlend()
+{
+	D3D12_BLEND_DESC result = {};
+	result.AlphaToCoverageEnable = FALSE;
+	result.IndependentBlendEnable = FALSE;
+	result.RenderTarget[0].BlendEnable = FALSE;
+	//result.RenderTarget[0].LogicOpEnable = FALSE;
+	//result.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+	//result.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	//result.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	//result.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	//result.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+	//result.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	//result.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_CLEAR;
+	//result.RenderTarget[0].RenderTargetWriteMask = 0;
+	return result;
+}
+
 CD3DX12_CPU_DESCRIPTOR_HANDLE Renderer::GetRtvHandle(int frameIndex)
 {
 	return rtvHandles[frameIndex];
@@ -259,6 +305,8 @@ bool Renderer::CreatePSO(
 	ID3D12PipelineState** pso,
 	ID3D12RootSignature* rootSignature,
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTType,
+	D3D12_BLEND_DESC blendDesc,
+	D3D12_DEPTH_STENCIL_DESC dsDesc,
 	DXGI_FORMAT rtvFormat,
 	Shader* vertexShader,
 	Shader* hullShader,
@@ -304,9 +352,9 @@ bool Renderer::CreatePSO(
 	psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
 	psoDesc.SampleMask = 0xffffffff; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
-	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT); // a default blent state.
+	psoDesc.BlendState = blendDesc;// CD3DX12_BLEND_DESC(D3D12_DEFAULT); // a default blent state.
 	psoDesc.NumRenderTargets = 1; // we are only binding one render target
-	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
+	psoDesc.DepthStencilState = dsDesc;// CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
 
 	// create the pso
 	hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pso));
@@ -376,6 +424,7 @@ void Renderer::RecordWaveParticlePipeline(
 	ID3D12RootSignature* rootSignature,
 	ID3D12DescriptorHeap* descriptorHeap,
 	Frame* pFrame,
+	Scene* pScene,
 	D3D_PRIMITIVE_TOPOLOGY primitiveType)
 {
 	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
@@ -398,22 +447,23 @@ void Renderer::RecordWaveParticlePipeline(
 	{
 		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
 		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		commandList->SetGraphicsRootDescriptorTable(3, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
 	}
 
 	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootConstantBufferView(1, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
 	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
 	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
-	commandList->SetGraphicsRootConstantBufferView(2, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
 	int meshCount = pFrame->GetMeshVec().size();
 	for (int i = 0; i < meshCount; i++)
 	{
 		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
 		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
 		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
-		commandList->SetGraphicsRootConstantBufferView(0, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
 		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
 	}
 }
@@ -441,38 +491,45 @@ bool Renderer::CreateWaveParticleRootSignature(
 	descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
 	// create a root parameter for the root descriptor and fill it out
-	D3D12_ROOT_PARAMETER  rootParameters[4]; // 3 root parameters
-	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[3]; // 2 of 3 are cbv
+	D3D12_ROOT_PARAMETER  rootParameters[UNIFORM_SLOT::COUNT]; // 3 root parameters
+	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[UNIFORM_SLOT::COUNT - 1]; // 2 of 3 are cbv
 	UINT rootParameterCount = 0;
 
-	rootCBVDescriptors[0].RegisterSpace = 0;
-	rootCBVDescriptors[0].ShaderRegister = 0;
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[0].Descriptor = rootCBVDescriptors[0]; // this is the root descriptor for this root parameter
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].ShaderRegister = UNIFORM_SLOT::OBJECT;
+	rootParameters[UNIFORM_SLOT::OBJECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::OBJECT].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::OBJECT]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::OBJECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
-	rootCBVDescriptors[1].RegisterSpace = 0;
-	rootCBVDescriptors[1].ShaderRegister = 1;
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[1].Descriptor = rootCBVDescriptors[1]; // this is the root descriptor for this root parameter
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].ShaderRegister = UNIFORM_SLOT::CAMERA;
+	rootParameters[UNIFORM_SLOT::CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::CAMERA].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::CAMERA]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
-	rootCBVDescriptors[2].RegisterSpace = 0;
-	rootCBVDescriptors[2].ShaderRegister = 2;
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[2].Descriptor = rootCBVDescriptors[2]; // this is the root descriptor for this root parameter
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].ShaderRegister = UNIFORM_SLOT::FRAME;
+	rootParameters[UNIFORM_SLOT::FRAME].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::FRAME].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::FRAME]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::FRAME].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameterCount++;
+
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].ShaderRegister = UNIFORM_SLOT::SCENE;
+	rootParameters[UNIFORM_SLOT::SCENE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::SCENE].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::SCENE]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::SCENE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
 	if (descriptorNum > 0)
 	{
 		// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
 		// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
-		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-		rootParameters[3].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+		rootParameters[UNIFORM_SLOT::TABLE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+		rootParameters[UNIFORM_SLOT::TABLE].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+		rootParameters[UNIFORM_SLOT::TABLE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 		rootParameterCount++;
 	}
 
@@ -599,6 +656,7 @@ void Renderer::RecordPostProcessPipeline(
 	ID3D12RootSignature* rootSignature,
 	ID3D12DescriptorHeap* descriptorHeap,
 	Frame* pFrame,
+	Scene* pScene,
 	D3D_PRIMITIVE_TOPOLOGY primitiveType)
 {
 	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
@@ -621,22 +679,23 @@ void Renderer::RecordPostProcessPipeline(
 	{
 		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
 		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		commandList->SetGraphicsRootDescriptorTable(3, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
 	}
 
 	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootConstantBufferView(1, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
 	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
 	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
-	commandList->SetGraphicsRootConstantBufferView(2, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
 	int meshCount = pFrame->GetMeshVec().size();
 	for (int i = 0; i < meshCount; i++)
 	{
 		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
 		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
 		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
-		commandList->SetGraphicsRootConstantBufferView(0, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
 		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
 	}
 }
@@ -664,38 +723,45 @@ bool Renderer::CreatePostProcessRootSignature(
 	descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
 	// create a root parameter for the root descriptor and fill it out
-	D3D12_ROOT_PARAMETER  rootParameters[4]; // 3 root parameters
-	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[3]; // 2 of 3 are cbv
+	D3D12_ROOT_PARAMETER  rootParameters[UNIFORM_SLOT::COUNT]; // 3 root parameters
+	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[UNIFORM_SLOT::COUNT - 1]; // 2 of 3 are cbv
 	UINT rootParameterCount = 0;
 
-	rootCBVDescriptors[0].RegisterSpace = 0;
-	rootCBVDescriptors[0].ShaderRegister = 0;
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[0].Descriptor = rootCBVDescriptors[0]; // this is the root descriptor for this root parameter
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].ShaderRegister = UNIFORM_SLOT::OBJECT;
+	rootParameters[UNIFORM_SLOT::OBJECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::OBJECT].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::OBJECT]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::OBJECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
-	rootCBVDescriptors[1].RegisterSpace = 0;
-	rootCBVDescriptors[1].ShaderRegister = 1;
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[1].Descriptor = rootCBVDescriptors[1]; // this is the root descriptor for this root parameter
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].ShaderRegister = UNIFORM_SLOT::CAMERA;
+	rootParameters[UNIFORM_SLOT::CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::CAMERA].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::CAMERA]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
-	rootCBVDescriptors[2].RegisterSpace = 0;
-	rootCBVDescriptors[2].ShaderRegister = 2;
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[2].Descriptor = rootCBVDescriptors[2]; // this is the root descriptor for this root parameter
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].ShaderRegister = UNIFORM_SLOT::FRAME;
+	rootParameters[UNIFORM_SLOT::FRAME].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::FRAME].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::FRAME]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::FRAME].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameterCount++;
+
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].ShaderRegister = UNIFORM_SLOT::SCENE;
+	rootParameters[UNIFORM_SLOT::SCENE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::SCENE].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::SCENE]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::SCENE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
 	if (descriptorNum > 0)
 	{
 		// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
 		// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
-		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-		rootParameters[3].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+		rootParameters[UNIFORM_SLOT::TABLE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+		rootParameters[UNIFORM_SLOT::TABLE].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+		rootParameters[UNIFORM_SLOT::TABLE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 		rootParameterCount++;
 	}
 
@@ -820,6 +886,7 @@ void Renderer::RecordGraphicsPipeline(
 	ID3D12RootSignature* rootSignature,
 	ID3D12DescriptorHeap* descriptorHeap,
 	Frame* pFrame,
+	Scene* pScene,
 	D3D_PRIMITIVE_TOPOLOGY primitiveType)
 {
 	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
@@ -842,22 +909,23 @@ void Renderer::RecordGraphicsPipeline(
 	{
 		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
 		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		commandList->SetGraphicsRootDescriptorTable(3, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
 	}
 
 	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootConstantBufferView(1, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
 	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
 	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
-	commandList->SetGraphicsRootConstantBufferView(2, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
 	int meshCount = pFrame->GetMeshVec().size();
 	for (int i = 0; i < meshCount; i++)
 	{
 		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
 		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
 		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
-		commandList->SetGraphicsRootConstantBufferView(0, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
 		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
 	}
 }
@@ -885,38 +953,45 @@ bool Renderer::CreateGraphicsRootSignature(
 	descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
 	// create a root parameter for the root descriptor and fill it out
-	D3D12_ROOT_PARAMETER  rootParameters[4]; // 3 root parameters
-	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[3]; // 2 of 3 are cbv
+	D3D12_ROOT_PARAMETER  rootParameters[UNIFORM_SLOT::COUNT]; // 3 root parameters
+	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[UNIFORM_SLOT::COUNT - 1]; // 2 of 3 are cbv
 	UINT rootParameterCount = 0;
 
-	rootCBVDescriptors[0].RegisterSpace = 0;
-	rootCBVDescriptors[0].ShaderRegister = 0;
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[0].Descriptor = rootCBVDescriptors[0]; // this is the root descriptor for this root parameter
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].ShaderRegister = UNIFORM_SLOT::OBJECT;
+	rootParameters[UNIFORM_SLOT::OBJECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::OBJECT].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::OBJECT]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::OBJECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
-	rootCBVDescriptors[1].RegisterSpace = 0;
-	rootCBVDescriptors[1].ShaderRegister = 1;
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[1].Descriptor = rootCBVDescriptors[1]; // this is the root descriptor for this root parameter
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].ShaderRegister = UNIFORM_SLOT::CAMERA;
+	rootParameters[UNIFORM_SLOT::CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::CAMERA].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::CAMERA]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
-	rootCBVDescriptors[2].RegisterSpace = 0;
-	rootCBVDescriptors[2].ShaderRegister = 2;
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
-	rootParameters[2].Descriptor = rootCBVDescriptors[2]; // this is the root descriptor for this root parameter
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].ShaderRegister = UNIFORM_SLOT::FRAME;
+	rootParameters[UNIFORM_SLOT::FRAME].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::FRAME].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::FRAME]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::FRAME].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameterCount++;
+
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].ShaderRegister = UNIFORM_SLOT::SCENE;
+	rootParameters[UNIFORM_SLOT::SCENE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::SCENE].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::SCENE]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::SCENE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 	rootParameterCount++;
 
 	if (descriptorNum > 0)
 	{
 		// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
 		// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
-		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-		rootParameters[3].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+		rootParameters[UNIFORM_SLOT::TABLE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+		rootParameters[UNIFORM_SLOT::TABLE].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+		rootParameters[UNIFORM_SLOT::TABLE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
 		rootParameterCount++;
 	}
 

@@ -29,50 +29,14 @@ void Frame::AddRenderTexture(RenderTexture* pRenderTexture)
 	pRenderTextureVec.push_back(pRenderTexture);
 }
 
-void Frame::SetUniformWaveParticleScale(float _waveParticleScale)
+void Frame::SetUniformTime(uint32_t time)
 {
-	uniform.waveParticleScale = _waveParticleScale;
+	uniform.time = time;
 }
 
-void Frame::SetUniformEdgeTessFactor(uint32_t _tessellationFactor)
+uint32_t Frame::GetUniformTime()
 {
-	uniform.edgeTessFactor = _tessellationFactor;
-}
-
-void Frame::SetUniformInsideTessFactor(uint32_t _tessellationFactor)
-{
-	uniform.insideTessFactor = _tessellationFactor;
-}
-
-void Frame::SetUniformTexutureWidthHeight(uint32_t texWidth, uint32_t texHeight)
-{
-	uniform.textureWidth = texWidth;
-	uniform.textureHeight = texHeight;
-}
-
-void Frame::SetUniformBlurRadius(uint32_t blurR)
-{
-	uniform.blurRadius = blurR;
-}
-
-float Frame::GetUniformWaveParticleScale()
-{
-	return uniform.waveParticleScale;
-}
-
-uint32_t Frame::GetUniformEdgeTessFactor()
-{
-	return uniform.edgeTessFactor;
-}
-
-uint32_t Frame::GetUniformInsideTessFactor()
-{
-	return uniform.insideTessFactor;
-}
-
-uint32_t Frame::GetUniformBlurRadius()
-{
-	return uniform.blurRadius;
+	return uniform.time;
 }
 
 bool Frame::CreateUniformBuffer(ID3D12Device* device)

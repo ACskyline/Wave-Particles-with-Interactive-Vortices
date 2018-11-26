@@ -32,6 +32,7 @@ bool Shader::CreateShader()
 	{
 		return CreatePixelShaderFromFile(fileName);
 	}
+	return false;
 }
 
 bool Shader::CreateVertexShaderFromFile(const wstring& _fileName)

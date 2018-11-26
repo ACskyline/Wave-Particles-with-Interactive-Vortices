@@ -30,6 +30,7 @@ ID3D12Fence* fence[FrameBufferCount];
 HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
 UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. each fence will have its own value
 int frameIndex; // current rtv we are on
+uint32_t frameCount = 0;
 
 Renderer mRenderer;
 Scene mScene;
@@ -40,9 +41,9 @@ OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.
 OrbitCamera mCameraRenderTexture(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 500, 500, 45.0f, 0.1f, 1000.0f);
 Camera mDummyCamera(XMFLOAT3{ 4.f,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,1,0 }, 500, 500, 45.0f, 0.1f, 1000.f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
-Mesh mWaterSurface(Mesh::MeshType::WaterSurface, 100, 100, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 1, 10));
+Mesh mWaterSurface(Mesh::MeshType::WaterSurface, 100, 100, XMFLOAT3(-5, 0, -5), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 1, 10));
 Mesh mQuad(Mesh::MeshType::FullScreenQuad, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
-Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 100, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
+Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 400, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
 Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
 Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
@@ -77,18 +78,15 @@ bool CreateScene()
 	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH);
 	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV);
 
-	mFramePostProcess.SetUniformTexutureWidthHeight(500, 500);
-	mFramePostProcess.SetUniformBlurRadius(10);
-
 	mFrameGraphics.AddCamera(&mCamera);
 	mFrameGraphics.AddMesh(&mWaterSurface);// (&mPlane);
 	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV);
 	//mFrameGraphics.AddTexture(&mHeightMap);
 	mFrameGraphics.AddTexture(&mTextureAlbedo);
 
-	mFrameGraphics.SetUniformEdgeTessFactor(4);
-	mFrameGraphics.SetUniformInsideTessFactor(2);
-	mFrameGraphics.SetUniformWaveParticleScale(0.5);
+	mFrameGraphics.SetUniformTime(0);
+	mFramePostProcess.SetUniformTime(0);
+	mFrameWaveParticle.SetUniformTime(0);
 
 	mScene.AddFrame(&mFrameGraphics);
 	mScene.AddFrame(&mFrameWaveParticle);
@@ -114,6 +112,17 @@ bool CreateScene()
 	mScene.AddRenderTexture(&mRenderTextureWaveParticle);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessH);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessV);
+
+	mScene.SetUniformEdgeTessFactor(4);
+	mScene.SetUniformInsideTessFactor(2);
+	mScene.SetUniformHeightScale(1.3);
+	mScene.SetUniformRadiusScale(1.05);
+	mScene.SetUniformSpeedScale(0.0001);
+	mScene.SetUniformTexutureWidthHeight(500, 500);
+	mScene.SetUniformBlurRadius(50);
+	mScene.SetUniformDxScale(0.015);
+	mScene.SetUniformDzScale(0.015);
+	mScene.SetUniformTimeScale(1.0);
 
 	if (!mScene.LoadScene())
 		return false;
@@ -538,6 +547,8 @@ bool InitD3D()
 		mRenderer.GetWaveParticlePsoPtr(0),
 		mRenderer.GetWaveParticleRootSignature(),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT,
+		Renderer::AdditiveBlend(),
+		Renderer::NoDepthTest(),
 		DXGI_FORMAT_R16G16B16A16_FLOAT,
 		&mWaveParticleVS,
 		nullptr,
@@ -564,6 +575,8 @@ bool InitD3D()
 		mRenderer.GetPostProcessPsoPtr(0),
 		mRenderer.GetPostProcessRootSignature(),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		CD3DX12_BLEND_DESC(D3D12_DEFAULT),//Renderer::AdditiveBlend(),
+		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
 		DXGI_FORMAT_R16G16B16A16_FLOAT,
 		&mPostProcessVS,
 		nullptr,
@@ -580,6 +593,8 @@ bool InitD3D()
 		mRenderer.GetPostProcessPsoPtr(1),
 		mRenderer.GetPostProcessRootSignature(),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		CD3DX12_BLEND_DESC(D3D12_DEFAULT),//Renderer::AdditiveBlend(),
+		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
 		DXGI_FORMAT_R16G16B16A16_FLOAT,
 		&mPostProcessVS,
 		nullptr,
@@ -606,6 +621,8 @@ bool InitD3D()
 		mRenderer.GetGraphicsPsoPtr(0),
 		mRenderer.GetGraphicsRootSignature(),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH,//D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		CD3DX12_BLEND_DESC(D3D12_DEFAULT),// Renderer::NoBlend(),
+		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		&mVertexShader,
 		&mHullShader,
@@ -637,7 +654,10 @@ bool InitD3D()
 
 void Update()
 {
-
+	//printf("frame:%d\n", frameCount);
+	frameCount++;
+	mFrameWaveParticle.SetUniformTime(frameCount);
+	mFrameWaveParticle.UpdateUniformBuffer();
 	//mCube1.UpdateUniform();
 	//mCube1.UpdateUniformBuffer();
 
@@ -725,6 +745,7 @@ void UpdatePipeline()
 		mRenderer.GetWaveParticleRootSignature(),
 		mRenderer.GetWaveParticleDescriptorHeap(),
 		&mFrameWaveParticle,
+		&mScene,
 		D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY WAVE PARTICLE PIPELINE /////////
@@ -741,6 +762,7 @@ void UpdatePipeline()
 		mRenderer.GetPostProcessRootSignature(),
 		mRenderer.GetPostProcessDescriptorHeap(),
 		&mFramePostProcess,
+		&mScene,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS PIPELINE /////////
@@ -758,6 +780,7 @@ void UpdatePipeline()
 		mRenderer.GetPostProcessRootSignature(),
 		mRenderer.GetPostProcessDescriptorHeap(),
 		&mFramePostProcess,
+		&mScene,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS PIPELINE /////////
@@ -774,6 +797,7 @@ void UpdatePipeline()
 		mRenderer.GetGraphicsRootSignature(),
 		mRenderer.GetGraphicsDescriptorHeap(),
 		&mFrameGraphics,
+		&mScene,
 		D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);// D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);// 
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY GRAPHICS PIPELINE /////////
@@ -838,53 +862,91 @@ void Gui()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	static float particleScale = mFrameGraphics.GetUniformWaveParticleScale();
-	static int edgeTess = mFrameGraphics.GetUniformEdgeTessFactor();
-	static int insideTess = mFrameGraphics.GetUniformInsideTessFactor();
-	static int blurRadius = mFramePostProcess.GetUniformBlurRadius();
-	bool needToUpdateFrameUniform = false;
+	static float heightScale = mScene.GetUniformHeightScale();
+	static float radiusScale = mScene.GetUniformRadiusScale();
+	static float speedScale = mScene.GetUniformSpeedScale();
+	static float dxScale = mScene.GetUniformDxScale();
+	static float dzScale = mScene.GetUniformDzScale();
+	static float timeScale = mScene.GetUniformTimeScale();
+	static int edgeTess = mScene.GetUniformEdgeTessFactor();
+	static int insideTess = mScene.GetUniformInsideTessFactor();
+	static int blurRadius = mScene.GetUniformBlurRadius();
+	bool needToUpdateSceneUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImVec2(300, 200));
+	//ImGui::SetNextWindowSize(ImVec2(300, 200));
 
 	ImGui::Begin("Control Panel ");                          // Create a window called "Hello, world!" and append into it.
 
 	ImGui::Text("Wave Particles Scale ");               // Display some text (you can use a format strings too)
 
-	ImGui::SliderFloat("float ", &particleScale, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
+	ImGui::SliderFloat("height ", &heightScale, 0.0f, 5.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
+	ImGui::SliderFloat("radius ", &radiusScale, 0.0f, 5.0f);
+	ImGui::SliderFloat("speed ", &speedScale, 0.0f, 0.0005f, "%.6f");
+	ImGui::SliderFloat("dx ", &dxScale, 0.0f, 0.1f, "%.6f");
+	ImGui::SliderFloat("dz ", &dzScale, 0.0f, 0.1f, "%.6f");
+	ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 1.0f, "%.6f");
 	ImGui::SliderInt("edge tess ", &edgeTess, 0, 128);
 	ImGui::SliderInt("inside tess ", &insideTess, 0, 128);
-	ImGui::SliderInt("blur radius ", &blurRadius, 0, 128);
+	ImGui::SliderInt("blur radius ", &blurRadius, 0, 500);
 
-	if (particleScale != mFrameGraphics.GetUniformWaveParticleScale())
+	if (heightScale != mScene.GetUniformHeightScale())
 	{
-		mFrameGraphics.SetUniformWaveParticleScale(particleScale);
-		needToUpdateFrameUniform = true;
+		mScene.SetUniformHeightScale(heightScale);
+		needToUpdateSceneUniform = true;
 	}
 
-	if (edgeTess != mFrameGraphics.GetUniformEdgeTessFactor())
+	if (radiusScale != mScene.GetUniformRadiusScale())
 	{
-		mFrameGraphics.SetUniformEdgeTessFactor(edgeTess);
-		needToUpdateFrameUniform = true;
+		mScene.SetUniformRadiusScale(radiusScale);
+		needToUpdateSceneUniform = true;
 	}
 
-	if (insideTess != mFrameGraphics.GetUniformInsideTessFactor())
+	if (speedScale != mScene.GetUniformSpeedScale())
 	{
-		mFrameGraphics.SetUniformInsideTessFactor(insideTess);
-		needToUpdateFrameUniform = true;
+		mScene.SetUniformSpeedScale(speedScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (dxScale != mScene.GetUniformDxScale())
+	{
+		mScene.SetUniformDxScale(dxScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (dzScale != mScene.GetUniformDzScale())
+	{
+		mScene.SetUniformDzScale(dzScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (timeScale != mScene.GetUniformTimeScale())
+	{
+		mScene.SetUniformTimeScale(timeScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (edgeTess != mScene.GetUniformEdgeTessFactor())
+	{
+		mScene.SetUniformEdgeTessFactor(edgeTess);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (insideTess != mScene.GetUniformInsideTessFactor())
+	{
+		mScene.SetUniformInsideTessFactor(insideTess);
+		needToUpdateSceneUniform = true;
 	}
 	
-	if (blurRadius != mFramePostProcess.GetUniformBlurRadius())
+	if (blurRadius != mScene.GetUniformBlurRadius())
 	{
-		mFramePostProcess.SetUniformBlurRadius(blurRadius);
-		needToUpdateFrameUniform = true;
+		mScene.SetUniformBlurRadius(blurRadius);
+		needToUpdateSceneUniform = true;
 	}
 
-	if (needToUpdateFrameUniform)
+	if (needToUpdateSceneUniform)
 	{
-		mFrameGraphics.UpdateUniformBuffer();
-		mFramePostProcess.UpdateUniformBuffer();
-		mFrameWaveParticle.UpdateUniformBuffer();
+		mScene.UpdateUniformBuffer();
 	}
 
 	ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

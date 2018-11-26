@@ -539,7 +539,14 @@ void Mesh::InitWaveParticles(int waveParticleCount)
 		for (int j = 0; j < waveParticlePerRow; j++)
 		{
 			int index = i * waveParticlePerRow + j;
-			vList[index] = { i / (float)waveParticlePerRow * 2.f - 1.f, j / (float)waveParticlePerRow * 2.f - 1.f, 1, 0, 0 };
+			XMFLOAT2 position = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
+			XMFLOAT2 direction = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
+			XMStoreFloat2(&direction, XMVector2Normalize(XMLoadFloat2(&direction)));
+			float height = rand() / (float)RAND_MAX * 0.1 + 0.2;
+			float radius = rand() / (float)RAND_MAX * 0.05 + 0.1;
+			float beta = rand() / (float)RAND_MAX;
+			float speed = rand() / (float)RAND_MAX;
+			vList[index] = { position.x, position.y, height, direction.x, direction.y, radius, beta, speed };
 			iList[index] = index;
 		}
 	}
