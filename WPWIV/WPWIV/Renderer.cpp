@@ -768,8 +768,8 @@ bool Renderer::CreatePostProcessRootSignature(
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
 	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 	sampler.MipLODBias = 0;
 	sampler.MaxAnisotropy = 0;
@@ -996,26 +996,44 @@ bool Renderer::CreateGraphicsRootSignature(
 	}
 
 	// create a static sampler
-	D3D12_STATIC_SAMPLER_DESC sampler = {};
-	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.MipLODBias = 0;
-	sampler.MaxAnisotropy = 0;
-	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	sampler.MinLOD = 0.0f;
-	sampler.MaxLOD = D3D12_FLOAT32_MAX;
-	sampler.ShaderRegister = 0;
-	sampler.RegisterSpace = 0;
-	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	D3D12_STATIC_SAMPLER_DESC samplerBorder = {};
+	samplerBorder.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerBorder.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	samplerBorder.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	samplerBorder.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	samplerBorder.MipLODBias = 0;
+	samplerBorder.MaxAnisotropy = 0;
+	samplerBorder.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerBorder.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	samplerBorder.MinLOD = 0.0f;
+	samplerBorder.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerBorder.ShaderRegister = 0;
+	samplerBorder.RegisterSpace = 0;
+	samplerBorder.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	// create a static sampler
+	D3D12_STATIC_SAMPLER_DESC samplerClamp = {};
+	samplerClamp.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerClamp.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerClamp.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerClamp.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerClamp.MipLODBias = 0;
+	samplerClamp.MaxAnisotropy = 0;
+	samplerClamp.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerClamp.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	samplerClamp.MinLOD = 0.0f;
+	samplerClamp.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerClamp.ShaderRegister = 1;
+	samplerClamp.RegisterSpace = 0;
+	samplerClamp.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerBorder, samplerClamp };
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(rootParameterCount, // we have 2 root parameters
 		rootParameters, // a pointer to the beginning of our root parameters array
-		1, // we have one static sampler
-		&sampler, // a pointer to our static sampler (array)
+		2, // we have one static sampler
+		samplers, // a pointer to our static sampler (array)
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // we can deny shader stages here for better performance
 		//D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 		//D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |

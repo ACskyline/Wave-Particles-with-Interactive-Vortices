@@ -539,7 +539,7 @@ void Mesh::InitWaveParticles(int waveParticleCount)
 		for (int j = 0; j < waveParticlePerRow; j++)
 		{
 			int index = i * waveParticlePerRow + j;
-			XMFLOAT2 position = {0, 0};// { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
+			XMFLOAT2 position = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
 			XMFLOAT2 direction = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
 			XMStoreFloat2(&direction, XMVector2Normalize(XMLoadFloat2(&direction)));
 			float height = rand() / (float)RAND_MAX * 0.1 + 0.2;
@@ -566,7 +566,14 @@ void Mesh::InitWaterSurface(int cellCountX, int cellCountZ)
 		for (int j = 0; j <= cellCountZ; j++)
 		{
 			int vIndex = i * (cellCountZ + 1) + j;
-			vList[vIndex] = { i / (float)cellCountX, 0, j / (float)cellCountZ, i / (float)cellCountX, j / (float)cellCountZ };
+			// make the border wider so that it can sample outside of [0, 1] and return border color which is set to transparent black
+			float ui = i;
+			float vj = j;
+			if (i == 0) ui-= EPSILON;
+			else if (i == cellCountX) ui+= EPSILON;
+			if (j == 0) vj-= EPSILON;
+			else if (j == cellCountZ) vj+= EPSILON;
+			vList[vIndex] = { i / (float)cellCountX, 0, j / (float)cellCountZ, ui / (float)cellCountX, vj / (float)cellCountZ };
 		}
 	}
 

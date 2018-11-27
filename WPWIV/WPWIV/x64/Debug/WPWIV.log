@@ -1,1 +1,14 @@
-﻿  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe
+﻿  Mesh.cpp
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(148): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(177): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(395): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(535): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(545): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(546): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(570): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(571): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(572): warning C4305: '-=': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(573): warning C4305: '+=': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(574): warning C4305: '-=': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\mesh.cpp(575): warning C4305: '+=': truncation from 'double' to 'float'
+  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

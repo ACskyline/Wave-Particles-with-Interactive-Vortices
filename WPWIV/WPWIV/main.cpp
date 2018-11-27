@@ -43,7 +43,7 @@ Camera mDummyCamera(XMFLOAT3{ 4.f,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,1,0 }, 5
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Mesh mWaterSurface(Mesh::MeshType::WaterSurface, 100, 100, XMFLOAT3(-5, 0, -5), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 1, 10));
 Mesh mQuad(Mesh::MeshType::FullScreenQuad, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
-Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 1, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
+Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 100, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
 Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
 Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
@@ -120,8 +120,8 @@ bool CreateScene()
 	mScene.SetUniformSpeedScale(0.0001);
 	mScene.SetUniformTexutureWidthHeight(500, 500);
 	mScene.SetUniformBlurRadius(50);
-	mScene.SetUniformDxScale(0.015);
-	mScene.SetUniformDzScale(0.015);
+	mScene.SetUniformDxScale(0.05);
+	mScene.SetUniformDzScale(0.05);
 	mScene.SetUniformTimeScale(1.0);
 
 	if (!mScene.LoadScene())
@@ -880,11 +880,11 @@ void Gui()
 
 	ImGui::Text("Wave Particles Scale ");               // Display some text (you can use a format strings too)
 
-	ImGui::SliderFloat("height ", &heightScale, 0.0f, 5.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
-	ImGui::SliderFloat("radius ", &radiusScale, 0.0f, 5.0f);
+	ImGui::SliderFloat("height ", &heightScale, 0.0f, 3.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
+	ImGui::SliderFloat("radius ", &radiusScale, 0.0f, 3.0f);
 	ImGui::SliderFloat("speed ", &speedScale, 0.0f, 0.0005f, "%.6f");
-	ImGui::SliderFloat("dx ", &dxScale, 0.0f, 1.f, "%.6f");
-	ImGui::SliderFloat("dz ", &dzScale, 0.0f, 1.f, "%.6f");
+	ImGui::SliderFloat("dx ", &dxScale, 0.0f, 0.13f, "%.6f");
+	ImGui::SliderFloat("dz ", &dzScale, 0.0f, 0.13f, "%.6f");
 	ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 1.0f, "%.6f");
 	ImGui::SliderInt("edge tess ", &edgeTess, 0, 128);
 	ImGui::SliderInt("inside tess ", &insideTess, 0, 128);
