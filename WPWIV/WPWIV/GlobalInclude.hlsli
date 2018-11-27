@@ -63,6 +63,8 @@ cbuffer FluidUniform : register(b3)
 	  float cellsize;
 	  float Curadvection;
 	  float Curimpulse;
+	  float impulseposx;
+	  float impulseposy;
 }
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////

@@ -7,7 +7,7 @@ struct FluidUniform
 {
 	const float AmbientTemperature = 0.0f;
 	const float ImpulseDensity = 1.0f;
-	const uint32_t NumJacobiIterations = 40;
+	const uint32_t NumJacobiIterations = 41;
 	const float TimeStep = 0.00825f;
 	const float SmokeBuoyancy = 1.0f;
 	const float SmokeWeight = 0.05f;
@@ -23,6 +23,8 @@ struct FluidUniform
 	const float cellsize = 1.125;
 	float Curadvection = 1.0;//1 vel , 2 temp, 3 density
 	float Curimpulse = 1;//0 temp ,1 density
+	float impulseposx =  0.3;
+	float impulseposy = 0.5;
 };
 
 
@@ -58,6 +60,9 @@ public:
 	void setimpulsetemp();
 	void setimpulsedens();
 	void setimpulsevel();
+
+	void Setfluidcellnum(int num);
+	void Setimpulsepos(float x, float y);
 protected:
 
 	FluidUniform uniform;

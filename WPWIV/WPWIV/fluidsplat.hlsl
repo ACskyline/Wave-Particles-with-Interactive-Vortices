@@ -38,7 +38,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 		col = t5.Sample(s0, coord);
 	}
  
-	float4 centpt = float4(0.3, 0.5, 0, 1);
+	float2 centpt = float2(impulseposx, impulseposy);
 	float d = distance(centpt, coord);
 	if (Curimpulse == 0)//temp
 	{

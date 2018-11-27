@@ -137,6 +137,18 @@ void Fluid::resettextureOP()
 	return;
 }
 
+void Fluid::Setfluidcellnum(int num)
+{
+	uniform.size = XMFLOAT2(num, num);
+}
+
+
+void Fluid::Setimpulsepos(float x, float y)
+{
+	uniform.impulseposx = x;
+	uniform.impulseposy = y;
+}
+
 void Fluid::ReleaseBuffer()
 {
 	SAFE_RELEASE(gpuUniformBuffer);

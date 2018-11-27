@@ -1,2 +1,43 @@
-﻿  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluiddisplay.cso
+﻿  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidadvection.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidbuoyancy.cso
+E:\cis565\wavev4\waveparticle\WPWIV\WPWIV\fluidclear.hlsl(14,12-34): warning X3206: 'distance': implicit truncation of vector type
+  
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidclear.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidcomputedivergence.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluiddensadvection.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluiddisplay.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidjacobi.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidsplat.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidsubtractgradient.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\fluidtempadvect.cso
+  compilation object save succeeded; see E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\VertexShader.cso
+  Renderer.cpp
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.h(26): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(73): warning C4244: 'argument': conversion from 'float' to 'UINT', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(73): warning C4244: 'argument': conversion from 'float' to 'UINT64', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(256): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(257): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(469): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(631): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(632): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\renderer.cpp(775): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  fluid2D.cpp
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.h(26): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.cpp(84): warning C4244: 'return': conversion from 'float' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.cpp(89): warning C4244: 'return': conversion from 'float' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.cpp(94): warning C4244: 'return': conversion from 'float' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.cpp(99): warning C4244: 'return': conversion from 'float' to 'int', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.cpp(142): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+  main.cpp
+  c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\fluid2d.h(26): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(334): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(338): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(339): warning C4305: '=': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(340): warning C4305: '=': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(345): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(346): warning C4305: '=': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(659): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(1361): warning C4305: 'initializing': truncation from 'double' to 'float'
+  Generating Code...
   WPWIV.vcxproj -> E:\cis565\wavev4\waveparticle\WPWIV\x64\Debug\WPWIV.exe

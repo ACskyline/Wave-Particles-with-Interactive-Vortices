@@ -8,9 +8,11 @@
 
 float4 main(VSQuadOut input) : SV_TARGET
 {
-	float4 foam = t12.Sample(s0,input.uv);
-	foam = float4(foam.x, 0, 0, 1);
-	float4 col = t11.Sample(s0,input.uv);
-	col = float4(col.x, col.x, col.x, 1);
-	return col;
+	float4 divergence = t12.Sample(s0,input.uv);
+	divergence = float4(divergence.x, 0, 0, 1);
+	float4 coldens = t10.Sample(s0,input.uv);
+	coldens = float4(coldens.x, coldens.x, coldens.x, 1);
+	float4 vel = t4.Sample(s0, input.uv);
+	float4 pressure = t8.Sample(s0, input.uv);
+	return coldens;
 }

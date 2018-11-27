@@ -1212,17 +1212,17 @@ void RenderFluid()
 
 //apply buoyancy pipeline======================================================================
 
-	RenderTexture* vv;
-	if (mFluid.getvelstate() == 0)
-		vv = mVelocitypingpong.pong;
-	else
-		vv = mVelocitypingpong.ping;
-	ApplyBuoyancyPipeline(vv);
-	ID3D12CommandList* ppClist6[] = { commandList };
-	commandQueue->ExecuteCommandLists(_countof(ppClist6), ppClist6);
+	//RenderTexture* vv;
+	//if (mFluid.getvelstate() == 0)
+	//	vv = mVelocitypingpong.pong;
+	//else
+	//	vv = mVelocitypingpong.ping;
+	//ApplyBuoyancyPipeline(vv);
+	//ID3D12CommandList* ppClist6[] = { commandList };
+	//commandQueue->ExecuteCommandLists(_countof(ppClist6), ppClist6);
 	mFluid.swapvelstate();
 	mFluid.UpdateUniformBuffer();
-	hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
+	//hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
 
 //apply impulses======================================================================
 
@@ -1357,6 +1357,10 @@ void Gui()
 
 	static float f = 0.5f;
 	static int u = 32;
+	static int cellnum = 280;
+	static float impulsex = 0.3;
+	static float impulsey = 0.5;
+
 	bool needToUpdateFrameUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -1364,27 +1368,39 @@ void Gui()
 
 	ImGui::Begin("Control Panel ");                          // Create a window called "Hello, world!" and append into it.
 
-	ImGui::Text("Wave Particles Scale ");               // Display some text (you can use a format strings too)
+/*	ImGui::Text("Wave Particles Scale ");      */         // Display some text (you can use a format strings too)
 
-	ImGui::SliderFloat("float ", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
-	ImGui::SliderInt("uint ", &u, 0, 128);
+	//ImGui::SliderFloat("float ", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
+	//ImGui::SliderInt("uint ", &u, 0, 128);
 
-	if (f != mFrameGraphics.GetWaveParticleScale())
-	{
-		mFrameGraphics.SetWaveParticleScale(f);
-		needToUpdateFrameUniform = true;
-	}
+	ImGui::SliderInt("Cellnum", &cellnum, 280, 1000);
+	ImGui::SliderFloat("impulseX", &impulsex, 0, 1);
+	ImGui::SliderFloat("impulseY", &impulsey, 0, 1);
 
-	if (u != mFrameGraphics.GetWaveParticleScale())
-	{
-		mFrameGraphics.SetTessellationFactor(u);
-		needToUpdateFrameUniform = true;
-	}
 
-	if (needToUpdateFrameUniform)
-	{
-		mFrameGraphics.UpdateUniformBuffer();
-	}
+	mFluid.Setfluidcellnum(cellnum);
+	mFluid.Setimpulsepos(impulsex, impulsey);
+	mFluid.UpdateUniformBuffer();
+
+
+	//if (f != mFrameGraphics.GetWaveParticleScale())
+	//{
+	//	mFrameGraphics.SetWaveParticleScale(f);
+	//	needToUpdateFrameUniform = true;
+	//}
+
+	//if (u != mFrameGraphics.GetWaveParticleScale())
+	//{
+	//	mFrameGraphics.SetTessellationFactor(u);
+	//	needToUpdateFrameUniform = true;
+	//}
+
+	//if (needToUpdateFrameUniform)
+	//{
+	//	mFrameGraphics.UpdateUniformBuffer();
+	//}
+
+
 
 	ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
