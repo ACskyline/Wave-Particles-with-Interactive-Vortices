@@ -113,6 +113,14 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ![](img/m2-2.gif)
 
+* Fluid with different cell size
+
+![](img/m2fluid1.gif)
+
+* Fluid with different impulse location
+
+![](img/m2fluid2.gif)
+
 ## References
 
 [River Editor Water Simulation in Real-Time](https://80.lv/articles/river-editor-water-simulation-in-real-time/)
