@@ -13,12 +13,12 @@ DS_OUTPUT main(
     
     float4 data = t0.SampleLevel(s0, texCoord, 0);
     //pos.xz += data.gb;
-    //pos.y += data.r * heightScale;
-    //pos.x += data.b * dxScale;
-    //pos.z += data.a * dzScale;
-    pos.y += data.z * heightScale;
-    pos.x += data.x * dxScale;
-    pos.z += data.y * dzScale;
+    pos.y += data.r * heightScale;
+    pos.x += data.b;// * dxScale;
+    pos.z += data.a;// * dzScale;
+    //pos.y += data.z * heightScale;
+    //pos.x += data.x * 0.001;// * dxScale;
+    //pos.z += data.y * 0.001;// * dzScale;
 
     Output.pos = mul(mul(viewProj, model), float4(pos, 1));
     Output.texCoord = texCoord;

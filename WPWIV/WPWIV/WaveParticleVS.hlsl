@@ -12,7 +12,7 @@ WAVE_PARTICLE main(VS_INPUT input)
     float speed = speedScale * input.nor.z;
     
 
-    pos = pos + speed * timeScale * float(time) * direction;
+    //pos = pos + speed * timeScale * float(time) * direction;
 
     float2 posTemp = abs(pos);
     
