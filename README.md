@@ -67,7 +67,7 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
     - [x] Use flow map to advect wave particle
 
-    - [x] Fluid simulation
+   - [x] Fluid simulation
 
 - [ ] Milestone 3
 
