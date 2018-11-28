@@ -770,7 +770,7 @@ bool Renderer::CreatePostProcessRootSignature(
 	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampler.MipLODBias = 0;
 	sampler.MaxAnisotropy = 0;
 	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
@@ -1027,12 +1027,28 @@ bool Renderer::CreateGraphicsRootSignature(
 	samplerClamp.RegisterSpace = 0;
 	samplerClamp.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerBorder, samplerClamp };
+	// create a static sampler
+	D3D12_STATIC_SAMPLER_DESC samplerWrap = {};
+	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerWrap.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.MipLODBias = 0;
+	samplerWrap.MaxAnisotropy = 0;
+	samplerWrap.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerWrap.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	samplerWrap.MinLOD = 0.0f;
+	samplerWrap.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerWrap.ShaderRegister = 2;
+	samplerWrap.RegisterSpace = 0;
+	samplerWrap.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerBorder, samplerClamp, samplerWrap };
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(rootParameterCount, // we have 2 root parameters
 		rootParameters, // a pointer to the beginning of our root parameters array
-		2, // we have one static sampler
+		_countof(samplers), // we have one static sampler
 		samplers, // a pointer to our static sampler (array)
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // we can deny shader stages here for better performance
 		//D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
@@ -1044,7 +1060,7 @@ bool Renderer::CreateGraphicsRootSignature(
 	hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff);
 	if (FAILED(hr))
 	{
-		OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+		CheckError(hr, errorBuff);
 		return false;
 	}
 

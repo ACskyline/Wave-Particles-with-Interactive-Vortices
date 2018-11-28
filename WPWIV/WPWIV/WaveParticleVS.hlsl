@@ -7,11 +7,8 @@ WAVE_PARTICLE main(VS_INPUT input)
     float2 pos = float2(input.pos.xy);
     float2 direction = input.texCoord;
     float height = input.pos.z;
-    float radius = radiusScale * input.nor.x;
-    float beta = input.nor.y;
-    float speed = speedScale * input.nor.z;
+    float speed = waveParticleSpeedScale * input.nor.z;
     
-
     pos = pos + speed * timeScale * float(time) * direction;
 
     float2 posTemp = abs(pos);
@@ -38,8 +35,6 @@ WAVE_PARTICLE main(VS_INPUT input)
     output.pos = float4(pos, 0.5, 1.0);
     output.direction = direction;
     output.height = height;
-    output.radius = radius;
-    output.beta = beta;
     output.speed = speed;
 
     return output;

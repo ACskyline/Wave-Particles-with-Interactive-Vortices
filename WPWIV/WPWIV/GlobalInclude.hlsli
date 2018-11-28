@@ -3,9 +3,6 @@
 #define PI 3.14159265359
 #define HALF_PI 1.57079632679
 
-//#define USE_RADIUS
-#define USE_SPEED
-
 float2 BLERP2(float2 v00, float2 v01, float2 v10, float2 v11, float2 uv)
 {
     return lerp(lerp(v00, v01, float2(uv.y, uv.y)), lerp(v10, v11, float2(uv.y, uv.y)), float2(uv.x, uv.x));
@@ -49,8 +46,8 @@ cbuffer FrameUniform : register(b2)
 cbuffer SceneUniform : register(b3)
 {
     float heightScale;
-    float radiusScale;
-    float speedScale;
+    float waveParticleSpeedScale;
+    float flowSpeed;
     float dxScale;
     float dzScale;
     float timeScale;
@@ -59,6 +56,15 @@ cbuffer SceneUniform : register(b3)
     uint textureWidth;
     uint textureHeight;
     uint blurRadius;
+    uint mode; 
+    //0 - default, 
+    //1 - flow map, 
+    //2 - flow map driven texture, 
+    //3 - wave particle, 
+    //4 - horizontal blur, 
+    //5 - vertical blur, 
+    //6 - horizontal and vertical blur,
+    //7 - wave particle driven deviation
 };
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 /////////////// UNIFORM ///////////////
@@ -83,8 +89,6 @@ struct WAVE_PARTICLE
     float4 pos : SV_POSITION;
     float2 direction : DIRECTION;
     float height : HEIGHT;
-    float radius : RADIUS;
-    float beta : BETA;
     float speed : SPEED;
 };
 
@@ -129,7 +133,16 @@ struct DS_OUTPUT
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 Texture2D t0 : register(t0);
 Texture2D t1 : register(t1);
+Texture2D t2 : register(t2);
 SamplerState s0 : register(s0);
 SamplerState s1 : register(s1);
+SamplerState s2 : register(s2);
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// PS /////////////////
+
+//
+//    |  wave_particle |   post_process  |    graphics   |
+// s0 |border(not used)|      wrap       |     border    |
+// s1 |      n/a       |      n/a        |     clamp     |
+// s2 |      n/a       |      n/a        |     wrap      |
+//

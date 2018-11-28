@@ -43,14 +43,14 @@ void Scene::SetUniformHeightScale(float _heightScale)
 	uniform.heightScale = _heightScale;
 }
 
-void Scene::SetUniformRadiusScale(float _radiusScale)
+void Scene::SetUniformWaveParticleSpeedScale(float _waveParticleSpeedScale)
 {
-	uniform.radiusScale = _radiusScale;
+	uniform.waveParticleSpeedScale = _waveParticleSpeedScale;
 }
 
-void Scene::SetUniformSpeedScale(float _speedScale)
+void Scene::SetUniformFlowSpeed(float _flowSpeed)
 {
-	uniform.speedScale = _speedScale;
+	uniform.flowSpeed = _flowSpeed;
 }
 
 void Scene::SetUniformDxScale(float _dxScale)
@@ -84,9 +84,14 @@ void Scene::SetUniformTexutureWidthHeight(uint32_t texWidth, uint32_t texHeight)
 	uniform.textureHeight = texHeight;
 }
 
-void Scene::SetUniformBlurRadius(uint32_t blurR)
+void Scene::SetUniformBlurRadius(uint32_t blurRadius)
 {
-	uniform.blurRadius = blurR;
+	uniform.blurRadius = blurRadius;
+}
+
+void Scene::SetUniformMode(uint32_t mode)
+{
+	uniform.mode = mode;
 }
 
 float Scene::GetUniformHeightScale()
@@ -94,14 +99,14 @@ float Scene::GetUniformHeightScale()
 	return uniform.heightScale;
 }
 
-float Scene::GetUniformRadiusScale()
+float Scene::GetUniformWaveParticleSpeedScale()
 {
-	return uniform.radiusScale;
+	return uniform.waveParticleSpeedScale;
 }
 
-float Scene::GetUniformSpeedScale()
+float Scene::GetUniformFlowSpeed()
 {
-	return uniform.speedScale;
+	return uniform.flowSpeed;
 }
 
 float Scene::GetUniformDxScale()
@@ -132,6 +137,11 @@ uint32_t Scene::GetUniformInsideTessFactor()
 uint32_t Scene::GetUniformBlurRadius()
 {
 	return uniform.blurRadius;
+}
+
+uint32_t Scene::GetUniformMode()
+{
+	return uniform.mode;
 }
 
 bool Scene::LoadScene()

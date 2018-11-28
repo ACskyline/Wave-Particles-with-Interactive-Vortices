@@ -9,8 +9,8 @@ public:
 	struct SceneUniform
 	{
 		float heightScale;
-		float radiusScale;
-		float speedScale;
+		float waveParticleSpeedScale;
+		float flowSpeed;
 		float dxScale;
 		float dzScale;
 		float timeScale;
@@ -19,6 +19,15 @@ public:
 		uint32_t textureWidth;
 		uint32_t textureHeight;
 		uint32_t blurRadius;
+		uint32_t mode; 
+		//0 - default, 
+		//1 - flow map, 
+		//2 - flow map driven texture, 
+		//3 - wave particle, 
+		//4 - horizontal blur, 
+		//5 - vertical blur, 
+		//6 - horizontal and vertical blur
+		//7 - wave particle driven deviation
 	};
 
 	Scene();
@@ -31,24 +40,26 @@ public:
 	void AddRenderTexture(RenderTexture* pRenderTexture);
 
 	void SetUniformHeightScale(float _heightScale);
-	void SetUniformRadiusScale(float _radiusScale);
-	void SetUniformSpeedScale(float _speedScale);
+	void SetUniformWaveParticleSpeedScale(float _waveParticleSpeedScale);
+	void SetUniformFlowSpeed(float _flowSpeed);
 	void SetUniformDxScale(float _dxScale);
 	void SetUniformDzScale(float _dzScale);
 	void SetUniformTimeScale(float _timeScale);
 	void SetUniformEdgeTessFactor(uint32_t _tessellationFactor);
 	void SetUniformInsideTessFactor(uint32_t _tessellationFactor);
 	void SetUniformTexutureWidthHeight(uint32_t texWidth, uint32_t texHeight);
-	void SetUniformBlurRadius(uint32_t blurR);
+	void SetUniformBlurRadius(uint32_t _blurRadius);
+	void SetUniformMode(uint32_t _mode);
 	float GetUniformHeightScale();
-	float GetUniformRadiusScale();
-	float GetUniformSpeedScale();
+	float GetUniformWaveParticleSpeedScale();
+	float GetUniformFlowSpeed();
 	float GetUniformDxScale();
 	float GetUniformDzScale();
 	float GetUniformTimeScale();
 	uint32_t GetUniformEdgeTessFactor();
 	uint32_t GetUniformInsideTessFactor();
 	uint32_t GetUniformBlurRadius();
+	uint32_t GetUniformMode();
 
 	bool LoadScene();
 	bool InitScene(ID3D12Device* device);

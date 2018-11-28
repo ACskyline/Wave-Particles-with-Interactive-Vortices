@@ -53,7 +53,7 @@ Shader mPostProcessPS_H(Shader::ShaderType::PixelShader, L"PostProcessPS_H.hlsl"
 Shader mPostProcessPS_V(Shader::ShaderType::PixelShader, L"PostProcessPS_V.hlsl");
 Shader mWaveParticleVS(Shader::ShaderType::VertexShader, L"WaveParticleVS.hlsl");
 Shader mWaveParticlePS(Shader::ShaderType::PixelShader, L"WaveParticlePS.hlsl");
-Texture mHeightMap(L"wave.jpg");
+Texture mTextureFlowmap(L"flow2.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
 RenderTexture mRenderTextureWaveParticle(500, 500);
 RenderTexture mRenderTexturePostProcessH(500, 500);
@@ -81,8 +81,8 @@ bool CreateScene()
 	mFrameGraphics.AddCamera(&mCamera);
 	mFrameGraphics.AddMesh(&mWaterSurface);// (&mPlane);
 	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV);
-	//mFrameGraphics.AddTexture(&mHeightMap);
 	mFrameGraphics.AddTexture(&mTextureAlbedo);
+	mFrameGraphics.AddTexture(&mTextureFlowmap);
 
 	mFrameGraphics.SetUniformTime(0);
 	mFramePostProcess.SetUniformTime(0);
@@ -108,7 +108,7 @@ bool CreateScene()
 	mScene.AddShader(&mWaveParticleVS);
 	mScene.AddShader(&mWaveParticlePS);
 	mScene.AddTexture(&mTextureAlbedo);
-	mScene.AddTexture(&mHeightMap);
+	mScene.AddTexture(&mTextureFlowmap);
 	mScene.AddRenderTexture(&mRenderTextureWaveParticle);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessH);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessV);
@@ -116,13 +116,14 @@ bool CreateScene()
 	mScene.SetUniformEdgeTessFactor(4);
 	mScene.SetUniformInsideTessFactor(2);
 	mScene.SetUniformHeightScale(1.3);
-	mScene.SetUniformRadiusScale(1.05);
-	mScene.SetUniformSpeedScale(0.0001);
+	mScene.SetUniformWaveParticleSpeedScale(0.0001);
+	mScene.SetUniformFlowSpeed(0.0001);
 	mScene.SetUniformTexutureWidthHeight(500, 500);
 	mScene.SetUniformBlurRadius(50);
 	mScene.SetUniformDxScale(0.05);
 	mScene.SetUniformDzScale(0.05);
 	mScene.SetUniformTimeScale(1.0);
+	mScene.SetUniformMode(0);
 
 	if (!mScene.LoadScene())
 		return false;
@@ -654,24 +655,11 @@ bool InitD3D()
 
 void Update()
 {
-	//printf("frame:%d\n", frameCount);
 	frameCount++;
 	mFrameWaveParticle.SetUniformTime(frameCount);
 	mFrameWaveParticle.UpdateUniformBuffer();
-	//mCube1.UpdateUniform();
-	//mCube1.UpdateUniformBuffer();
-
-	//XMFLOAT3 temp = mCube2.GetPosition();
-	//temp.y = temp.y > 2.f ? 0.f : temp.y + 0.0001f;
-	//mCube2.SetPosition(temp);
-	//mCube2.UpdateUniform();
-	//mCube2.UpdateUniformBuffer();
-
-	//XMFLOAT3 tempR = mPlane2.GetRotation();
-	//tempR.y += 0.0001f;
-	//mPlane2.SetRotation(tempR);
-	//mPlane2.UpdateUniform();
-	//mPlane2.UpdateUniformBuffer();
+	mFrameGraphics.SetUniformTime(frameCount);
+	mFrameGraphics.UpdateUniformBuffer();
 }
 
 void WaitForPreviousFrame()
@@ -863,48 +851,43 @@ void Gui()
 	ImGui::NewFrame();
 
 	static float heightScale = mScene.GetUniformHeightScale();
-	static float radiusScale = mScene.GetUniformRadiusScale();
-	static float speedScale = mScene.GetUniformSpeedScale();
+	static float waveParticleSpeedScale = mScene.GetUniformWaveParticleSpeedScale();
+	static float flowSpeed = mScene.GetUniformFlowSpeed();
 	static float dxScale = mScene.GetUniformDxScale();
 	static float dzScale = mScene.GetUniformDzScale();
 	static float timeScale = mScene.GetUniformTimeScale();
 	static int edgeTess = mScene.GetUniformEdgeTessFactor();
 	static int insideTess = mScene.GetUniformInsideTessFactor();
 	static int blurRadius = mScene.GetUniformBlurRadius();
+	static int mode = mScene.GetUniformMode();
 	bool needToUpdateSceneUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	//ImGui::SetNextWindowSize(ImVec2(300, 200));
 
-	ImGui::Begin("Control Panel ");                          // Create a window called "Hello, world!" and append into it.
+	ImGui::Begin("Control Panel ");                        
+	ImGui::Text("Wave Particles Scale ");
 
-	ImGui::Text("Wave Particles Scale ");               // Display some text (you can use a format strings too)
+	ImGui::Combo("mode", &mode, "default\0flow map\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0wave particle driven deviation\0\0");
 
-	ImGui::SliderFloat("height ", &heightScale, 0.0f, 3.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
-	ImGui::SliderFloat("radius ", &radiusScale, 0.0f, 3.0f);
-	ImGui::SliderFloat("speed ", &speedScale, 0.0f, 0.0005f, "%.6f");
+	ImGui::SliderFloat("height ", &heightScale, 0.0f, 3.0f);
 	ImGui::SliderFloat("dx ", &dxScale, 0.0f, 0.13f, "%.6f");
 	ImGui::SliderFloat("dz ", &dzScale, 0.0f, 0.13f, "%.6f");
-	ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 1.0f, "%.6f");
-	ImGui::SliderInt("edge tess ", &edgeTess, 0, 128);
-	ImGui::SliderInt("inside tess ", &insideTess, 0, 128);
 	ImGui::SliderInt("blur radius ", &blurRadius, 0, 500);
+	ImGui::SliderFloat("wpSpeed ", &waveParticleSpeedScale, 0.0f, 0.0005f, "%.6f");
+	ImGui::SliderFloat("flowSpeed ", &flowSpeed, 0.f, 0.0005f, "%.6f");
+	ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 100.0f, "%.6f");
+	ImGui::SliderInt("edge tess ", &edgeTess, 0, 32);
+	ImGui::SliderInt("inside tess ", &insideTess, 0, 32);
+
+	if (mode != mScene.GetUniformMode())
+	{
+		mScene.SetUniformMode(mode);
+		needToUpdateSceneUniform = true;
+	}
 
 	if (heightScale != mScene.GetUniformHeightScale())
 	{
 		mScene.SetUniformHeightScale(heightScale);
-		needToUpdateSceneUniform = true;
-	}
-
-	if (radiusScale != mScene.GetUniformRadiusScale())
-	{
-		mScene.SetUniformRadiusScale(radiusScale);
-		needToUpdateSceneUniform = true;
-	}
-
-	if (speedScale != mScene.GetUniformSpeedScale())
-	{
-		mScene.SetUniformSpeedScale(speedScale);
 		needToUpdateSceneUniform = true;
 	}
 
@@ -917,6 +900,24 @@ void Gui()
 	if (dzScale != mScene.GetUniformDzScale())
 	{
 		mScene.SetUniformDzScale(dzScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (blurRadius != mScene.GetUniformBlurRadius())
+	{
+		mScene.SetUniformBlurRadius(blurRadius);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (waveParticleSpeedScale != mScene.GetUniformWaveParticleSpeedScale())
+	{
+		mScene.SetUniformWaveParticleSpeedScale(waveParticleSpeedScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (flowSpeed != mScene.GetUniformFlowSpeed())
+	{
+		mScene.SetUniformFlowSpeed(flowSpeed);
 		needToUpdateSceneUniform = true;
 	}
 
@@ -938,12 +939,6 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 	
-	if (blurRadius != mScene.GetUniformBlurRadius())
-	{
-		mScene.SetUniformBlurRadius(blurRadius);
-		needToUpdateSceneUniform = true;
-	}
-
 	if (needToUpdateSceneUniform)
 	{
 		mScene.UpdateUniformBuffer();

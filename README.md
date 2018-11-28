@@ -113,6 +113,38 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ![](img/m2-2.gif)
 
+* Wave particle with flow map
+
+![](img/m2-3.gif)
+
+* Flow map
+
+![](img/m2-4.jpg)
+
+* Flow map driven texture
+
+![](img/m2-5.gif)
+
+* Wave particle
+
+![](img/m2-6.gif)
+
+* Horizontal blur
+
+![](img/m2-7.gif)
+
+* Vertical blur
+
+![](img/m2-8.gif)
+
+* Horizontal and vertical blur
+
+![](img/m2-9.gif)
+
+* Wave particle driven deviation
+
+![](img/m2-10.gif)
+
 * Fluid with different cell size
 
 ![](img/m2fluid1.gif)

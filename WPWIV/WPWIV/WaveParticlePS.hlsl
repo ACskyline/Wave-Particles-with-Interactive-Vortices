@@ -3,5 +3,5 @@
 float4 main(WAVE_PARTICLE input) : SV_TARGET
 {
     // return interpolated color
-    return float4(input.height, input.radius, input.direction);
+    return float4(input.height, input.speed, input.direction);
 }
