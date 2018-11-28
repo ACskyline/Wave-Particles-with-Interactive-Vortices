@@ -57,7 +57,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 
 	else if (Curimpulse == 2)//velocity
 	{
-		if (d < 0.05)
+		if (d < 0.03)
 		{
 			col = float4(0.6, 0, 0.6, 1);
 		}
@@ -65,7 +65,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 	}
 	float4 ob = t2.Sample(s0, coord);
 	if(ob.x!=0)
-	col += float4(0.001, 0.001, 0.001, 0);
+	col += float4(0.0015, 0.0015, 0.0015, 0);
 	return col;
 
 }

@@ -9,4 +9,7 @@ e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(347): warning C4244: 'initial
 e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(348): warning C4305: '=': truncation from 'double' to 'float'
 e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(661): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
 e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(1363): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(1366): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(1367): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\cis565\wavev4\waveparticle\wpwiv\wpwiv\main.cpp(1386): warning C4305: 'argument': truncation from 'double' to 'float'
   WPWIV.vcxproj -> E:\cis565\wavev4\waveparticle\WPWIV\x64\Release\WPWIV.exe

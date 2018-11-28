@@ -1363,10 +1363,13 @@ void Gui()
 	static float impulsex = 0.3;
 	static float impulsey = 0.5;
 
+	static float vDis = 0.99;
+	static float dDis = 0.99;
+
 	bool needToUpdateFrameUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImVec2(200, 120));
+	ImGui::SetNextWindowSize(ImVec2(400, 220));
 
 	ImGui::Begin("Control Panel ");                          // Create a window called "Hello, world!" and append into it.
 
@@ -1375,10 +1378,12 @@ void Gui()
 	//ImGui::SliderFloat("float ", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
 	//ImGui::SliderInt("uint ", &u, 0, 128);
 
-
+	ImGui::Text("Common fluid properties");
 	ImGui::SliderInt("Cellnum", &cellnum, 280, 1000);
 	ImGui::SliderFloat("impulseX", &impulsex, 0, 1);
 	ImGui::SliderFloat("impulseY", &impulsey, 0, 1);
+	ImGui::Text("Dissipation properties");
+	ImGui::SliderFloat("Dissipation", &vDis, 0.99, 1);
 
 	DIMOUSESTATE mouseCurrState;
 	DIMouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseCurrState);
@@ -1390,8 +1395,11 @@ void Gui()
 	impulsex = absoluteMpos.x / 1000;
 	impulsey = absoluteMpos.y / 1000;
 
+
+
 	mFluid.Setfluidcellnum(cellnum);
 	mFluid.Setimpulsepos(impulsex, impulsey);
+	mFluid.setveldissipation(vDis);
 	mFluid.UpdateUniformBuffer();
 
 

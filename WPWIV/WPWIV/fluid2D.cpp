@@ -130,6 +130,15 @@ void Fluid::setimpulsedens()
 	uniform.Curimpulse = 1;
 }
 
+void Fluid::setveldissipation(float x)
+{
+	uniform.VelocityDissipation = x;
+}
+
+void Fluid::setdensdissipation(float x)
+{
+	uniform.DensityDissipation = x;
+}
 
 
 void Fluid::resettextureOP()

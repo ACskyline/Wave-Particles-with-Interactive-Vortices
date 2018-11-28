@@ -13,8 +13,8 @@ struct FluidUniform
 	const float SmokeWeight = 0.05f;
 	const float GradientScale = 1.125f / CellSize;
 	const float TemperatureDissipation = 0.99f;
-	const float VelocityDissipation = 0.99f;
-	const float DensityDissipation = 0.9999f;
+	float VelocityDissipation = 1.f;
+	float DensityDissipation = 1.f;
 	XMFLOAT2 velocitystate = {0,1};
 	XMFLOAT2 temperaturestate = { 0,1 };
 	XMFLOAT2 pressurestate = { 0,1 };
@@ -63,6 +63,9 @@ public:
 
 	void Setfluidcellnum(int num);
 	void Setimpulsepos(float x, float y);
+
+	void setveldissipation(float x);
+	void setdensdissipation(float x);
 protected:
 
 	FluidUniform uniform;
