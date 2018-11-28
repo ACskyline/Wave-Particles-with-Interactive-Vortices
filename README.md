@@ -61,11 +61,15 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
     - [x] Multiple particles
 
-  - [ ] Combine flow map with wave particle
+  - [x] Combine flow map with wave particle
 
     - [x] Find some interesting flow maps
 
-    - [ ] Use flow map to advect wave particle
+    - [x] Use flow map to advect wave particle
+
+    - [x] Fluid simulation
+
+- [ ] Milestone 3
 
   - [ ] Improve rendering method
 
@@ -73,11 +77,7 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
     - [ ] Subsurface scattering
 
-- [ ] Milestone 3
-
   - [ ] Update flow map in real-time
-
-    - [ ] Fluid simulation
 
     - [ ] Create blockers (rocks and etc.)
 
