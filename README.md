@@ -153,6 +153,10 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ![](img/m2fluid2.gif)
 
+* Influence of fluid density/velocity dissipation
+
+![](img/dissipation.gif)
+
 * Flow map we will be using to guide the movement of wave particles
 
 ![](img/m2fluid3.gif)
