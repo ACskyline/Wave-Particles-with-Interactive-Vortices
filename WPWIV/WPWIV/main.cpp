@@ -35,6 +35,8 @@ HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
 UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. each fence will have its own value
 int frameIndex; // current rtv we are on
 
+XMFLOAT2 absoluteMpos(0, 0);
+
 OrbitCamera mCamera(4.f, 180.f, -90.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 
@@ -1373,10 +1375,20 @@ void Gui()
 	//ImGui::SliderFloat("float ", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f  
 	//ImGui::SliderInt("uint ", &u, 0, 128);
 
+
 	ImGui::SliderInt("Cellnum", &cellnum, 280, 1000);
 	ImGui::SliderFloat("impulseX", &impulsex, 0, 1);
 	ImGui::SliderFloat("impulseY", &impulsey, 0, 1);
 
+	DIMOUSESTATE mouseCurrState;
+	DIMouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseCurrState);
+	if (mouseAcquired)
+	{
+		absoluteMpos.x += mouseCurrState.lX;
+		absoluteMpos.y += mouseCurrState.lY;
+	}
+	impulsex = absoluteMpos.x / 1000;
+	impulsey = absoluteMpos.y / 1000;
 
 	mFluid.Setfluidcellnum(cellnum);
 	mFluid.Setimpulsepos(impulsex, impulsey);

@@ -14,5 +14,7 @@ float4 main(VSQuadOut input) : SV_TARGET
 	coldens = float4(coldens.x, coldens.x, coldens.x, 1);
 	float4 vel = t4.Sample(s0, input.uv);
 	float4 pressure = t8.Sample(s0, input.uv);
+	coldens *= 2;
+	clamp(coldens, 0, 0.8);
 	return coldens;
 }
