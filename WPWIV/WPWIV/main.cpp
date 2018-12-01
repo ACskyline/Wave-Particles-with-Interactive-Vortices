@@ -56,8 +56,10 @@ Shader mWaveParticlePS(Shader::ShaderType::PixelShader, L"WaveParticlePS.hlsl");
 Texture mTextureFlowmap(L"flow2.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
 RenderTexture mRenderTextureWaveParticle(500, 500);
-RenderTexture mRenderTexturePostProcessH(500, 500);
-RenderTexture mRenderTexturePostProcessV(500, 500);
+RenderTexture mRenderTexturePostProcessH1(500, 500);
+//RenderTexture mRenderTexturePostProcessH2(500, 500);
+RenderTexture mRenderTexturePostProcessV1(500, 500);
+//RenderTexture mRenderTexturePostProcessV2(500, 500);
 
 //imgui stuff
 ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
@@ -67,6 +69,8 @@ ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 bool CreateScene()
 {
+	// the adding order of textures is the register number
+
 	mFrameWaveParticle.AddCamera(&mDummyCamera);
 	mFrameWaveParticle.AddMesh(&mWaveParticle);
 	mFrameWaveParticle.AddRenderTexture(&mRenderTextureWaveParticle);
@@ -74,13 +78,17 @@ bool CreateScene()
 	mFramePostProcess.AddCamera(&mDummyCamera);
 	mFramePostProcess.AddMesh(&mQuad);
 	mFramePostProcess.AddTexture(&mRenderTextureWaveParticle);
-	mFramePostProcess.AddTexture(&mRenderTexturePostProcessH);
-	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH);
-	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV);
+	mFramePostProcess.AddTexture(&mRenderTexturePostProcessH1);
+	//mFramePostProcess.AddTexture(&mRenderTexturePostProcessH2);
+	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH1);
+	//mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH2);
+	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV1);
+	//mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV2);
 
 	mFrameGraphics.AddCamera(&mCamera);
 	mFrameGraphics.AddMesh(&mWaterSurface);// (&mPlane);
-	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV);
+	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV1);
+	//mFrameGraphics.AddTexture(&mRenderTexturePostProcessV2);
 	mFrameGraphics.AddTexture(&mTextureAlbedo);
 	mFrameGraphics.AddTexture(&mTextureFlowmap);
 
@@ -110,8 +118,10 @@ bool CreateScene()
 	mScene.AddTexture(&mTextureAlbedo);
 	mScene.AddTexture(&mTextureFlowmap);
 	mScene.AddRenderTexture(&mRenderTextureWaveParticle);
-	mScene.AddRenderTexture(&mRenderTexturePostProcessH);
-	mScene.AddRenderTexture(&mRenderTexturePostProcessV);
+	mScene.AddRenderTexture(&mRenderTexturePostProcessH1);
+	//mScene.AddRenderTexture(&mRenderTexturePostProcessH2);
+	mScene.AddRenderTexture(&mRenderTexturePostProcessV1);
+	//mScene.AddRenderTexture(&mRenderTexturePostProcessV2);
 
 	mScene.SetUniformEdgeTessFactor(4);
 	mScene.SetUniformInsideTessFactor(2);
@@ -551,6 +561,7 @@ bool InitD3D()
 		Renderer::AdditiveBlend(),
 		Renderer::NoDepthTest(),
 		DXGI_FORMAT_R16G16B16A16_FLOAT,
+		1,
 		&mWaveParticleVS,
 		nullptr,
 		nullptr,
@@ -579,6 +590,7 @@ bool InitD3D()
 		CD3DX12_BLEND_DESC(D3D12_DEFAULT),//Renderer::AdditiveBlend(),
 		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
 		DXGI_FORMAT_R16G16B16A16_FLOAT,
+		2,
 		&mPostProcessVS,
 		nullptr,
 		nullptr,
@@ -597,6 +609,7 @@ bool InitD3D()
 		CD3DX12_BLEND_DESC(D3D12_DEFAULT),//Renderer::AdditiveBlend(),
 		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
 		DXGI_FORMAT_R16G16B16A16_FLOAT,
+		2,
 		&mPostProcessVS,
 		nullptr,
 		nullptr,
@@ -625,6 +638,7 @@ bool InitD3D()
 		CD3DX12_BLEND_DESC(D3D12_DEFAULT),// Renderer::NoBlend(),
 		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
 		DXGI_FORMAT_R8G8B8A8_UNORM,
+		1,
 		&mVertexShader,
 		&mHullShader,
 		&mDomainShader,
@@ -744,7 +758,7 @@ void UpdatePipeline()
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	commandList->SetPipelineState(mRenderer.GetPostProcessPSO(0));
 	mRenderer.RecordPostProcessPipeline(
-		mRenderTexturePostProcessH.GetRtvHandle(),
+		mRenderTexturePostProcessH1.GetRtvHandle(),
 		mRenderer.GetDsvHandle(),
 		commandList,
 		mRenderer.GetPostProcessRootSignature(),
@@ -756,13 +770,13 @@ void UpdatePipeline()
 	///////// MY POSTPROCESS PIPELINE /////////
 
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
 
 	///////// MY POSTPROCESS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	commandList->SetPipelineState(mRenderer.GetPostProcessPSO(1));
 	mRenderer.RecordPostProcessPipeline(
-		mRenderTexturePostProcessV.GetRtvHandle(),
+		mRenderTexturePostProcessV1.GetRtvHandle(),
 		mRenderer.GetDsvHandle(),
 		commandList,
 		mRenderer.GetPostProcessRootSignature(),
@@ -773,7 +787,7 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS PIPELINE /////////
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0));
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0));
 
 	///////// MY GRAPHICS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -790,7 +804,7 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY GRAPHICS PIPELINE /////////
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV.GetTextureBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
 
 	///////// IMGUI PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -867,7 +881,7 @@ void Gui()
 	ImGui::Begin("Control Panel ");                        
 	ImGui::Text("Wave Particles Scale ");
 
-	ImGui::Combo("mode", &mode, "default\0flow map\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0wave particle driven deviation\0\0");
+	ImGui::Combo("mode", &mode, "default\0flow map\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0\0");
 
 	ImGui::SliderFloat("height ", &heightScale, 0.0f, 3.0f);
 	ImGui::SliderFloat("dx ", &dxScale, 0.0f, 0.13f, "%.6f");

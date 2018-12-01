@@ -3,7 +3,7 @@
 float4 main(VS_OUTPUT input) : SV_TARGET
 {    
     float4 data = t0.Sample(s0, input.texCoord); //height, speed, direction
-    float4 f = float4(0, data.x, data.x, 1); //height, 0, height
+    float4 f = float4(0, data.x, data.x, 1); //0, height, height
     if(mode==0||mode==4||mode==6||mode==7)
     {
         for (int i = 1; i <= blurRadius; i++)

@@ -37,6 +37,7 @@ public:
 		D3D12_BLEND_DESC blendDesc,
 		D3D12_DEPTH_STENCIL_DESC dsDesc,
 		DXGI_FORMAT rtvFormat,
+		int rtvCount,
 		Shader* vertexShader,
 		Shader* hullShader,
 		Shader* domainShader,
@@ -93,6 +94,16 @@ public:
 
 	void RecordPostProcessPipeline(
 		CD3DX12_CPU_DESCRIPTOR_HANDLE renderTarget,
+		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
+		ID3D12GraphicsCommandList* commandList,
+		ID3D12RootSignature* rootSignature,
+		ID3D12DescriptorHeap* descriptorHeap,
+		Frame* pFrame,
+		Scene* pScene,
+		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+
+	void RecordPostProcessPipeline(
+		vector<RenderTexture> renderTextureVec,
 		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
 		ID3D12GraphicsCommandList* commandList,
 		ID3D12RootSignature* rootSignature,

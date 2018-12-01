@@ -27,7 +27,7 @@ public:
 		//4 - horizontal blur, 
 		//5 - vertical blur, 
 		//6 - horizontal and vertical blur
-		//7 - wave particle driven deviation
+		//7 - normal
 	};
 
 	Scene();

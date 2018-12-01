@@ -308,6 +308,7 @@ bool Renderer::CreatePSO(
 	D3D12_BLEND_DESC blendDesc,
 	D3D12_DEPTH_STENCIL_DESC dsDesc,
 	DXGI_FORMAT rtvFormat,
+	int rtvCount,
 	Shader* vertexShader,
 	Shader* hullShader,
 	Shader* domainShader,
@@ -348,12 +349,15 @@ bool Renderer::CreatePSO(
 	if (geometryShader != nullptr) psoDesc.GS = geometryShader->GetShaderByteCode();
 	if (pixelShader != nullptr) psoDesc.PS = pixelShader->GetShaderByteCode(); // same as VS but for pixel shader
 	psoDesc.PrimitiveTopologyType = primitiveTType;// D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; // type of topology we are drawing
-	psoDesc.RTVFormats[0] = rtvFormat; // format of the render target
+	for (int i = 0; i < rtvCount; i++)
+	{
+		psoDesc.RTVFormats[i] = rtvFormat; // format of the render target
+	}
 	psoDesc.SampleDesc = sampleDesc; // must be the same sample description as the swapchain and depth/stencil buffer
 	psoDesc.SampleMask = 0xffffffff; // sample mask has to do with multi-sampling. 0xffffffff means point sampling is done
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT); // a default rasterizer state.
 	psoDesc.BlendState = blendDesc;// CD3DX12_BLEND_DESC(D3D12_DEFAULT); // a default blent state.
-	psoDesc.NumRenderTargets = 1; // we are only binding one render target
+	psoDesc.NumRenderTargets = rtvCount; // we are only binding one render target
 	psoDesc.DepthStencilState = dsDesc;// CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
 
 	// create the pso
@@ -667,6 +671,69 @@ void Renderer::RecordPostProcessPipeline(
 	// Clear the render target by using the ClearRenderTargetView command
 	const float clearColor[] = { 0.8f, 0.2f, 0.4f, 1.0f };
 	commandList->ClearRenderTargetView(renderTarget, clearColor, 0, nullptr);
+
+	// clear the depth/stencil buffer
+	commandList->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	// set root signature
+	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
+
+	// set the descriptor heap
+	if (descriptorHeap != nullptr)
+	{
+		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
+		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	}
+
+	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
+	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
+	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
+	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
+	int meshCount = pFrame->GetMeshVec().size();
+	for (int i = 0; i < meshCount; i++)
+	{
+		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
+		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
+		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
+		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
+	}
+}
+
+
+void Renderer::RecordPostProcessPipeline(
+	vector<RenderTexture> renderTextureVec,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
+	ID3D12GraphicsCommandList* commandList,
+	ID3D12RootSignature* rootSignature,
+	ID3D12DescriptorHeap* descriptorHeap,
+	Frame* pFrame,
+	Scene* pScene,
+	D3D_PRIMITIVE_TOPOLOGY primitiveType)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+{
+	int rtvCount = renderTextureVec.size();
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> rtvHandles;
+	rtvHandles.resize(rtvCount);
+
+	for (int i = 0; i < rtvCount; i++)
+	{
+		rtvHandles[i] = renderTextureVec[i].GetRtvHandle();
+	}
+	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(rtvCount, rtvHandles.data(), FALSE, &depthStencil);
+
+	// Clear the render target by using the ClearRenderTargetView command
+	const float clearColor[] = { 0.8f, 0.2f, 0.4f, 1.0f };
+	for (int i = 0; i < rtvCount; i++)
+	{
+		commandList->ClearRenderTargetView(rtvHandles[i], clearColor, 0, nullptr);
+	}
 
 	// clear the depth/stencil buffer
 	commandList->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
