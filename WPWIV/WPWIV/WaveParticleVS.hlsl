@@ -5,7 +5,7 @@ WAVE_PARTICLE main(VS_INPUT input)
     WAVE_PARTICLE output;
 
     float2 pos = float2(input.pos.xy);
-    float2 direction = input.texCoord;
+    float2 direction = normalize(input.texCoord);
     float height = input.pos.z;
     float speed = waveParticleSpeedScale * input.nor.z;
     
@@ -33,9 +33,8 @@ WAVE_PARTICLE main(VS_INPUT input)
     }
     
     output.pos = float4(pos, 0.5, 1.0);
-    output.direction = direction;
-    output.height = height;
-    output.speed = speed;
+    output.velocity = direction * speed;
+    output.amplitude = height * heightScale;
 
     return output;
 }

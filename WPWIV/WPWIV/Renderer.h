@@ -103,7 +103,7 @@ public:
 		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
 
 	void RecordPostProcessPipeline(
-		vector<RenderTexture> renderTextureVec,
+		const vector<RenderTexture*> &renderTextureVec,
 		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
 		ID3D12GraphicsCommandList* commandList,
 		ID3D12RootSignature* rootSignature,

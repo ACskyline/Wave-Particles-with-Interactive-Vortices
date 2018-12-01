@@ -1,18 +1,4 @@
-﻿  Renderer.cpp
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(119): warning C4244: 'argument': conversion from 'float' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(119): warning C4244: 'argument': conversion from 'float' to 'UINT64', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(382): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(383): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(464): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(614): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(615): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(696): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(718): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(759): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(907): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(908): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\renderer.cpp(989): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-  main.cpp
+﻿  main.cpp
   c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
 e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(128): warning C4305: 'argument': truncation from 'double' to 'float'
 e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(129): warning C4305: 'argument': truncation from 'double' to 'float'
@@ -26,5 +12,8 @@ e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(227): warning C4305: '='
 e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(232): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(233): warning C4305: '=': truncation from 'double' to 'float'
 e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(540): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-  Generating Code...
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(744): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(766): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(790): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(812): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
   WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

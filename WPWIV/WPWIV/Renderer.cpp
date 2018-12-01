@@ -706,7 +706,7 @@ void Renderer::RecordPostProcessPipeline(
 
 
 void Renderer::RecordPostProcessPipeline(
-	vector<RenderTexture> renderTextureVec,
+	const vector<RenderTexture*> &renderTextureVec,
 	CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
 	ID3D12GraphicsCommandList* commandList,
 	ID3D12RootSignature* rootSignature,
@@ -721,7 +721,7 @@ void Renderer::RecordPostProcessPipeline(
 
 	for (int i = 0; i < rtvCount; i++)
 	{
-		rtvHandles[i] = renderTextureVec[i].GetRtvHandle();
+		rtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
 	}
 	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
 

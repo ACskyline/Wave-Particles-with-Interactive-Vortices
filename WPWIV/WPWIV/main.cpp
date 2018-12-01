@@ -57,9 +57,9 @@ Texture mTextureFlowmap(L"flow2.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
 RenderTexture mRenderTextureWaveParticle(500, 500);
 RenderTexture mRenderTexturePostProcessH1(500, 500);
-//RenderTexture mRenderTexturePostProcessH2(500, 500);
+RenderTexture mRenderTexturePostProcessH2(500, 500);
 RenderTexture mRenderTexturePostProcessV1(500, 500);
-//RenderTexture mRenderTexturePostProcessV2(500, 500);
+RenderTexture mRenderTexturePostProcessV2(500, 500);
 
 //imgui stuff
 ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
@@ -79,18 +79,18 @@ bool CreateScene()
 	mFramePostProcess.AddMesh(&mQuad);
 	mFramePostProcess.AddTexture(&mRenderTextureWaveParticle);
 	mFramePostProcess.AddTexture(&mRenderTexturePostProcessH1);
-	//mFramePostProcess.AddTexture(&mRenderTexturePostProcessH2);
+	mFramePostProcess.AddTexture(&mRenderTexturePostProcessH2);
 	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH1);
-	//mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH2);
+	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessH2);
 	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV1);
-	//mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV2);
+	mFramePostProcess.AddRenderTexture(&mRenderTexturePostProcessV2);
 
 	mFrameGraphics.AddCamera(&mCamera);
 	mFrameGraphics.AddMesh(&mWaterSurface);// (&mPlane);
-	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV1);
-	//mFrameGraphics.AddTexture(&mRenderTexturePostProcessV2);
 	mFrameGraphics.AddTexture(&mTextureAlbedo);
 	mFrameGraphics.AddTexture(&mTextureFlowmap);
+	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV1);
+	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV2);
 
 	mFrameGraphics.SetUniformTime(0);
 	mFramePostProcess.SetUniformTime(0);
@@ -119,9 +119,9 @@ bool CreateScene()
 	mScene.AddTexture(&mTextureFlowmap);
 	mScene.AddRenderTexture(&mRenderTextureWaveParticle);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessH1);
-	//mScene.AddRenderTexture(&mRenderTexturePostProcessH2);
+	mScene.AddRenderTexture(&mRenderTexturePostProcessH2);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessV1);
-	//mScene.AddRenderTexture(&mRenderTexturePostProcessV2);
+	mScene.AddRenderTexture(&mRenderTexturePostProcessV2);
 
 	mScene.SetUniformEdgeTessFactor(4);
 	mScene.SetUniformInsideTessFactor(2);
@@ -130,8 +130,8 @@ bool CreateScene()
 	mScene.SetUniformFlowSpeed(0.0001);
 	mScene.SetUniformTexutureWidthHeight(500, 500);
 	mScene.SetUniformBlurRadius(50);
-	mScene.SetUniformDxScale(0.05);
-	mScene.SetUniformDzScale(0.05);
+	mScene.SetUniformDxScale(0.03);
+	mScene.SetUniformDzScale(0.03);
 	mScene.SetUniformTimeScale(1.0);
 	mScene.SetUniformMode(0);
 
@@ -734,8 +734,14 @@ void UpdatePipeline()
 		Running = false;
 	}
 
-	// RECORD GRAPHICS PIPELINE BEGIN //
+	///////// RECORD GRAPHICS COMMANDS BEGIN /////////
 	mRenderer.RecordBegin(frameIndex, commandList);
+	///////// RECORD GRAPHICS COMMANDS BEGIN /////////
+
+	vector<D3D12_RESOURCE_BARRIER> barrierGraphicsToWaveParticle = {
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+	};
+	commandList->ResourceBarrier(barrierGraphicsToWaveParticle.size(), barrierGraphicsToWaveParticle.data());
 
 	///////// MY WAVE PARTICLE PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -752,13 +758,19 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY WAVE PARTICLE PIPELINE /////////
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+	vector<D3D12_RESOURCE_BARRIER> barrierWaveParticleToPostprocessH = {
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH1.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH2.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+	};
+	commandList->ResourceBarrier(barrierWaveParticleToPostprocessH.size(), barrierWaveParticleToPostprocessH.data());
 	
-	///////// MY POSTPROCESS PIPELINE /////////
+	///////// MY POSTPROCESS H PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
+	vector<RenderTexture*> rtvVec1 = {&mRenderTexturePostProcessH1, &mRenderTexturePostProcessH2};
 	commandList->SetPipelineState(mRenderer.GetPostProcessPSO(0));
 	mRenderer.RecordPostProcessPipeline(
-		mRenderTexturePostProcessH1.GetRtvHandle(),
+		rtvVec1,
 		mRenderer.GetDsvHandle(),
 		commandList,
 		mRenderer.GetPostProcessRootSignature(),
@@ -767,16 +779,22 @@ void UpdatePipeline()
 		&mScene,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-	///////// MY POSTPROCESS PIPELINE /////////
+	///////// MY POSTPROCESS H PIPELINE /////////
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureWaveParticle.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0));
+	vector<D3D12_RESOURCE_BARRIER> barrierPostprocessHToPostprocessV = {
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessH2.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV2.GetTextureBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+	};
+	commandList->ResourceBarrier(barrierPostprocessHToPostprocessV.size(), barrierPostprocessHToPostprocessV.data());
 
-	///////// MY POSTPROCESS PIPELINE /////////
+	///////// MY POSTPROCESS V PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
+	vector<RenderTexture*> rtvVec2 = { &mRenderTexturePostProcessV1, &mRenderTexturePostProcessV2 };
 	commandList->SetPipelineState(mRenderer.GetPostProcessPSO(1));
 	mRenderer.RecordPostProcessPipeline(
-		mRenderTexturePostProcessV1.GetRtvHandle(),
+		rtvVec2,
 		mRenderer.GetDsvHandle(),
 		commandList,
 		mRenderer.GetPostProcessRootSignature(),
@@ -785,10 +803,14 @@ void UpdatePipeline()
 		&mScene,
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-	///////// MY POSTPROCESS PIPELINE /////////
+	///////// MY POSTPROCESS V PIPELINE /////////
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0));
-
+	vector<D3D12_RESOURCE_BARRIER> barrierPostprocessVToGraphics = {
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV2.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0)
+	};
+	commandList->ResourceBarrier(barrierPostprocessVToGraphics.size(), barrierPostprocessVToGraphics.data());
+	
 	///////// MY GRAPHICS PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	commandList->SetPipelineState(mRenderer.GetGraphicsPSO(0));
@@ -804,8 +826,6 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY GRAPHICS PIPELINE /////////
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0));
-
 	///////// IMGUI PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	commandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
@@ -814,8 +834,9 @@ void UpdatePipeline()
 	///////// IMGUI PIPELINE /////////
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
+	// RECORD GRAPHICS COMMANDS END //
 	mRenderer.RecordEnd(frameIndex, commandList);
-	// RECORD GRAPHICS PIPELINE END //
+	// RECORD GRAPHICS COMMANDS END //
 
 	hr = commandList->Close();
 	if (FAILED(hr))

@@ -1,23 +1,37 @@
 #include "GlobalInclude.hlsli"
 
-float4 main(VS_OUTPUT input) : SV_TARGET
-{    
-    float4 data = t0.Sample(s0, input.texCoord); //height, speed, direction
-    float4 f = float4(0, data.x, data.x, 1); //0, height, height
+PS_OUTPUT main(VS_OUTPUT input)
+{
+    PS_OUTPUT output;
+    output.col1 = float4(0, 0, 0, 0);
+    output.col2 = float4(0, 0, 0, 0);
+
+    float3 velAmp = t0.Sample(s0, input.texCoord).xyz;
+    float4 f123 = float4(velAmp.z, 0, 0.5 * velAmp.z, 1);
+    float4 f45v = float4(0, velAmp.z, sign(velAmp.z) * velAmp.xy);
+
     if(mode==0||mode==4||mode==6||mode==7)
     {
         for (int i = 1; i <= blurRadius; i++)
         {
             float offset = i / float(textureWidth);
-            float4 dataL = t0.Sample(s0, input.texCoord + float2(-offset, 0)); //height, radius, direction
-            float4 dataR = t0.Sample(s0, input.texCoord + float2(offset, 0)); //height, radius, direction
-            float heightSum = dataR.x + dataL.x;
-            float heightDif = dataR.x - dataL.x;
-            float3 filter = GetFilter(i / float(blurRadius));
-            f.x += heightDif * filter.x * filter.y * 2; //horizontal 1
-            f.y += heightSum * filter.x; //vertical
-            f.z += heightSum * filter.x * filter.x; //horizontal 2
+            float4 velAmpL = t0.Sample(s0, input.texCoord + float2(offset, 0));
+            float4 velAmpR = t0.Sample(s0, input.texCoord + float2(-offset, 0));
+            float ampSum = velAmpL.z + velAmpR.z;
+            float ampDif = velAmpL.z - velAmpR.z;
+            float3 f = GetFilter(i / float(blurRadius));
+            f123.x += ampSum * f.x;
+            f123.y += ampDif * f.y;
+            f123.z += ampSum * f.z;
+            f45v.x += ampDif * f.x * f.y * 2;
+            f45v.y += ampSum * f.x * f.x;
+            
+            f45v.z += (sign(velAmpL.z) * velAmpL.x + sign(velAmpR.z) * velAmpR.x) * f.x;
+            f45v.w += (sign(velAmpL.z) * velAmpL.y + sign(velAmpR.z) * velAmpR.y) * f.x;
         }
     }
-    return f;
+
+    output.col1 = f123;
+    output.col2 = f45v;
+    return output;
 }
