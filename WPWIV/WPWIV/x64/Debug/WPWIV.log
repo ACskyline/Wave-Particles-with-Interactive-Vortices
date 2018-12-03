@@ -1,42 +1,41 @@
 ﻿  main.cpp
   c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(53): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(54): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(233): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(234): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(235): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(236): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(237): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(239): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(240): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(241): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(242): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(243): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(244): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(247): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(249): warning C4244: 'argument': conversion from 'double' to 'uint32_t', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(338): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(342): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(343): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(344): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(349): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(350): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(657): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(883): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(923): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(963): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1003): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1135): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1217): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1247): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1278): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1314): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1332): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1373): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1414): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1435): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1457): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1479): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1498): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1637): warning C4305: 'argument': truncation from 'double' to 'float'
-  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(53): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(54): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(233): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(234): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(235): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(236): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(237): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(239): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(241): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(242): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(243): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(244): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(245): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(247): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(338): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(342): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(343): warning C4305: '=': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(344): warning C4305: '=': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(349): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(350): warning C4305: '=': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(657): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(883): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(923): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(963): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1003): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1135): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1217): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1247): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1278): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1314): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1332): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1373): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1414): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1435): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1457): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1479): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1498): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\waveparticlev2\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1638): warning C4305: 'argument': truncation from 'double' to 'float'
+  WPWIV.vcxproj -> D:\cis565\waveparticlev2\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Debug\WPWIV.exe

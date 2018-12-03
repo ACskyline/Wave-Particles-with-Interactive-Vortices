@@ -113,6 +113,8 @@ void Scene::SetUniformSplatScale(float _splatScale)
 	uniform.splatScale = _splatScale;
 }
 
+
+
 void Scene::SetUniformEdgeTessFactor(uint32_t _tessellationFactor)
 {
 	uniform.edgeTessFactor = _tessellationFactor;

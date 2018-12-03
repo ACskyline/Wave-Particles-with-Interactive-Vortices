@@ -10,12 +10,12 @@
 HWND hwnd = NULL;// Handle to the window
 LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
 LPCTSTR WindowTitle = L"WPWIV_1.0";// title of the window
-int Width = 1024;// width and height of the window
-int Height = 768;
-int WidthRT = 500;
-int HeightRT = 500;
-int WidthRtFluid = 500;
-int HeightRtFluid = 500;
+int Width = 1000;// width and height of the window
+int Height = 1000;
+int WidthRT = 1000;
+int HeightRT = 1000;
+int WidthRtFluid = 1000;
+int HeightRtFluid = 1000;
 int JacobiIteration = 40;
 bool FluidSimulation = true;
 IDirectInputDevice8* DIKeyboard;
@@ -71,7 +71,7 @@ Shader mFluidJacobiPS(Shader::ShaderType::PixelShader, L"JacobiPS.hlsl");
 Shader mFluidSubtractGradientPS(Shader::ShaderType::PixelShader, L"SubtractGradientPS.hlsl");
 //Texture mTextureFlowmap(L"flow2.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
-Texture mTextureObstacle(L"ob3.jpg");
+Texture mTextureObstacle(L"ob1.jpg");
 RenderTexture mRenderTextureWaveParticle(WidthRT, HeightRT);
 RenderTexture mRenderTexturePostProcessH1(WidthRT, HeightRT);
 RenderTexture mRenderTexturePostProcessH2(WidthRT, HeightRT);
@@ -236,17 +236,17 @@ bool CreateScene()
 	mScene.SetUniformDxScale(0.03);
 	mScene.SetUniformDzScale(0.03);
 	mScene.SetUniformTimeScale(1.0);
-	mScene.SetUniformTimeStepFluid(0.020275);
-	mScene.SetUniformJacobiObstacleScale(18.131868);
+	mScene.SetUniformTimeStepFluid(0.0084070);
+	mScene.SetUniformJacobiObstacleScale(13);
 	mScene.SetUniformFluidCellSize(1.3);
-	mScene.SetUniformJacobiInvBeta(0.222527);
+	mScene.SetUniformJacobiInvBeta(0.2);
 	mScene.SetUniformFluidDissipation(0.992308);
 	mScene.SetUniformGradientScale(0.972198);
-	mScene.SetUniformSplatDirU(0.5);
+	mScene.SetUniformSplatDirU(0.450549);
 	mScene.SetUniformSplatDirV(0.5);
-	mScene.SetUniformSplatScale(0.002385);
+	mScene.SetUniformSplatScale(0.01);
 	mScene.SetUniformTextureWidthHeight(WidthRT, HeightRT);
-	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 3.0, HeightRtFluid / 3.0);
+	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid /3, HeightRtFluid / 3);
 	mScene.SetUniformEdgeTessFactor(4);
 	mScene.SetUniformInsideTessFactor(2);
 	mScene.SetUniformBlurRadius(50);
@@ -1577,6 +1577,7 @@ void Gui()
 	static float splatScale = mScene.GetUniformSplatScale();
 	static int edgeTess = mScene.GetUniformEdgeTessFactor();
 	static int insideTess = mScene.GetUniformInsideTessFactor();
+	static int celldiv = 3;
 	bool needToUpdateSceneUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -1684,7 +1685,7 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("splatScale ", &splatScale, 0.0f, 0.005f, "%.6f"))
+	if (ImGui::SliderFloat("splatScale ", &splatScale, 0.0f, 0.02f, "%.6f"))
 	{
 		mScene.SetUniformSplatScale(splatScale);
 		needToUpdateSceneUniform = true;
@@ -1699,6 +1700,12 @@ void Gui()
 	if (ImGui::SliderInt("inside tess ", &insideTess, 0, 32))
 	{
 		mScene.SetUniformInsideTessFactor(insideTess);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderInt("fluidtexsize", &celldiv, 1, 100))
+	{
+		mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / celldiv, HeightRtFluid / celldiv);
 		needToUpdateSceneUniform = true;
 	}
 
