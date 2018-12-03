@@ -7,28 +7,19 @@
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 
 //
-//    |  wave_particle |   post_process  |    graphics   |
-// t0 |      n/a       |   WaveParticle  |    Albedo     |
-// t1 |      n/a       |   PostProcessH1 |    Flowmap    |
-// t2 |      n/a       |   PostProcessH2 | PostProcessV1 |
-// t3 |      n/a       |      n/a        | PostProcessV2 |
+//    |  wave_particle | post_process H | post_process V |    graphics   |  advect  |  jacobi  |  sub g   | divergence |  splat   |
+// t0 |      n/a       | WaveParticle   | PostProcessH1  |    Albedo     | obstacle | obstacle | obstacle |  obstacle  | obstacle |
+// t1 |      n/a       |      n/a       | PostProcessH2  |    Flowmap    | velocity | pressure | pressure |  velocity  |   n/a    |
+// t2 |      n/a       |      n/a       |      n/a       | PostProcessV1 |  source  |divergence| velocity |     n/a    |   n/a    |
+// t3 |      n/a       |      n/a       |      n/a       | PostProcessV2 |   n/a    |    n/a   |    n/a   |     n/a    |   n/a    |
 //
 
-Texture2D t0 : register(t0);
-Texture2D t1 : register(t1);
-Texture2D t2 : register(t2);
-Texture2D t3 : register(t3);
-
 //
-//    |  wave_particle |   post_process  |    graphics   |
-// s0 |border(not used)|      wrap       |     border    |
-// s1 |      n/a       |      n/a        |     clamp     |
-// s2 |      n/a       |      n/a        |     wrap      |
+//    |  wave_particle | post_process H | post_process H | graphics | advect | jacobi | sub g | divergence | splat |
+// s0 |border(not used)|     wrap       |      wrap      |   wrap   |  wrap  |  wrap  | wrap  |    wrap    |  wrap |
+// s1 |      n/a       |     n/a        |      n/a       |   clamp  |  n/a   |  n/a   |  n/a  |    n/a     |  n/a  |
+// s2 |      n/a       |     n/a        |      n/a       |   n/a    |  n/a   |  n/a   |  n/a  |    n/a     |  n/a  |
 //
-
-SamplerState s0 : register(s0);
-SamplerState s1 : register(s1);
-SamplerState s2 : register(s2);
 
 cbuffer ObjectUniform : register(b0)
 {
@@ -40,9 +31,6 @@ cbuffer CameraUniform : register(b1)
 {
     float4x4 viewProj;
     float4x4 viewProjInv;
-	float vx;
-	float vy;
-	float vz;
 };
 
 cbuffer FrameUniform : register(b2)
@@ -58,10 +46,21 @@ cbuffer SceneUniform : register(b3)
     float dxScale;
     float dzScale;
     float timeScale;
+    float timeScaleFluid;//
+    float jacobiObstacleScale;//1
+    float fluidCellSize;//1.25
+    float jacobiInvBeta;//0.243
+    float fluidDissipation;//1
+    float gradientScale;//0.07 * 1.125 (/ cellsize)
+    float splatDirU;//
+    float splatDirV;//
+    float splatScale;//0.015
     uint edgeTessFactor;
     uint insideTessFactor;
     uint textureWidth;
     uint textureHeight;
+    uint textureWidthFluid;//280
+    uint textureHeightFluid;//280
     uint blurRadius;
     uint mode; 
     //0 - default, 
@@ -72,9 +71,6 @@ cbuffer SceneUniform : register(b3)
     //5 - vertical blur, 
     //6 - horizontal and vertical blur,
     //7 - normal
-	float lighthight;
-	float extinctcoeff;
-	float shiness;
 };
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 /////////////// UNIFORM ///////////////
@@ -221,7 +217,6 @@ struct DS_OUTPUT
 {
     float4 pos : SV_POSITION;
     float2 texCoord : TEXCOORD;
-	float3 PosW : POSITION;
     //float3 nor : NORMAL; //PER VERTEX NORMAL
 };
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//

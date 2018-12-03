@@ -174,6 +174,11 @@ void Texture::ReleaseBuffer()
 	free(imageData);
 }
 
+wstring Texture::GetName()
+{
+	return fileName;
+}
+
 bool Texture::InitTexture(ID3D12Device* device)
 {
 	if (!CreateTextureBuffer(device))
@@ -421,7 +426,8 @@ int Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 RenderTexture::RenderTexture(int _width, int _height)
 	: width(_width), 
 	height(_height),
-	rtvHandle()
+	rtvHandle(),
+	Texture(L"no name")
 {
 }
 

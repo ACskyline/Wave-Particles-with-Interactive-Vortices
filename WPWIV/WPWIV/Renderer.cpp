@@ -2,6 +2,16 @@
 
 Renderer::Renderer()
 {
+	for (int i = 0; i < FrameBufferCount; i++)
+	{
+		for (int j = 0; j < static_cast<int>(FluidStage::Count); j++)
+		{
+			fluidPSO[i][j] = nullptr;
+			fluidRootSignature[i][j] = nullptr;
+			fluidDescriptorHeap[i][j] = nullptr;
+			fluidRtvDescriptorHeap[i][j] = nullptr;
+		}
+	}
 }
 
 Renderer::~Renderer()
@@ -51,7 +61,7 @@ D3D12_BLEND_DESC Renderer::NoBlend()
 	//result.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
 	//result.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 	//result.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_CLEAR;
-	//result.RenderTarget[0].RenderTargetWriteMask = 0;
+	result.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	return result;
 }
 
@@ -187,41 +197,42 @@ bool Renderer::CreateRenderTargetBuffer(ID3D12Device* device, IDXGISwapChain3* s
 
 void Renderer::Release()
 {
-	int gPsoCount = _countof(graphicsPSO);
-	for (int i = 0; i < gPsoCount; i++)
+	// fluid pipeline
+	for (int i = 0; i < FrameBufferCount; i++)
 	{
-		SAFE_RELEASE(graphicsPSO[i]);
+		for (int j = 0; j < static_cast<int>(FluidStage::Count); j++)
+		{
+			SAFE_RELEASE(fluidPSO[i][j]);
+			SAFE_RELEASE(fluidRootSignature[i][j]);
+			SAFE_RELEASE(fluidDescriptorHeap[i][j]);
+			SAFE_RELEASE(fluidRtvDescriptorHeap[i][j]);
+		}
 	}
-	SAFE_RELEASE(graphicsRootSignature);
-	SAFE_RELEASE(graphicsDescriptorHeap);
-	SAFE_RELEASE(graphicsRtvDescriptorHeap);
 
-	int pPsoCount = _countof(postProcessPSO);
-	for (int i = 0; i < pPsoCount; i++)
-	{
-		SAFE_RELEASE(postProcessPSO[i]);
-	}
-	SAFE_RELEASE(postProcessRootSignature);
-	SAFE_RELEASE(postProcessDescriptorHeap);
-	SAFE_RELEASE(postProcessRtvDescriptorHeap);
+	// graphics pipeline
+	SAFE_RELEASE_ARRAY(graphicsPSO);
+	SAFE_RELEASE_ARRAY(graphicsRootSignature);
+	SAFE_RELEASE_ARRAY(graphicsDescriptorHeap);
+	SAFE_RELEASE_ARRAY(graphicsRtvDescriptorHeap);
 
-	int wPsoCount = _countof(waveParticlePSO);
-	for (int i = 0; i < wPsoCount; i++)
-	{
-		SAFE_RELEASE(waveParticlePSO[i]);
-	}
-	SAFE_RELEASE(waveParticleRootSignature);
-	SAFE_RELEASE(waveParticleDescriptorHeap);
-	SAFE_RELEASE(waveParticleRtvDescriptorHeap);
+	// post process pipeline
+	SAFE_RELEASE_ARRAY(postProcessPSO);
+	SAFE_RELEASE_ARRAY(postProcessRootSignature);
+	SAFE_RELEASE_ARRAY(postProcessDescriptorHeap);
+	SAFE_RELEASE_ARRAY(postProcessRtvDescriptorHeap);
 
+	// wave particle pipeline
+	SAFE_RELEASE_ARRAY(waveParticlePSO);
+	SAFE_RELEASE_ARRAY(waveParticleRootSignature);
+	SAFE_RELEASE_ARRAY(waveParticleDescriptorHeap);
+	SAFE_RELEASE_ARRAY(waveParticleRtvDescriptorHeap);
+
+	
+	// common resource
 	SAFE_RELEASE(depthStencilBuffer);
 	SAFE_RELEASE(dsvDescriptorHeap);
-
 	SAFE_RELEASE(rtvDescriptorHeap);
-	for (int i = 0; i < FrameBufferCount; ++i)
-	{
-		SAFE_RELEASE(renderTargetBuffers[i]);
-	};
+	SAFE_RELEASE_ARRAY(renderTargetBuffers);
 }
 
 void Renderer::RecordBegin(int frameIndex, ID3D12GraphicsCommandList* commandList)
@@ -364,84 +375,52 @@ bool Renderer::CreatePSO(
 	hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pso));
 	if (FAILED(hr))
 	{
+		CheckError(hr);
 		return false;
 	}
 
 	return true;
 }
 
-////////////////////////////////////////////
-////////// Wave Particle Pipeline //////////
-////////////////////////////////////////////
-
-bool Renderer::CreateWaveParticlePipeline(
-	ID3D12Device* device,
-	const vector<Texture*>& textures,
-	const vector<RenderTexture*>& renderTextures)
-{
-	int texCount = textures.size();
-	int renderTexCount = renderTextures.size();
-
-	if (!CreateWaveParticleRootSignature(device, &waveParticleRootSignature, texCount))
-	{
-		printf("CreateRootSignature failed\n");
-		return false;
-	}
-
-	if (!CreateDescriptorHeap(device, &waveParticleDescriptorHeap, texCount))
-	{
-		printf("CreateDescriptorHeap failed\n");
-		return false;
-	}
-
-	for (int i = 0; i < texCount; i++)
-	{
-		if (!BindTextureToDescriptorHeap(device, waveParticleDescriptorHeap, textures[i], i))
-		{
-			printf("BindTextureToDescriptorHeap failed\n");
-			return false;
-		}
-	}
-
-	if (!CreateRtvDescriptorHeap(device, &waveParticleRtvDescriptorHeap, renderTexCount))
-	{
-		printf("CreateRtvDescriptorHeap failed\n");
-		return false;
-	}
-
-	for (int i = 0; i < renderTexCount; i++)
-	{
-		if (!BindRenderTextureToRtvDescriptorHeap(device, waveParticleRtvDescriptorHeap, renderTextures[i], i))
-		{
-			printf("BindRenderTextureToRtvDescriptorHeap failed\n");
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void Renderer::RecordWaveParticlePipeline(
-	CD3DX12_CPU_DESCRIPTOR_HANDLE renderTarget,
-	CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
+void Renderer::RecordPipelineNoClear(
 	ID3D12GraphicsCommandList* commandList,
+	ID3D12PipelineState* pso,
 	ID3D12RootSignature* rootSignature,
 	ID3D12DescriptorHeap* descriptorHeap,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
 	Frame* pFrame,
 	Scene* pScene,
-	D3D_PRIMITIVE_TOPOLOGY primitiveType)
+	D3D_PRIMITIVE_TOPOLOGY primitiveType)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
 {
-	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
+	vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
+	int frameRtvCount = renderTextureVec.size();
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
+	frameRtvHandles.resize(frameRtvCount);
+	for (int i = 0; i < frameRtvCount; i++)
+	{
+		frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
+	}
+
+	if (frameRtvCount == 0)
+	{
+		frameRtvHandles.push_back(fallbackRTV);
+		frameRtvCount++;
+	}
+
+	commandList->SetPipelineState(pso);
 
 	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(1, &renderTarget, FALSE, &depthStencil);
+	commandList->OMSetRenderTargets(frameRtvCount, frameRtvHandles.data(), FALSE, &dsvHandle);
 
 	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	commandList->ClearRenderTargetView(renderTarget, clearColor, 0, nullptr);
+	//const float clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	//for (int i = 0; i < frameRtvCount; i++)
+	//{
+	//	commandList->ClearRenderTargetView(frameRtvHandles[i], clearColor, 0, nullptr);
+	//}
 
 	// clear the depth/stencil buffer
-	commandList->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	// set root signature
 	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
@@ -471,6 +450,183 @@ void Renderer::RecordWaveParticlePipeline(
 		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
 	}
 }
+
+void Renderer::RecordPipeline(
+	ID3D12GraphicsCommandList* commandList,
+	ID3D12PipelineState* pso,
+	ID3D12RootSignature* rootSignature,
+	ID3D12DescriptorHeap* descriptorHeap,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
+	Frame* pFrame,
+	Scene* pScene,
+	D3D_PRIMITIVE_TOPOLOGY primitiveType,
+	XMFLOAT4 clearRtvColor)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+{
+	vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
+	int frameRtvCount = renderTextureVec.size();
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
+	frameRtvHandles.resize(frameRtvCount);
+	for (int i = 0; i < frameRtvCount; i++)
+	{
+		frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
+	}
+
+	if (frameRtvCount == 0)
+	{
+		frameRtvHandles.push_back(fallbackRTV);
+		frameRtvCount++;
+	}
+
+	commandList->SetPipelineState(pso);
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(frameRtvCount, frameRtvHandles.data(), FALSE, &dsvHandle);
+
+	// Clear the render target by using the ClearRenderTargetView command
+	const float clearColor[] = { clearRtvColor.x, clearRtvColor.y, clearRtvColor.z, clearRtvColor.w };
+	for (int i = 0; i < frameRtvCount; i++)
+	{
+		commandList->ClearRenderTargetView(frameRtvHandles[i], clearColor, 0, nullptr);
+	}
+
+	// clear the depth/stencil buffer
+	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	// set root signature
+	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
+
+	// set the descriptor heap
+	if (descriptorHeap != nullptr)
+	{
+		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
+		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	}
+
+	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
+	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
+	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
+	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
+	int meshCount = pFrame->GetMeshVec().size();
+	for (int i = 0; i < meshCount; i++)
+	{
+		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
+		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
+		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
+		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
+	}
+}
+
+void Renderer::Clear(
+	ID3D12GraphicsCommandList* commandList,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
+	Frame* pFrame,
+	XMFLOAT4 clearRtvColor)
+{
+	int frameRtvCount = 0;
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
+
+	if (pFrame != nullptr)
+	{
+		vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
+		frameRtvCount = renderTextureVec.size();
+		frameRtvHandles.resize(frameRtvCount);
+		for (int i = 0; i < frameRtvCount; i++)
+		{
+			frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
+		}
+	}
+
+	if (frameRtvCount == 0)
+	{
+		frameRtvHandles.push_back(fallbackRTV);
+		frameRtvCount++;
+	}
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(frameRtvCount, frameRtvHandles.data(), FALSE, &dsvHandle);
+
+	// Clear the render target by using the ClearRenderTargetView command
+	const float clearColor[] = { clearRtvColor.x, clearRtvColor.y, clearRtvColor.z, clearRtvColor.w };
+	for (int i = 0; i < frameRtvCount; i++)
+	{
+		commandList->ClearRenderTargetView(frameRtvHandles[i], clearColor, 0, nullptr);
+	}
+}
+
+
+bool Renderer::CreateHeapBindTexture(
+	ID3D12Device* device,
+	ID3D12DescriptorHeap** descriptorHeap,
+	ID3D12DescriptorHeap** rtvDescriptorHeap,
+	const vector<Texture*>& textures,
+	const vector<RenderTexture*>& renderTextures)
+{
+	int texCount = textures.size();
+	int renderTexCount = renderTextures.size();
+
+	if (!CreateDescriptorHeap(device, descriptorHeap, texCount))
+	{
+		printf("CreateDescriptorHeap failed\n");
+		return false;
+	}
+
+	for (int i = 0; i < texCount; i++)
+	{
+		if (!BindTextureToDescriptorHeap(device, *descriptorHeap, textures[i], i))
+		{
+			printf("BindTextureToDescriptorHeap failed\n");
+			return false;
+		}
+	}
+
+	if (!CreateRtvDescriptorHeap(device, rtvDescriptorHeap, renderTexCount))
+	{
+		printf("CreateRtvDescriptorHeap failed\n");
+		return false;
+	}
+
+	for (int i = 0; i < renderTexCount; i++)
+	{
+		if (!BindRenderTextureToRtvDescriptorHeap(device, *rtvDescriptorHeap, renderTextures[i], i))
+		{
+			printf("BindRenderTextureToRtvDescriptorHeap failed\n");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Renderer::CreateHeap(
+	ID3D12Device* device,
+	ID3D12DescriptorHeap** descriptorHeap,
+	ID3D12DescriptorHeap** rtvDescriptorHeap,
+	int textureCount,
+	int renderTextureCount)
+{
+	if (!CreateDescriptorHeap(device, descriptorHeap, textureCount))
+	{
+		printf("CreateDescriptorHeap failed\n");
+		return false;
+	}
+
+	if (!CreateRtvDescriptorHeap(device, rtvDescriptorHeap, renderTextureCount))
+	{
+		printf("CreateRtvDescriptorHeap failed\n");
+		return false;
+	}
+
+	return true;
+}
+
+////////////////////////////////////////////
+////////// Wave Particle Pipeline //////////
+////////////////////////////////////////////
 
 bool Renderer::CreateWaveParticleRootSignature(
 	ID3D12Device* device,
@@ -592,180 +748,39 @@ ID3D12PipelineState** Renderer::GetWaveParticlePsoPtr(int index)
 	return &waveParticlePSO[index];
 }
 
-ID3D12RootSignature* Renderer::GetWaveParticleRootSignature()
+ID3D12RootSignature* Renderer::GetWaveParticleRootSignature(int index)
 {
-	return waveParticleRootSignature;
+	return waveParticleRootSignature[index];
 }
 
-ID3D12DescriptorHeap* Renderer::GetWaveParticleDescriptorHeap()
+ID3D12RootSignature** Renderer::GetWaveParticleRootSignaturePtr(int index)
 {
-	return  waveParticleDescriptorHeap;
+	return &waveParticleRootSignature[index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetWaveParticleDescriptorHeap(int index)
+{
+	return  waveParticleDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetWaveParticleDescriptorHeapPtr(int index)
+{
+	return  &waveParticleDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetWaveParticleRtvDescriptorHeap(int index)
+{
+	return  waveParticleRtvDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetWaveParticleRtvDescriptorHeapPtr(int index)
+{
+	return  &waveParticleRtvDescriptorHeap[index];
 }
 
 ///////////////////////////////////////////
 ////////// Post Process Pipeline //////////
 ///////////////////////////////////////////
-
-bool Renderer::CreatePostProcessPipeline(
-	ID3D12Device* device,
-	const vector<Texture*>& textures,
-	const vector<RenderTexture*>& renderTextures)
-{
-	int texCount = textures.size();
-	int renderTexCount = renderTextures.size();
-
-	if (!CreatePostProcessRootSignature(device, &postProcessRootSignature, texCount))
-	{
-		printf("CreateRootSignature failed\n");
-		return false;
-	}
-
-	if (!CreateDescriptorHeap(device, &postProcessDescriptorHeap, texCount))
-	{
-		printf("CreateDescriptorHeap failed\n");
-		return false;
-	}
-
-	for (int i = 0; i < texCount; i++)
-	{
-		if (!BindTextureToDescriptorHeap(device, postProcessDescriptorHeap, textures[i], i))
-		{
-			printf("BindTextureToDescriptorHeap failed\n");
-			return false;
-		}
-	}
-
-	if (!CreateRtvDescriptorHeap(device, &postProcessRtvDescriptorHeap, renderTexCount))
-	{
-		printf("CreateRtvDescriptorHeap failed\n");
-		return false;
-	}
-
-	for (int i = 0; i < renderTexCount; i++)
-	{
-		if (!BindRenderTextureToRtvDescriptorHeap(device, postProcessRtvDescriptorHeap, renderTextures[i], i))
-		{
-			printf("BindRenderTextureToRtvDescriptorHeap failed\n");
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void Renderer::RecordPostProcessPipeline(
-	CD3DX12_CPU_DESCRIPTOR_HANDLE renderTarget,
-	CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
-	ID3D12GraphicsCommandList* commandList,
-	ID3D12RootSignature* rootSignature,
-	ID3D12DescriptorHeap* descriptorHeap,
-	Frame* pFrame,
-	Scene* pScene,
-	D3D_PRIMITIVE_TOPOLOGY primitiveType)
-{
-	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
-
-	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(1, &renderTarget, FALSE, &depthStencil);
-
-	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { 0.8f, 0.2f, 0.4f, 1.0f };
-	commandList->ClearRenderTargetView(renderTarget, clearColor, 0, nullptr);
-
-	// clear the depth/stencil buffer
-	commandList->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	// set root signature
-	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
-
-	// set the descriptor heap
-	if (descriptorHeap != nullptr)
-	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
-		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	}
-
-	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
-	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
-	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
-	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
-	int meshCount = pFrame->GetMeshVec().size();
-	for (int i = 0; i < meshCount; i++)
-	{
-		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
-		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
-		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
-		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
-		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
-	}
-}
-
-
-void Renderer::RecordPostProcessPipeline(
-	const vector<RenderTexture*> &renderTextureVec,
-	CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
-	ID3D12GraphicsCommandList* commandList,
-	ID3D12RootSignature* rootSignature,
-	ID3D12DescriptorHeap* descriptorHeap,
-	Frame* pFrame,
-	Scene* pScene,
-	D3D_PRIMITIVE_TOPOLOGY primitiveType)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
-{
-	int rtvCount = renderTextureVec.size();
-	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> rtvHandles;
-	rtvHandles.resize(rtvCount);
-
-	for (int i = 0; i < rtvCount; i++)
-	{
-		rtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
-	}
-	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
-
-	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(rtvCount, rtvHandles.data(), FALSE, &depthStencil);
-
-	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { 0.8f, 0.2f, 0.4f, 1.0f };
-	for (int i = 0; i < rtvCount; i++)
-	{
-		commandList->ClearRenderTargetView(rtvHandles[i], clearColor, 0, nullptr);
-	}
-
-	// clear the depth/stencil buffer
-	commandList->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	// set root signature
-	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
-
-	// set the descriptor heap
-	if (descriptorHeap != nullptr)
-	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
-		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	}
-
-	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
-	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
-	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
-	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
-	int meshCount = pFrame->GetMeshVec().size();
-	for (int i = 0; i < meshCount; i++)
-	{
-		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
-		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
-		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
-		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
-		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
-	}
-}
 
 bool Renderer::CreatePostProcessRootSignature(
 	ID3D12Device* device,
@@ -885,117 +900,39 @@ ID3D12PipelineState** Renderer::GetPostProcessPsoPtr(int index)
 	return &postProcessPSO[index];
 }
 
-ID3D12RootSignature* Renderer::GetPostProcessRootSignature()
+ID3D12RootSignature* Renderer::GetPostProcessRootSignature(int index)
 {
-	return postProcessRootSignature;
+	return postProcessRootSignature[index];
 }
 
-ID3D12DescriptorHeap* Renderer::GetPostProcessDescriptorHeap()
+ID3D12RootSignature** Renderer::GetPostProcessRootSignaturePtr(int index)
 {
-	return  postProcessDescriptorHeap;
+	return &postProcessRootSignature[index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetPostProcessDescriptorHeap(int index)
+{
+	return  postProcessDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetPostProcessDescriptorHeapPtr(int index)
+{
+	return  &postProcessDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetPostProcessRtvDescriptorHeap(int index)
+{
+	return  postProcessRtvDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetPostProcessRtvDescriptorHeapPtr(int index)
+{
+	return  &postProcessRtvDescriptorHeap[index];
 }
 
 ///////////////////////////////////////////
 //////////// Graphics Pipeline ////////////
 ///////////////////////////////////////////
-
-bool Renderer::CreateGraphicsPipeline(
-	ID3D12Device* device,
-	const vector<Texture*>& textures,
-	const vector<RenderTexture*>& renderTextures)
-{
-	int texCount = textures.size();
-	int renderTexCount = renderTextures.size();
-
-	if (!CreateGraphicsRootSignature(device, &graphicsRootSignature, texCount))
-	{
-		printf("CreateRootSignature failed\n");
-		return false;
-	}
-
-	if (!CreateDescriptorHeap(device, &graphicsDescriptorHeap, texCount))
-	{
-		printf("CreateDescriptorHeap failed\n");
-		return false;
-	}
-
-	for (int i = 0; i < texCount; i++)
-	{
-		if (!BindTextureToDescriptorHeap(device, graphicsDescriptorHeap, textures[i], i))
-		{
-			printf("BindTextureToDescriptorHeap failed\n");
-			return false;
-		}
-	}
-
-	if (!CreateRtvDescriptorHeap(device, &graphicsRtvDescriptorHeap, renderTexCount))
-	{
-		printf("CreateRtvDescriptorHeap failed\n");
-		return false;
-	}
-
-	for (int i = 0; i < renderTexCount; i++)
-	{
-		if (!BindRenderTextureToRtvDescriptorHeap(device, graphicsRtvDescriptorHeap, renderTextures[i], i))
-		{
-			printf("BindRenderTextureToRtvDescriptorHeap failed\n");
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void Renderer::RecordGraphicsPipeline(
-	CD3DX12_CPU_DESCRIPTOR_HANDLE renderTarget,
-	CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
-	ID3D12GraphicsCommandList* commandList,
-	ID3D12RootSignature* rootSignature,
-	ID3D12DescriptorHeap* descriptorHeap,
-	Frame* pFrame,
-	Scene* pScene,
-	D3D_PRIMITIVE_TOPOLOGY primitiveType)
-{
-	// here we start recording commands into the commandList (which all the commands will be stored in the commandAllocator)
-
-	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(1, &renderTarget, FALSE, &depthStencil);
-
-	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	commandList->ClearRenderTargetView(renderTarget, clearColor, 0, nullptr);
-
-	// clear the depth/stencil buffer
-	commandList->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	// set root signature
-	commandList->SetGraphicsRootSignature(graphicsRootSignature); // set the root signature
-
-	// set the descriptor heap
-	if (descriptorHeap != nullptr)
-	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
-		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	}
-
-	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
-	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
-	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
-	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
-	int meshCount = pFrame->GetMeshVec().size();
-	for (int i = 0; i < meshCount; i++)
-	{
-		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
-		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
-		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
-		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
-		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
-	}
-}
 
 bool Renderer::CreateGraphicsRootSignature(
 	ID3D12Device* device,
@@ -1063,20 +1000,20 @@ bool Renderer::CreateGraphicsRootSignature(
 	}
 
 	// create a static sampler
-	D3D12_STATIC_SAMPLER_DESC samplerBorder = {};
-	samplerBorder.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	samplerBorder.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplerBorder.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplerBorder.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplerBorder.MipLODBias = 0;
-	samplerBorder.MaxAnisotropy = 0;
-	samplerBorder.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	samplerBorder.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	samplerBorder.MinLOD = 0.0f;
-	samplerBorder.MaxLOD = D3D12_FLOAT32_MAX;
-	samplerBorder.ShaderRegister = 0;
-	samplerBorder.RegisterSpace = 0;
-	samplerBorder.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	D3D12_STATIC_SAMPLER_DESC samplerWrap = {};
+	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerWrap.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.MipLODBias = 0;
+	samplerWrap.MaxAnisotropy = 0;
+	samplerWrap.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerWrap.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	samplerWrap.MinLOD = 0.0f;
+	samplerWrap.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerWrap.ShaderRegister = 0;
+	samplerWrap.RegisterSpace = 0;
+	samplerWrap.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC samplerClamp = {};
@@ -1094,23 +1031,8 @@ bool Renderer::CreateGraphicsRootSignature(
 	samplerClamp.RegisterSpace = 0;
 	samplerClamp.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	// create a static sampler
-	D3D12_STATIC_SAMPLER_DESC samplerWrap = {};
-	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	samplerWrap.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerWrap.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerWrap.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerWrap.MipLODBias = 0;
-	samplerWrap.MaxAnisotropy = 0;
-	samplerWrap.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	samplerWrap.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	samplerWrap.MinLOD = 0.0f;
-	samplerWrap.MaxLOD = D3D12_FLOAT32_MAX;
-	samplerWrap.ShaderRegister = 2;
-	samplerWrap.RegisterSpace = 0;
-	samplerWrap.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerBorder, samplerClamp, samplerWrap };
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerWrap, samplerClamp };
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(rootParameterCount, // we have 2 root parameters
@@ -1149,12 +1071,186 @@ ID3D12PipelineState** Renderer::GetGraphicsPsoPtr(int index)
 	return &graphicsPSO[index];
 }
 
-ID3D12RootSignature* Renderer::GetGraphicsRootSignature()
+ID3D12RootSignature* Renderer::GetGraphicsRootSignature(int index)
 {
-	return graphicsRootSignature;
+	return graphicsRootSignature[index];
 }
 
-ID3D12DescriptorHeap* Renderer::GetGraphicsDescriptorHeap()
+ID3D12RootSignature** Renderer::GetGraphicsRootSignaturePtr(int index)
 {
-	return  graphicsDescriptorHeap;
+	return &graphicsRootSignature[index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetGraphicsDescriptorHeap(int index)
+{
+	return  graphicsDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetGraphicsDescriptorHeapPtr(int index)
+{
+	return  &graphicsDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetGraphicsRtvDescriptorHeap(int index)
+{
+	return  graphicsRtvDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetGraphicsRtvDescriptorHeapPtr(int index)
+{
+	return  &graphicsRtvDescriptorHeap[index];
+}
+
+////////////////////////////////////////////
+////////////// Fluid Pipeline //////////////
+////////////////////////////////////////////
+
+bool Renderer::CreateFluidRootSignature(
+	ID3D12Device* device,
+	ID3D12RootSignature** rootSignature,
+	int descriptorNum)
+{
+	HRESULT hr;
+	// create root signature
+
+	// create a descriptor range (descriptor table) and fill it out
+	// this is a range of descriptors inside a descriptor heap
+	D3D12_DESCRIPTOR_RANGE  descriptorTableRanges[1]; // only one range right now
+	descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of shader resource views (descriptors)
+	descriptorTableRanges[0].NumDescriptors = descriptorNum; // we only have one texture right now, so the range is only 1
+	descriptorTableRanges[0].BaseShaderRegister = 0; // start index of the shader registers in the range
+	descriptorTableRanges[0].RegisterSpace = 0; // space 0. can usually be zero
+	descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
+
+	// create a descriptor table
+	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
+	descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges); // we only have one range
+	descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
+
+	// create a root parameter for the root descriptor and fill it out
+	D3D12_ROOT_PARAMETER  rootParameters[UNIFORM_SLOT::COUNT]; // 3 root parameters
+	D3D12_ROOT_DESCRIPTOR rootCBVDescriptors[UNIFORM_SLOT::COUNT - 1]; // 2 of 3 are cbv
+	UINT rootParameterCount = 0;
+
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::OBJECT].ShaderRegister = UNIFORM_SLOT::OBJECT;
+	rootParameters[UNIFORM_SLOT::OBJECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::OBJECT].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::OBJECT]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::OBJECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameterCount++;
+
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::CAMERA].ShaderRegister = UNIFORM_SLOT::CAMERA;
+	rootParameters[UNIFORM_SLOT::CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::CAMERA].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::CAMERA]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameterCount++;
+
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::FRAME].ShaderRegister = UNIFORM_SLOT::FRAME;
+	rootParameters[UNIFORM_SLOT::FRAME].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::FRAME].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::FRAME]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::FRAME].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameterCount++;
+
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].RegisterSpace = 0;
+	rootCBVDescriptors[UNIFORM_SLOT::SCENE].ShaderRegister = UNIFORM_SLOT::SCENE;
+	rootParameters[UNIFORM_SLOT::SCENE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // this is a constant buffer view root descriptor
+	rootParameters[UNIFORM_SLOT::SCENE].Descriptor = rootCBVDescriptors[UNIFORM_SLOT::SCENE]; // this is the root descriptor for this root parameter
+	rootParameters[UNIFORM_SLOT::SCENE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+	rootParameterCount++;
+
+	if (descriptorNum > 0)
+	{
+		// fill out the parameter for our descriptor table. Remember it's a good idea to sort parameters by frequency of change. Our constant
+		// buffer will be changed multiple times per frame, while our descriptor table will not be changed at all (in this tutorial)
+		rootParameters[UNIFORM_SLOT::TABLE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+		rootParameters[UNIFORM_SLOT::TABLE].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+		rootParameters[UNIFORM_SLOT::TABLE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+		rootParameterCount++;
+	}
+
+	// create a static sampler
+	D3D12_STATIC_SAMPLER_DESC samplerWrap = {};
+	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerWrap.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerWrap.MipLODBias = 0;
+	samplerWrap.MaxAnisotropy = 0;
+	samplerWrap.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerWrap.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	samplerWrap.MinLOD = 0.0f;
+	samplerWrap.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerWrap.ShaderRegister = 0;
+	samplerWrap.RegisterSpace = 0;
+	samplerWrap.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerWrap };
+
+	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	rootSignatureDesc.Init(rootParameterCount, // we have 2 root parameters
+		rootParameters, // a pointer to the beginning of our root parameters array
+		_countof(samplers), // we have one static sampler
+		samplers, // a pointer to our static sampler (array)
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // we can deny shader stages here for better performance
+		//D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+		//D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
+
+	ID3DBlob* errorBuff; // a buffer holding the error data if any
+	ID3DBlob* signature;
+	hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &errorBuff);
+	if (FAILED(hr))
+	{
+		CheckError(hr, errorBuff);
+		return false;
+	}
+
+	hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(rootSignature));
+	if (FAILED(hr))
+	{
+		return false;
+	}
+	return true;
+}
+
+ID3D12PipelineState* Renderer::GetFluidPSO(int frame, int index)
+{
+	return fluidPSO[frame][index];
+}
+
+ID3D12PipelineState** Renderer::GetFluidPsoPtr(int frame, int index)
+{
+	return &fluidPSO[frame][index];
+}
+
+ID3D12RootSignature* Renderer::GetFluidRootSignature(int frame, int index)
+{
+	return fluidRootSignature[frame][index];
+}
+
+ID3D12RootSignature** Renderer::GetFluidRootSignaturePtr(int frame, int index)
+{
+	return &fluidRootSignature[frame][index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetFluidDescriptorHeap(int frame, int index)
+{
+	return  fluidDescriptorHeap[frame][index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetFluidDescriptorHeapPtr(int frame, int index)
+{
+	return  &fluidDescriptorHeap[frame][index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetFluidRtvDescriptorHeap(int frame, int index)
+{
+	return  fluidRtvDescriptorHeap[frame][index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetFluidRtvDescriptorHeapPtr(int frame, int index)
+{
+	return  &fluidRtvDescriptorHeap[frame][index];
 }

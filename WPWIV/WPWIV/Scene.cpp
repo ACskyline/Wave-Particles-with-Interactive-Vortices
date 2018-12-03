@@ -68,6 +68,51 @@ void Scene::SetUniformTimeScale(float _timeScale)
 	uniform.timeScale = _timeScale;
 }
 
+void Scene::SetUniformTimeStepFluid(float _timeStepFluid)
+{
+	uniform.timeStepFluid = _timeStepFluid;
+}
+
+void Scene::SetUniformJacobiObstacleScale(float _jacobiObstacleScale)
+{
+	uniform.jacobiObstacleScale = _jacobiObstacleScale;
+}
+
+void Scene::SetUniformFluidCellSize(float _fluidCellSize)
+{
+	uniform.fluidCellSize = _fluidCellSize;
+}
+
+void Scene::SetUniformJacobiInvBeta(float _jacobiInvBeta)
+{
+	uniform.jacobiInvBeta = _jacobiInvBeta;
+}
+
+void Scene::SetUniformFluidDissipation(float _fluidDissipation)
+{
+	uniform.fluidDissipation = _fluidDissipation;
+}
+
+void Scene::SetUniformGradientScale(float _gradientScale)
+{
+	uniform.gradientScale = _gradientScale;
+}
+
+void Scene::SetUniformSplatDirU(float _splatDirU)
+{
+	uniform.splatDirU = _splatDirU;
+}
+
+void Scene::SetUniformSplatDirV(float _splatDirV)
+{
+	uniform.splatDirV = _splatDirV;
+}
+
+void Scene::SetUniformSplatScale(float _splatScale)
+{
+	uniform.splatScale = _splatScale;
+}
+
 void Scene::SetUniformEdgeTessFactor(uint32_t _tessellationFactor)
 {
 	uniform.edgeTessFactor = _tessellationFactor;
@@ -78,10 +123,16 @@ void Scene::SetUniformInsideTessFactor(uint32_t _tessellationFactor)
 	uniform.insideTessFactor = _tessellationFactor;
 }
 
-void Scene::SetUniformTexutureWidthHeight(uint32_t texWidth, uint32_t texHeight)
+void Scene::SetUniformTextureWidthHeight(uint32_t texWidth, uint32_t texHeight)
 {
 	uniform.textureWidth = texWidth;
 	uniform.textureHeight = texHeight;
+}
+
+void Scene::SetUniformTextureWidthHeightFluid(uint32_t texWidth, uint32_t texHeight)
+{
+	uniform.textureWidthFluid = texWidth;
+	uniform.textureHeightFluid = texHeight;
 }
 
 void Scene::SetUniformBlurRadius(uint32_t blurRadius)
@@ -124,6 +175,51 @@ float Scene::GetUniformTimeScale()
 	return uniform.timeScale;
 }
 
+float Scene::GetUniformTimeStepFluid()
+{
+	return uniform.timeStepFluid;
+}
+
+float Scene::GetUniformJacobiObstacleScale()
+{
+	return uniform.jacobiObstacleScale;
+}
+
+float Scene::GetUniformFluidCellSize()
+{
+	return uniform.fluidCellSize;
+}
+
+float Scene::GetUniformJacobiInvBeta()
+{
+	return uniform.jacobiInvBeta;
+}
+
+float Scene::GetUniformFluidDissipation()
+{
+	return uniform.fluidDissipation;
+}
+
+float Scene::GetUniformGradientScale()
+{
+	return uniform.gradientScale;
+}
+
+float Scene::GetUniformSplatDirU()
+{
+	return uniform.splatDirU;
+}
+
+float Scene::GetUniformSplatDirV()
+{
+	return uniform.splatDirV;
+}
+
+float Scene::GetUniformSplatScale()
+{
+	return uniform.splatScale;
+}
+
 uint32_t Scene::GetUniformEdgeTessFactor()
 {
 	return uniform.edgeTessFactor;
@@ -144,36 +240,6 @@ uint32_t Scene::GetUniformMode()
 	return uniform.mode;
 }
 
-float Scene::GetUniformLighthight()
-{
-	return uniform.lighthight;
-}
-
-void Scene::SetUniformLighthight(float v)
-{
-	uniform.lighthight = v;
-}
-
-float Scene::Getextinctcoeff()
-{
-	return uniform.extinctcoeff;
-}
-
-void Scene::Setextinctcoeff(float v)
-{
-	uniform.extinctcoeff = v;
-}
-
-float Scene::Getshiness()
-{
-	return uniform.shiness;
-}
-
-void Scene::Setshiness(float v)
-{
-	uniform.shiness = v;
-}
-
 bool Scene::LoadScene()
 {
 	// CPU side, load data from disk
@@ -192,7 +258,7 @@ bool Scene::LoadScene()
 	{
 		if (!pTextureVec[i]->LoadTextureBuffer())
 		{
-			printf("LoadTexture failed\n");
+			printf("LoadTexture %d: %ls failed\n", i, pTextureVec[i]->GetName().c_str());
 			return false;
 		}
 	}

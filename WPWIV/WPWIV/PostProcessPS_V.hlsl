@@ -1,28 +1,32 @@
 #include "GlobalInclude.hlsli"
 
+Texture2D horizontalFilter1 : register(t0);
+Texture2D horizontalFilter2 : register(t1);
+SamplerState wrapSampler : register(s0);
+
 PS_OUTPUT main(VS_OUTPUT input)
 {
     PS_OUTPUT output;
     output.col1 = float4(0, 0, 0, 0);
     output.col2 = float4(0, 0, 0, 0);
 
-    float3 f123 = t1.Sample(s0, input.texCoord).xyz;
-    float4 f45v = t2.Sample(s0, input.texCoord);
+    float3 f123 = horizontalFilter1.Sample(wrapSampler, input.texCoord).xyz;
+    float4 f45v = horizontalFilter2.Sample(wrapSampler, input.texCoord);
     float4 deviation = float4(f45v.x, 0, f123.x, 1); // initialize deviation at this pixel
     float4 gradient = float4(f123.y, 0, 0, 1); // initialize gradient at this pixel
     float2 gradCorr = float2(f123.z, f45v.y); // initialize gradient correction
 
-    if(mode==0||mode==5||mode==6||mode==7||mode==8)
+    if(mode==0||mode==5||mode==6||mode==7)
     {
         for (int i = 1; i <= blurRadius; i++)
         {
             float offset = i / float(textureHeight);
 
-            float4 f123B = t1.Sample(s0, input.texCoord + float2(0, offset));
-            float4 f123T = t1.Sample(s0, input.texCoord + float2(0, -offset));
+            float4 f123B = horizontalFilter1.Sample(wrapSampler, input.texCoord + float2(0, offset));
+            float4 f123T = horizontalFilter1.Sample(wrapSampler, input.texCoord + float2(0, -offset));
 
-            float4 f45vB = t2.Sample(s0, input.texCoord + float2(0, offset));
-            float4 f45vT = t2.Sample(s0, input.texCoord + float2(0, -offset));
+            float4 f45vB = horizontalFilter2.Sample(wrapSampler, input.texCoord + float2(0, offset));
+            float4 f45vT = horizontalFilter2.Sample(wrapSampler, input.texCoord + float2(0, -offset));
 
             float3 f = GetFilter(i / float(blurRadius));
 

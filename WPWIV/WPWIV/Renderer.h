@@ -5,6 +5,12 @@
 class Renderer
 {
 public:
+	// scoped enum to avoid redefinition of Count
+	enum class GraphicsStage { Default, Count };
+	enum class WaveParticleStage { Default, Count };
+	enum class PostProcessStage { Horizontal, Vertical, Count };
+	enum class FluidStage { Advection, ComputeDivergence, Jacobi, Splat, SubtractGradient, Count };
+
 	Renderer();
 	~Renderer();
 
@@ -43,79 +49,102 @@ public:
 		Shader* domainShader,
 		Shader* geometryShader,
 		Shader* pixelShader);
-
-	// Graphics Pipeline
-	bool CreateGraphicsPipeline(
-		ID3D12Device* device,
-		const vector<Texture*>& textures,
-		const vector<RenderTexture*>& renderTextures);
-
-	void RecordGraphicsPipeline(
-		CD3DX12_CPU_DESCRIPTOR_HANDLE renderTarget,
-		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
+	void RecordPipelineNoClear(
 		ID3D12GraphicsCommandList* commandList,
+		ID3D12PipelineState* pso,
 		ID3D12RootSignature* rootSignature,
 		ID3D12DescriptorHeap* descriptorHeap,
+		CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
 		Frame* pFrame,
 		Scene* pScene,
 		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+	void RecordPipeline(
+		ID3D12GraphicsCommandList* commandList,
+		ID3D12PipelineState* pso,
+		ID3D12RootSignature* rootSignature,
+		ID3D12DescriptorHeap* descriptorHeap,
+		CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
+		Frame* pFrame,
+		Scene* pScene,
+		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED,
+		XMFLOAT4 clearColor = XMFLOAT4(0, 0, 0, 0));//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+	void Clear(
+		ID3D12GraphicsCommandList* commandList,
+		CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
+		Frame* pFrame = nullptr,
+		XMFLOAT4 clearColor = XMFLOAT4(0, 0, 0, 0));
+	bool CreateHeapBindTexture(
+		ID3D12Device* device,
+		ID3D12DescriptorHeap** descriptorHeap,
+		ID3D12DescriptorHeap** rtvDescriptorHeap,
+		const vector<Texture*>& textures,
+		const vector<RenderTexture*>& renderTextures);
+	bool CreateHeap(
+		ID3D12Device* device,
+		ID3D12DescriptorHeap** descriptorHeap,
+		ID3D12DescriptorHeap** rtvDescriptorHeap,
+		int textureCount,
+		int renderTextureCount);//for dynamically bound heaps
+
+	// Graphics Pipeline
+	bool CreateGraphicsRootSignature(
+		ID3D12Device* device, 
+		ID3D12RootSignature** rootSignature, 
+		int descriptorNum);
 
 	ID3D12PipelineState* GetGraphicsPSO(int index);
 	ID3D12PipelineState** GetGraphicsPsoPtr(int index);
-	ID3D12RootSignature* GetGraphicsRootSignature();
-	ID3D12DescriptorHeap* GetGraphicsDescriptorHeap();
+	ID3D12RootSignature* GetGraphicsRootSignature(int index);
+	ID3D12RootSignature** GetGraphicsRootSignaturePtr(int index);
+	ID3D12DescriptorHeap* GetGraphicsDescriptorHeap(int index);
+	ID3D12DescriptorHeap** GetGraphicsDescriptorHeapPtr(int index);
+	ID3D12DescriptorHeap* GetGraphicsRtvDescriptorHeap(int index);
+	ID3D12DescriptorHeap** GetGraphicsRtvDescriptorHeapPtr(int index);
 
 	// Wave Particle Pipeline
-	bool CreateWaveParticlePipeline(
+	bool CreateWaveParticleRootSignature(
 		ID3D12Device* device,
-		const vector<Texture*>& textures,
-		const vector<RenderTexture*>& renderTextures);
-
-	void RecordWaveParticlePipeline(
-		CD3DX12_CPU_DESCRIPTOR_HANDLE renderTarget,
-		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
-		ID3D12GraphicsCommandList* commandList,
-		ID3D12RootSignature* rootSignature,
-		ID3D12DescriptorHeap* descriptorHeap,
-		Frame* pFrame,
-		Scene* pScene,
-		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+		ID3D12RootSignature** rootSignature,
+		int descriptorNum);
 
 	ID3D12PipelineState* GetWaveParticlePSO(int index);
 	ID3D12PipelineState** GetWaveParticlePsoPtr(int index);
-	ID3D12RootSignature* GetWaveParticleRootSignature();
-	ID3D12DescriptorHeap* GetWaveParticleDescriptorHeap();
+	ID3D12RootSignature* GetWaveParticleRootSignature(int index);
+	ID3D12RootSignature** GetWaveParticleRootSignaturePtr(int index);
+	ID3D12DescriptorHeap* GetWaveParticleDescriptorHeap(int index);
+	ID3D12DescriptorHeap** GetWaveParticleDescriptorHeapPtr(int index);
+	ID3D12DescriptorHeap* GetWaveParticleRtvDescriptorHeap(int index);
+	ID3D12DescriptorHeap** GetWaveParticleRtvDescriptorHeapPtr(int index);
 
 	// Post Process Pipeline
-	bool CreatePostProcessPipeline(
+	bool CreatePostProcessRootSignature(
 		ID3D12Device* device,
-		const vector<Texture*>& textures,
-		const vector<RenderTexture*>& renderTextures);
-
-	void RecordPostProcessPipeline(
-		CD3DX12_CPU_DESCRIPTOR_HANDLE renderTarget,
-		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
-		ID3D12GraphicsCommandList* commandList,
-		ID3D12RootSignature* rootSignature,
-		ID3D12DescriptorHeap* descriptorHeap,
-		Frame* pFrame,
-		Scene* pScene,
-		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
-
-	void RecordPostProcessPipeline(
-		const vector<RenderTexture*> &renderTextureVec,
-		CD3DX12_CPU_DESCRIPTOR_HANDLE depthStencil,
-		ID3D12GraphicsCommandList* commandList,
-		ID3D12RootSignature* rootSignature,
-		ID3D12DescriptorHeap* descriptorHeap,
-		Frame* pFrame,
-		Scene* pScene,
-		D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED);//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+		ID3D12RootSignature** rootSignature,
+		int descriptorNum);
 
 	ID3D12PipelineState* GetPostProcessPSO(int index);
 	ID3D12PipelineState** GetPostProcessPsoPtr(int index);
-	ID3D12RootSignature* GetPostProcessRootSignature();
-	ID3D12DescriptorHeap* GetPostProcessDescriptorHeap();
+	ID3D12RootSignature* GetPostProcessRootSignature(int index);
+	ID3D12RootSignature** GetPostProcessRootSignaturePtr(int index);
+	ID3D12DescriptorHeap* GetPostProcessDescriptorHeap(int index);
+	ID3D12DescriptorHeap** GetPostProcessDescriptorHeapPtr(int index);
+	ID3D12DescriptorHeap* GetPostProcessRtvDescriptorHeap(int index);
+	ID3D12DescriptorHeap** GetPostProcessRtvDescriptorHeapPtr(int index);
+
+	// Fluid Pipeline
+	bool CreateFluidRootSignature(
+		ID3D12Device* device,
+		ID3D12RootSignature** rootSignature,
+		int descriptorNum);
+
+	ID3D12PipelineState* GetFluidPSO(int frame, int index);
+	ID3D12PipelineState** GetFluidPsoPtr(int frame, int index);
+	ID3D12RootSignature* GetFluidRootSignature(int frame, int index);
+	ID3D12RootSignature** GetFluidRootSignaturePtr(int frame, int index);
+	ID3D12DescriptorHeap* GetFluidDescriptorHeap(int frame, int index);
+	ID3D12DescriptorHeap** GetFluidDescriptorHeapPtr(int frame, int index);
+	ID3D12DescriptorHeap* GetFluidRtvDescriptorHeap(int frame, int index);
+	ID3D12DescriptorHeap** GetFluidRtvDescriptorHeapPtr(int frame, int index);
 
 private:
 
@@ -128,36 +157,28 @@ private:
 	ID3D12DescriptorHeap* rtvDescriptorHeap;
 
 	//graphics pipeline
-	ID3D12PipelineState* graphicsPSO[1];
-	ID3D12RootSignature* graphicsRootSignature;
-	ID3D12DescriptorHeap* graphicsDescriptorHeap;
-	ID3D12DescriptorHeap* graphicsRtvDescriptorHeap;
-
-	bool CreateGraphicsRootSignature(
-		ID3D12Device* device, 
-		ID3D12RootSignature** rootSignature, 
-		int descriptorNum);
+	ID3D12PipelineState* graphicsPSO[static_cast<int>(GraphicsStage::Count)];
+	ID3D12RootSignature* graphicsRootSignature[static_cast<int>(GraphicsStage::Count)];
+	ID3D12DescriptorHeap* graphicsDescriptorHeap[static_cast<int>(GraphicsStage::Count)];
+	ID3D12DescriptorHeap* graphicsRtvDescriptorHeap[static_cast<int>(GraphicsStage::Count)];
 
 	//wave particle pipeline
-	ID3D12PipelineState* waveParticlePSO[1];
-	ID3D12RootSignature* waveParticleRootSignature;
-	ID3D12DescriptorHeap* waveParticleDescriptorHeap;
-	ID3D12DescriptorHeap* waveParticleRtvDescriptorHeap;
-
-	bool CreateWaveParticleRootSignature(
-		ID3D12Device* device,
-		ID3D12RootSignature** rootSignature,
-		int descriptorNum);
+	ID3D12PipelineState* waveParticlePSO[static_cast<int>(WaveParticleStage::Count)];
+	ID3D12RootSignature* waveParticleRootSignature[static_cast<int>(WaveParticleStage::Count)];
+	ID3D12DescriptorHeap* waveParticleDescriptorHeap[static_cast<int>(WaveParticleStage::Count)];
+	ID3D12DescriptorHeap* waveParticleRtvDescriptorHeap[static_cast<int>(WaveParticleStage::Count)];
 
 	//post process pipeline
-	ID3D12PipelineState* postProcessPSO[2];
-	ID3D12RootSignature* postProcessRootSignature;
-	ID3D12DescriptorHeap* postProcessDescriptorHeap;
-	ID3D12DescriptorHeap* postProcessRtvDescriptorHeap;
+	ID3D12PipelineState* postProcessPSO[static_cast<int>(PostProcessStage::Count)];
+	ID3D12RootSignature* postProcessRootSignature[static_cast<int>(PostProcessStage::Count)];
+	ID3D12DescriptorHeap* postProcessDescriptorHeap[static_cast<int>(PostProcessStage::Count)];
+	ID3D12DescriptorHeap* postProcessRtvDescriptorHeap[static_cast<int>(PostProcessStage::Count)];
 
-	bool CreatePostProcessRootSignature(
-		ID3D12Device* device,
-		ID3D12RootSignature** rootSignature,
-		int descriptorNum);
+	//fluid pipeline
+	ID3D12PipelineState* fluidPSO[FrameBufferCount][static_cast<int>(FluidStage::Count)];
+	ID3D12RootSignature* fluidRootSignature[FrameBufferCount][static_cast<int>(FluidStage::Count)];
+	ID3D12DescriptorHeap* fluidDescriptorHeap[FrameBufferCount][static_cast<int>(FluidStage::Count)];
+	ID3D12DescriptorHeap* fluidRtvDescriptorHeap[FrameBufferCount][static_cast<int>(FluidStage::Count)];
+
 };
 

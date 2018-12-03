@@ -9,9 +9,6 @@ public:
 	{
 		XMFLOAT4X4 viewProj;
 		XMFLOAT4X4 viewProjInv;
-		float vx;
-		float vy;
-		float vz;
 	};
 
 	Camera(const XMFLOAT3 &_position,

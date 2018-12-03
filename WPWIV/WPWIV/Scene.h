@@ -14,10 +14,21 @@ public:
 		float dxScale;
 		float dzScale;
 		float timeScale;
+		float timeStepFluid;//
+		float jacobiObstacleScale;//1
+		float fluidCellSize;//1.25
+		float jacobiInvBeta;//0.243
+		float fluidDissipation;//1
+		float gradientScale;//0.07 * 1.125
+		float splatDirU;//
+		float splatDirV;//
+		float splatScale;//0.015
 		uint32_t edgeTessFactor;
 		uint32_t insideTessFactor;
 		uint32_t textureWidth;
 		uint32_t textureHeight;
+		uint32_t textureWidthFluid;
+		uint32_t textureHeightFluid;
 		uint32_t blurRadius;
 		uint32_t mode; 
 		//0 - default, 
@@ -28,9 +39,6 @@ public:
 		//5 - vertical blur, 
 		//6 - horizontal and vertical blur
 		//7 - normal
-		float lighthight;
-		float extinctcoeff;
-		float shiness;
 	};
 
 	Scene();
@@ -48,9 +56,19 @@ public:
 	void SetUniformDxScale(float _dxScale);
 	void SetUniformDzScale(float _dzScale);
 	void SetUniformTimeScale(float _timeScale);
+	void SetUniformTimeStepFluid(float _timeStepFluid);
+	void SetUniformJacobiObstacleScale(float _jacobiObstacleScale);
+	void SetUniformFluidCellSize(float _fluidCellSize);
+	void SetUniformJacobiInvBeta(float _jacobiInvBeta);
+	void SetUniformFluidDissipation(float _fluidDissipation);
+	void SetUniformGradientScale(float _gradientScale);
+	void SetUniformSplatDirU(float _splatDirU);
+	void SetUniformSplatDirV(float _splatDirV);
+	void SetUniformSplatScale(float _splatScale);
 	void SetUniformEdgeTessFactor(uint32_t _tessellationFactor);
 	void SetUniformInsideTessFactor(uint32_t _tessellationFactor);
-	void SetUniformTexutureWidthHeight(uint32_t texWidth, uint32_t texHeight);
+	void SetUniformTextureWidthHeight(uint32_t texWidth, uint32_t texHeight);
+	void SetUniformTextureWidthHeightFluid(uint32_t texWidth, uint32_t texHeight);
 	void SetUniformBlurRadius(uint32_t _blurRadius);
 	void SetUniformMode(uint32_t _mode);
 	float GetUniformHeightScale();
@@ -59,20 +77,19 @@ public:
 	float GetUniformDxScale();
 	float GetUniformDzScale();
 	float GetUniformTimeScale();
+	float GetUniformTimeStepFluid();
+	float GetUniformJacobiObstacleScale();
+	float GetUniformFluidCellSize();
+	float GetUniformJacobiInvBeta();
+	float GetUniformFluidDissipation();
+	float GetUniformGradientScale();
+	float GetUniformSplatDirU();
+	float GetUniformSplatDirV();
+	float GetUniformSplatScale();
 	uint32_t GetUniformEdgeTessFactor();
 	uint32_t GetUniformInsideTessFactor();
 	uint32_t GetUniformBlurRadius();
 	uint32_t GetUniformMode();
-
-	float GetUniformLighthight();
-	void SetUniformLighthight(float v);
-
-	float Getextinctcoeff();
-	void Setextinctcoeff(float v);
-
-	float Getshiness();
-	void Setshiness(float v);
-
 
 	bool LoadScene();
 	bool InitScene(ID3D12Device* device);

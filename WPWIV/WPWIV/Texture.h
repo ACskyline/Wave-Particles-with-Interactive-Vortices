@@ -19,6 +19,7 @@ public:
 	void ReleaseBuffer();
 
 	bool InitTexture(ID3D12Device* device);
+	wstring GetName();
 
 protected:
 	wstring fileName;

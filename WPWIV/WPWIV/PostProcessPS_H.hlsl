@@ -1,22 +1,25 @@
 #include "GlobalInclude.hlsli"
 
+Texture2D waveParticle : register(t0);
+SamplerState wrapSampler : register(s0);
+
 PS_OUTPUT main(VS_OUTPUT input)
 {
     PS_OUTPUT output;
     output.col1 = float4(0, 0, 0, 0);
     output.col2 = float4(0, 0, 0, 0);
 
-    float3 velAmp = t0.Sample(s0, input.texCoord).xyz;
+    float3 velAmp = waveParticle.Sample(wrapSampler, input.texCoord).xyz;
     float4 f123 = float4(velAmp.z, 0, 0.5 * velAmp.z, 1);
     float4 f45v = float4(0, velAmp.z, sign(velAmp.z) * velAmp.xy);
 
-    if(mode==0||mode==4||mode==6||mode==7||mode==8)
+    if(mode==0||mode==4||mode==6||mode==7)
     {
         for (int i = 1; i <= blurRadius; i++)
         {
             float offset = i / float(textureWidth);
-            float4 velAmpL = t0.Sample(s0, input.texCoord + float2(offset, 0));
-            float4 velAmpR = t0.Sample(s0, input.texCoord + float2(-offset, 0));
+            float4 velAmpL = waveParticle.Sample(wrapSampler, input.texCoord + float2(offset, 0));
+            float4 velAmpR = waveParticle.Sample(wrapSampler, input.texCoord + float2(-offset, 0));
             float ampSum = velAmpL.z + velAmpR.z;
             float ampDif = velAmpL.z - velAmpR.z;
             float3 f = GetFilter(i / float(blurRadius));
