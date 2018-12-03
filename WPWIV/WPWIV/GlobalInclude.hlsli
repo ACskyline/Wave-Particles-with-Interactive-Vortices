@@ -40,6 +40,9 @@ cbuffer CameraUniform : register(b1)
 {
     float4x4 viewProj;
     float4x4 viewProjInv;
+	float vx;
+	float vy;
+	float vz;
 };
 
 cbuffer FrameUniform : register(b2)
@@ -69,6 +72,9 @@ cbuffer SceneUniform : register(b3)
     //5 - vertical blur, 
     //6 - horizontal and vertical blur,
     //7 - normal
+	float lighthight;
+	float extinctcoeff;
+	float shiness;
 };
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 /////////////// UNIFORM ///////////////
@@ -215,6 +221,7 @@ struct DS_OUTPUT
 {
     float4 pos : SV_POSITION;
     float2 texCoord : TEXCOORD;
+	float3 PosW : POSITION;
     //float3 nor : NORMAL; //PER VERTEX NORMAL
 };
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//

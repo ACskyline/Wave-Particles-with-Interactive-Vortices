@@ -38,7 +38,7 @@ Frame mFrameGraphics;
 Frame mFrameWaveParticle;
 Frame mFramePostProcess;
 OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
-OrbitCamera mCameraRenderTexture(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 500, 500, 45.0f, 0.1f, 1000.0f);
+OrbitCamera mCameraRenderTexture(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), 1000, 1000, 45.0f, 0.1f, 1000.0f);
 Camera mDummyCamera(XMFLOAT3{ 4.f,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,1,0 }, 500, 500, 45.0f, 0.1f, 1000.f);
 Mesh mPlane(Mesh::MeshType::Plane, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Mesh mWaterSurface(Mesh::MeshType::WaterSurface, 100, 100, XMFLOAT3(-5, 0, -5), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 1, 10));
@@ -53,7 +53,7 @@ Shader mPostProcessPS_H(Shader::ShaderType::PixelShader, L"PostProcessPS_H.hlsl"
 Shader mPostProcessPS_V(Shader::ShaderType::PixelShader, L"PostProcessPS_V.hlsl");
 Shader mWaveParticleVS(Shader::ShaderType::VertexShader, L"WaveParticleVS.hlsl");
 Shader mWaveParticlePS(Shader::ShaderType::PixelShader, L"WaveParticlePS.hlsl");
-Texture mTextureFlowmap(L"flow2.jpg");
+Texture mTextureFlowmap(L"rd.jpg");
 Texture mTextureAlbedo(L"checkerboard.jpg");
 RenderTexture mRenderTextureWaveParticle(500, 500);
 RenderTexture mRenderTexturePostProcessH1(500, 500);
@@ -129,11 +129,14 @@ bool CreateScene()
 	mScene.SetUniformWaveParticleSpeedScale(0.0001);
 	mScene.SetUniformFlowSpeed(0.0001);
 	mScene.SetUniformTexutureWidthHeight(500, 500);
-	mScene.SetUniformBlurRadius(50);
+	mScene.SetUniformBlurRadius(65);
 	mScene.SetUniformDxScale(0.03);
 	mScene.SetUniformDzScale(0.03);
-	mScene.SetUniformTimeScale(1.0);
-	mScene.SetUniformMode(0);
+	mScene.SetUniformTimeScale(6);
+	mScene.SetUniformMode(8);
+	mScene.SetUniformLighthight(6.35);
+	mScene.Setextinctcoeff(-0.4);
+	mScene.Setshiness(240);
 
 	if (!mScene.LoadScene())
 		return false;
@@ -895,6 +898,9 @@ void Gui()
 	static int insideTess = mScene.GetUniformInsideTessFactor();
 	static int blurRadius = mScene.GetUniformBlurRadius();
 	static int mode = mScene.GetUniformMode();
+	static float lighthight = mScene.GetUniformLighthight();
+	static float extinctcoeff = mScene.Getextinctcoeff();
+	static float shiness = mScene.Getshiness();
 	bool needToUpdateSceneUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -902,7 +908,7 @@ void Gui()
 	ImGui::Begin("Control Panel ");                        
 	ImGui::Text("Wave Particles Scale ");
 
-	ImGui::Combo("mode", &mode, "default\0flow map\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0\0");
+	ImGui::Combo("mode", &mode, "default\0flow map\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0sss\0\0");
 
 	ImGui::SliderFloat("height ", &heightScale, 0.0f, 3.0f);
 	ImGui::SliderFloat("dx ", &dxScale, 0.0f, 0.13f, "%.6f");
@@ -913,6 +919,26 @@ void Gui()
 	ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 100.0f, "%.6f");
 	ImGui::SliderInt("edge tess ", &edgeTess, 0, 32);
 	ImGui::SliderInt("inside tess ", &insideTess, 0, 32);
+	ImGui::SliderFloat("light hight", &lighthight, 1, 20);
+	ImGui::SliderFloat("extinct coeff", &extinctcoeff, -0.7, 0);
+	ImGui::SliderFloat("shiness", &shiness, 10, 600);
+
+	if (shiness != mScene.Getshiness())
+	{
+		mScene.Setshiness(shiness);
+		needToUpdateSceneUniform = true;
+	}
+	if (extinctcoeff != mScene.Getextinctcoeff())
+	{
+		mScene.Setextinctcoeff(extinctcoeff);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (lighthight != mScene.GetUniformLighthight())
+	{
+		mScene.SetUniformLighthight(lighthight);
+		needToUpdateSceneUniform = true;
+	}
 
 	if (mode != mScene.GetUniformMode())
 	{

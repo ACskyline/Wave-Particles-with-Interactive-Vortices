@@ -28,6 +28,9 @@ public:
 		//5 - vertical blur, 
 		//6 - horizontal and vertical blur
 		//7 - normal
+		float lighthight;
+		float extinctcoeff;
+		float shiness;
 	};
 
 	Scene();
@@ -60,6 +63,16 @@ public:
 	uint32_t GetUniformInsideTessFactor();
 	uint32_t GetUniformBlurRadius();
 	uint32_t GetUniformMode();
+
+	float GetUniformLighthight();
+	void SetUniformLighthight(float v);
+
+	float Getextinctcoeff();
+	void Setextinctcoeff(float v);
+
+	float Getshiness();
+	void Setshiness(float v);
+
 
 	bool LoadScene();
 	bool InitScene(ID3D12Device* device);

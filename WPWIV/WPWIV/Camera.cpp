@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include <iostream>
 
 Camera::Camera(const XMFLOAT3 &_position,
 	const XMFLOAT3 &_target,
@@ -91,6 +92,11 @@ void Camera::UpdateUniform()
 		XMMatrixInverse(
 			nullptr, 
 			XMLoadFloat4x4(&uniform.viewProj)));
+
+	uniform.vx = position.x;
+	uniform.vy = position.y;
+	uniform.vz = position.z;
+	
 }
 
 bool Camera::CreateUniformBuffer(ID3D12Device* device)

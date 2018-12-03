@@ -1,19 +1,10 @@
-﻿  main.cpp
-  c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(128): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(129): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(130): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(133): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(134): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(221): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(225): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(226): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(227): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(232): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(233): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(540): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(744): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(766): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(790): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(812): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-  WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe
+﻿E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(3,13-25): warning X3207: Initializer used on a global 'const' variable. This requires setting an external constant. If a literal is desired, use 'static const' instead.
+E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(4,13-28): warning X3207: Initializer used on a global 'const' variable. This requires setting an external constant. If a literal is desired, use 'static const' instead.
+E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(6,14-52): warning X3207: Initializer used on a global 'const' variable. This requires setting an external constant. If a literal is desired, use 'static const' instead.
+E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(7,14-53): warning X3207: Initializer used on a global 'const' variable. This requires setting an external constant. If a literal is desired, use 'static const' instead.
+E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(57,9-60): warning X3206: implicit truncation of vector type
+E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(63,3-54): warning X3206: implicit truncation of vector type
+E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(71,3-32): warning X3206: implicit truncation of vector type
+  
+  compilation object save succeeded; see E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Debug\PixelShader.cso
+  WPWIV.vcxproj -> E:\cis565\wavev5\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Debug\WPWIV.exe

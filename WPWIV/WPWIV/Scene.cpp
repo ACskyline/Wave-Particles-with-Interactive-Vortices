@@ -144,6 +144,36 @@ uint32_t Scene::GetUniformMode()
 	return uniform.mode;
 }
 
+float Scene::GetUniformLighthight()
+{
+	return uniform.lighthight;
+}
+
+void Scene::SetUniformLighthight(float v)
+{
+	uniform.lighthight = v;
+}
+
+float Scene::Getextinctcoeff()
+{
+	return uniform.extinctcoeff;
+}
+
+void Scene::Setextinctcoeff(float v)
+{
+	uniform.extinctcoeff = v;
+}
+
+float Scene::Getshiness()
+{
+	return uniform.shiness;
+}
+
+void Scene::Setshiness(float v)
+{
+	uniform.shiness = v;
+}
+
 bool Scene::LoadScene()
 {
 	// CPU side, load data from disk
