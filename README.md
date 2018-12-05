@@ -69,7 +69,7 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
    - [x] Fluid simulation
 
-- [ ] Milestone 3
+- [x] Milestone 3
 
   - [ ] Improve rendering method
 
@@ -77,11 +77,11 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
     - [ ] Subsurface scattering
 
-  - [ ] Update flow map in real-time
+  - [x] Update flow map in real-time
 
     - [ ] Create blockers (rocks and etc.)
 
-    - [ ] Advect properties using simulation result
+    - [x] Advect properties using simulation result
 
 - [ ] Final
 
