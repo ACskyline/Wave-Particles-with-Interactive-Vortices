@@ -161,7 +161,7 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ![](img/m2fluid3.gif)
 
-## Milestone 2 Update
+## Milestone 3 Update
 
 * Specularity 
 
