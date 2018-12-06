@@ -171,11 +171,11 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ![](img/m3-1.gif)
 
-* Divergency
+* Divergence
 
 ![](img/m3-2.gif)
 
-* Displacement with foam
+* Divergence as foam
 
 ![](img/m3-3.gif)
 
