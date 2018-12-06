@@ -71,9 +71,9 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 - [x] Milestone 3
 
-  - [ ] Improve rendering method
+  - [x] Improve rendering method
 
-    - [ ] Foam
+    - [x] Foam
 
     - [ ] Subsurface scattering
 
@@ -166,6 +166,18 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 * Specularity 
 
 ![](img/wprender.gif)
+
+* Fluid sim with vorticity confinement
+
+![](img/m3-1.gif)
+
+* Divergency
+
+![](img/m3-2.gif)
+
+* Displacement with foam
+
+![](img/m3-3.gif)
 
 ## References
 

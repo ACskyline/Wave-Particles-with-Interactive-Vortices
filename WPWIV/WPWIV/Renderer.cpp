@@ -209,6 +209,17 @@ void Renderer::Release()
 		}
 	}
 
+	for (int i = 0; i < FrameBufferCount; i++)
+	{
+		for (int j = 0; j < JacobiIteration; j++)
+		{
+			SAFE_RELEASE(fluidJacobiPSO[i][j]);
+			SAFE_RELEASE(fluidJacobiRootSignature[i][j]);
+			SAFE_RELEASE(fluidJacobiDescriptorHeap[i][j]);
+			SAFE_RELEASE(fluidJacobiRtvDescriptorHeap[i][j]);
+		}
+	}
+
 	// graphics pipeline
 	SAFE_RELEASE_ARRAY(graphicsPSO);
 	SAFE_RELEASE_ARRAY(graphicsRootSignature);
@@ -1001,7 +1012,7 @@ bool Renderer::CreateGraphicsRootSignature(
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC samplerWrap = {};
-	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerWrap.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerWrap.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerWrap.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -1017,7 +1028,7 @@ bool Renderer::CreateGraphicsRootSignature(
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC samplerClamp = {};
-	samplerClamp.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerClamp.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerClamp.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	samplerClamp.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	samplerClamp.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -1172,7 +1183,7 @@ bool Renderer::CreateFluidRootSignature(
 
 	// create a static sampler
 	D3D12_STATIC_SAMPLER_DESC samplerWrap = {};
-	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	samplerWrap.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR; //D3D12_FILTER_MIN_MAG_MIP_POINT;// 
 	samplerWrap.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerWrap.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerWrap.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

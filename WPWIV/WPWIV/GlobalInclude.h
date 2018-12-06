@@ -19,6 +19,7 @@ enum UNIFORM_SLOT { OBJECT, CAMERA, FRAME, SCENE, TABLE, COUNT };
 
 const int FrameBufferCount = 3;
 const int MultiSampleCount = 1;
+const int JacobiIteration = 40;
 
 const D3D12_INPUT_ELEMENT_DESC VertexInputLayout[] =
 {

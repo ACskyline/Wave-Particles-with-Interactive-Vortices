@@ -10,14 +10,15 @@
 HWND hwnd = NULL;// Handle to the window
 LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
 LPCTSTR WindowTitle = L"WPWIV_1.0";// title of the window
-int Width = 1000;// width and height of the window
-int Height = 1000;
-int WidthRT = 1000;
-int HeightRT = 1000;
-int WidthRtFluid = 1000;
-int HeightRtFluid = 1000;
-int JacobiIteration = 40;
+int Width = 1024;// width and height of the window
+int Height = 768;
+int WidthRT = 500;
+int HeightRT = 500;
+int WidthRtFluid = 500;
+int HeightRtFluid = 500;
 bool FluidSimulation = true;
+int FluidSimulationStep = 30;
+int fluidSimulationStep = 0;
 IDirectInputDevice8* DIKeyboard;
 IDirectInputDevice8* DIMouse;
 DIMOUSESTATE mouseLastState;
@@ -65,13 +66,12 @@ Shader mPostProcessPS_V(Shader::ShaderType::PixelShader, L"PostProcessPS_V.hlsl"
 Shader mWaveParticleVS(Shader::ShaderType::VertexShader, L"WaveParticleVS.hlsl");
 Shader mWaveParticlePS(Shader::ShaderType::PixelShader, L"WaveParticlePS.hlsl");
 Shader mFluidAdvectPS(Shader::ShaderType::PixelShader, L"AdvectPS.hlsl");
-Shader mFluidSplatPS(Shader::ShaderType::PixelShader, L"SplatPS.hlsl");
+Shader mFluidSplatPS(Shader::ShaderType::PixelShader, L"SplatWithVorticityPS.hlsl");
 Shader mFluidComputeDivergencePS(Shader::ShaderType::PixelShader, L"ComputeDivergencePS.hlsl");
 Shader mFluidJacobiPS(Shader::ShaderType::PixelShader, L"JacobiPS.hlsl");
 Shader mFluidSubtractGradientPS(Shader::ShaderType::PixelShader, L"SubtractGradientPS.hlsl");
-//Texture mTextureFlowmap(L"flow2.jpg");
-Texture mTextureAlbedo(L"checkerboard.jpg");
-Texture mTextureObstacle(L"ob1.jpg");
+Texture mTextureAlbedo(L"foam.jpg");
+Texture mTextureObstacle(L"ob3.jpg");
 RenderTexture mRenderTextureWaveParticle(WidthRT, HeightRT);
 RenderTexture mRenderTexturePostProcessH1(WidthRT, HeightRT);
 RenderTexture mRenderTexturePostProcessH2(WidthRT, HeightRT);
@@ -155,10 +155,13 @@ bool CreateScene()
 	mFrameGraphics.AddCamera(&mCamera);
 	mFrameGraphics.AddMesh(&mWaterSurface);
 	mFrameGraphics.AddTexture(&mTextureAlbedo);//t0
-	//mFrameGraphics.AddTexture(&mRenderTextureFluidPressure1);//t1
 	mFrameGraphics.AddTexture(&mRenderTextureFluidVelocity1);//t1
 	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV1);//t2
 	mFrameGraphics.AddTexture(&mRenderTexturePostProcessV2);//t3
+	mFrameGraphics.AddTexture(&mRenderTextureFluidDensity1);//t4
+	mFrameGraphics.AddTexture(&mRenderTextureFluidPressure1);//t5
+	mFrameGraphics.AddTexture(&mRenderTextureFluidDivergence);//t6
+	mFrameGraphics.AddTexture(&mTextureObstacle);//t7
 
 	mFramePostProcessH.SetUniformTime(0);
 	mFramePostProcessV.SetUniformTime(0);
@@ -236,17 +239,16 @@ bool CreateScene()
 	mScene.SetUniformDxScale(0.03);
 	mScene.SetUniformDzScale(0.03);
 	mScene.SetUniformTimeScale(1.0);
-	mScene.SetUniformTimeStepFluid(0.0084070);
-	mScene.SetUniformJacobiObstacleScale(13);
-	mScene.SetUniformFluidCellSize(1.3);
-	mScene.SetUniformJacobiInvBeta(0.2);
-	mScene.SetUniformFluidDissipation(0.992308);
-	mScene.SetUniformGradientScale(0.972198);
-	mScene.SetUniformSplatDirU(0.450549);
+	mScene.SetUniformFoamScale(3.0);
+	mScene.SetUniformTimeStepFluid(0.03);
+	mScene.SetUniformFluidCellSize(1.25);
+	mScene.SetUniformFluidDissipation(0.996);
+	mScene.SetUniformVorticityScale(5.0);
+	mScene.SetUniformSplatDirU(0.5);
 	mScene.SetUniformSplatDirV(0.5);
-	mScene.SetUniformSplatScale(0.01);
+	mScene.SetUniformSplatScale(0.005);
 	mScene.SetUniformTextureWidthHeight(WidthRT, HeightRT);
-	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid /3, HeightRtFluid / 3);
+	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 2.0, HeightRtFluid / 2.0);
 	mScene.SetUniformEdgeTessFactor(4);
 	mScene.SetUniformInsideTessFactor(2);
 	mScene.SetUniformBlurRadius(50);
@@ -665,7 +667,7 @@ bool InitD3D()
 	{
 		if (!mRenderer.CreateFluidRootSignature(
 			device,
-			mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
 			3))
 		{
 			printf("Create Fluid RS advection failed\n");
@@ -674,8 +676,8 @@ bool InitD3D()
 
 		if (!mRenderer.CreateHeap(
 			device,
-			mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Advection)),
-			mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
+			mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
 			3,
 			1))
 		{
@@ -685,8 +687,51 @@ bool InitD3D()
 
 		if (!mRenderer.CreatePSO(
 			device,
-			mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::Advection)),
-			mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
+			mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
+			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+			CD3DX12_BLEND_DESC(D3D12_DEFAULT),
+			Renderer::NoDepthTest(),
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			1,
+			&mPostProcessVS,
+			nullptr,
+			nullptr,
+			nullptr,
+			&mFluidAdvectPS))
+		{
+			printf("Create Fluid Pipeline PSO advection failed\n");
+			return false;
+		}
+	}
+
+	// density advection
+	for (int i = 0; i < FrameBufferCount; i++)
+	{
+		if (!mRenderer.CreateFluidRootSignature(
+			device,
+			mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			3))
+		{
+			printf("Create Fluid RS advection failed\n");
+			return false;
+		}
+
+		if (!mRenderer.CreateHeap(
+			device,
+			mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			3,
+			1))
+		{
+			printf("Create Fluid Heap advection failed\n");
+			return false;
+		}
+
+		if (!mRenderer.CreatePSO(
+			device,
+			mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
 			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
 			CD3DX12_BLEND_DESC(D3D12_DEFAULT),
 			Renderer::NoDepthTest(),
@@ -708,8 +753,8 @@ bool InitD3D()
 	{
 		if (!mRenderer.CreateFluidRootSignature(
 			device,
-			mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::Splat)),
-			1))
+			mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
+			2))
 		{
 			printf("Create Fluid RS splat failed\n");
 			return false;
@@ -717,9 +762,9 @@ bool InitD3D()
 
 		if (!mRenderer.CreateHeap(
 			device,
-			mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Splat)),
-			mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Splat)),
-			1,
+			mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
+			mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
+			2,
 			1))
 		{
 			printf("Create Fluid Heap splat failed\n");
@@ -728,10 +773,53 @@ bool InitD3D()
 
 		if (!mRenderer.CreatePSO(
 			device,
-			mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::Splat)),
-			mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::Splat)),
+			mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
+			mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
 			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
-			mRenderer.AdditiveBlend(),
+			CD3DX12_BLEND_DESC(D3D12_DEFAULT), //mRenderer.AdditiveBlend(),
+			Renderer::NoDepthTest(),
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			1,
+			&mPostProcessVS,
+			nullptr,
+			nullptr,
+			nullptr,
+			&mFluidSplatPS))
+		{
+			printf("Create Fluid Pipeline PSO splat failed\n");
+			return false;
+		}
+	}
+
+	// density splat
+	for (int i = 0; i < FrameBufferCount; i++)
+	{
+		if (!mRenderer.CreateFluidRootSignature(
+			device,
+			mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			2))
+		{
+			printf("Create Fluid RS splat failed\n");
+			return false;
+		}
+
+		if (!mRenderer.CreateHeap(
+			device,
+			mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			2,
+			1))
+		{
+			printf("Create Fluid Heap splat failed\n");
+			return false;
+		}
+
+		if (!mRenderer.CreatePSO(
+			device,
+			mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+			CD3DX12_BLEND_DESC(D3D12_DEFAULT), //mRenderer.AdditiveBlend(),
 			Renderer::NoDepthTest(),
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			1,
@@ -792,43 +880,51 @@ bool InitD3D()
 	// fluid jacobi
 	for (int i = 0; i < FrameBufferCount; i++)
 	{
-		if (!mRenderer.CreateFluidRootSignature(
-			device,
-			mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
-			3))
+		for (int j = 0; j < JacobiIteration; j++)
 		{
-			printf("Create Fluid RS jacobi failed\n");
-			return false;
-		}
+			if (!mRenderer.CreateFluidRootSignature(
+				device,
+				&mRenderer.fluidJacobiRootSignature[i][j],
+				//mRenderer.GetFluidRootSignaturePtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				3))
+			{
+				printf("Create Fluid RS jacobi failed\n");
+				return false;
+			}
 
-		if (!mRenderer.CreateHeap(
-			device,
-			mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
-			mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
-			3,
-			1))
-		{
-			printf("Create Fluid Heap jacobi failed\n");
-			return false;
-		}
+			if (!mRenderer.CreateHeap(
+				device,
+				&mRenderer.fluidJacobiDescriptorHeap[i][j],
+				&mRenderer.fluidJacobiRtvDescriptorHeap[i][j],
+				//mRenderer.GetFluidDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				//mRenderer.GetFluidRtvDescriptorHeapPtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				3,
+				1))
+			{
+				printf("Create Fluid Heap jacobi failed\n");
+				return false;
+			}
 
-		if (!mRenderer.CreatePSO(
-			device,
-			mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
-			mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
-			CD3DX12_BLEND_DESC(D3D12_DEFAULT),
-			Renderer::NoDepthTest(),
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			1,
-			&mPostProcessVS,
-			nullptr,
-			nullptr,
-			nullptr,
-			&mFluidJacobiPS))
-		{
-			printf("Create Fluid Pipeline PSO jacobi failed\n");
-			return false;
+			if (!mRenderer.CreatePSO(
+				device,
+				&mRenderer.fluidJacobiPSO[i][j],
+				mRenderer.fluidJacobiRootSignature[i][j],
+				//mRenderer.GetFluidPsoPtr(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				//mRenderer.GetFluidRootSignature(i, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+				CD3DX12_BLEND_DESC(D3D12_DEFAULT),
+				Renderer::NoDepthTest(),
+				DXGI_FORMAT_R16G16B16A16_FLOAT,
+				1,
+				&mPostProcessVS,
+				nullptr,
+				nullptr,
+				nullptr,
+				&mFluidJacobiPS))
+			{
+				printf("Create Fluid Pipeline PSO jacobi failed\n");
+				return false;
+			}
 		}
 	}
 
@@ -1125,12 +1221,14 @@ void UpdatePipeline()
 	mRenderer.RecordBegin(frameIndex, commandList);
 	///////// RECORD GRAPHICS COMMANDS BEGIN /////////
 
-	if (FluidSimulation)
+	fluidSimulationStep++;
+	if (FluidSimulation && fluidSimulationStep >= FluidSimulationStep)
 	{
+		fluidSimulationStep = 0;
 
 		vector<D3D12_RESOURCE_BARRIER> barrierAdvectVelocity = {
 			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
-			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
 		};
 		commandList->ResourceBarrier(barrierAdvectVelocity.size(), barrierAdvectVelocity.data());
 
@@ -1138,29 +1236,29 @@ void UpdatePipeline()
 		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 		mRenderer.BindRenderTextureToRtvDescriptorHeap(
 			device,
-			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
 			pRtVelocityPong,
 			0);//rtv
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
 			&mTextureObstacle,
 			0);//t0
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
 			pRtVelocityPing,
 			1);//t1
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
 			pRtVelocityPing,
 			2);//t2
 		mRenderer.RecordPipeline(
 			commandList,
-			mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-			mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
+			mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
+			mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
 			pRtVelocityPong->GetRtvHandle(),//rtv
 			&mFrameFluidAdvect,
 			&mScene,
@@ -1169,107 +1267,118 @@ void UpdatePipeline()
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 		///////// MY FLUID PIPELINE advect velocity /////////
 
-		//vector<D3D12_RESOURCE_BARRIER> barrierAdvectDensity = {
-		//	CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
-		//	CD3DX12_RESOURCE_BARRIER::Transition(pRtDensityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
-		//	CD3DX12_RESOURCE_BARRIER::Transition(pRtDensityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
-		//};
-		//commandList->ResourceBarrier(barrierAdvectDensity.size(), barrierAdvectDensity.data());
-
-		/////////// MY FLUID PIPELINE advect density /////////
-		////vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-		//mRenderer.BindRenderTextureToRtvDescriptorHeap(
-		//	device,
-		//	mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-		//	pRtDensityPong,
-		//	0);//rtv
-		//mRenderer.BindTextureToDescriptorHeap(
-		//	device,
-		//	mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-		//	&mTextureObstacle,
-		//	0);//t0
-		//mRenderer.BindTextureToDescriptorHeap(
-		//	device,
-		//	mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-		//	pRtVelocityPing,
-		//	1);//t1
-		//mRenderer.BindTextureToDescriptorHeap(
-		//	device,
-		//	mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-		//	pRtDensityPing,
-		//	2);//t2
-		//mRenderer.RecordPipeline(
-		//	commandList,
-		//	mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-		//	mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-		//	mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Advection)),
-		//	pRtDensityPong->GetRtvHandle(),//rtv
-		//	&mFrameFluidAdvect,
-		//	&mScene,
-		//	D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//SwitchPingPong(&pRtDensityPing, &pRtDensityPong);//ping pong
-		////^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-		/////////// MY FLUID PIPELINE advect density /////////
-
-		vector<D3D12_RESOURCE_BARRIER> barrierSplat = {
-			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+		vector<D3D12_RESOURCE_BARRIER> barrierAdvectDensity = {
+			CD3DX12_RESOURCE_BARRIER::Transition(pRtDensityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+			CD3DX12_RESOURCE_BARRIER::Transition(pRtDensityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
 		};
-		commandList->ResourceBarrier(barrierSplat.size(), barrierSplat.data());
+		commandList->ResourceBarrier(barrierAdvectVelocity.size(), barrierAdvectVelocity.data());
 
-		///////// MY FLUID PIPELINE splat /////////
-		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+		///////// MY FLUID PIPELINE advect density /////////
+		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 		mRenderer.BindRenderTextureToRtvDescriptorHeap(
 			device,
-			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
+			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			pRtDensityPong,
+			0);//rtv
+		mRenderer.BindTextureToDescriptorHeap(
+			device,
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			&mTextureObstacle,
+			0);//t0
+		mRenderer.BindTextureToDescriptorHeap(
+			device,
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			pRtVelocityPing,
+			1);//t1
+		mRenderer.BindTextureToDescriptorHeap(
+			device,
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			pRtDensityPing,
+			2);//t2
+		mRenderer.RecordPipeline(
+			commandList,
+			mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
+			pRtDensityPong->GetRtvHandle(),//rtv
+			&mFrameFluidAdvect,
+			&mScene,
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		SwitchPingPong(&pRtDensityPing, &pRtDensityPong);//ping pong
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+		///////// MY FLUID PIPELINE advect density /////////
+
+		vector<D3D12_RESOURCE_BARRIER> barrierSplatVelocity = {
+			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0),
+			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPing->GetTextureBuffer(),  D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0)
+		};
+		commandList->ResourceBarrier(barrierSplatVelocity.size(), barrierSplatVelocity.data());
+
+		///////// MY FLUID PIPELINE splat velocity /////////
+		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+		mRenderer.BindRenderTextureToRtvDescriptorHeap(
+			device,
+			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
 			pRtVelocityPong,
 			0);//rtv
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
 			&mTextureObstacle,
 			0);//t0
+		mRenderer.BindTextureToDescriptorHeap(
+			device,
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
+			pRtVelocityPing,
+			1);//t1
 		mRenderer.RecordPipelineNoClear(
 			commandList,
-			mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
-			mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
+			mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
+			mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
 			pRtVelocityPong->GetRtvHandle(),//rtv
 			&mFrameFluidSplat,
 			&mScene,
 			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		SwitchPingPong(&pRtVelocityPing, &pRtVelocityPong);//ping pong
-		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-		///////// MY FLUID PIPELINE splat /////////
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+		///////// MY FLUID PIPELINE splat velocity /////////
 
-		vector<D3D12_RESOURCE_BARRIER> barrierSplat2 = {
-			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+		vector<D3D12_RESOURCE_BARRIER> barrierSplatDensity = {
+			CD3DX12_RESOURCE_BARRIER::Transition(pRtDensityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0),
+			CD3DX12_RESOURCE_BARRIER::Transition(pRtDensityPing->GetTextureBuffer(),  D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0)
 		};
-		commandList->ResourceBarrier(barrierSplat2.size(), barrierSplat2.data());
+		commandList->ResourceBarrier(barrierSplatDensity.size(), barrierSplatDensity.data());
 
-		///////// MY FLUID PIPELINE splat 2 /////////
-		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+		///////// MY FLUID PIPELINE splat density /////////
+		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 		mRenderer.BindRenderTextureToRtvDescriptorHeap(
 			device,
-			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
-			pRtVelocityPong,
+			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			pRtDensityPong,
 			0);//rtv
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatDensity)),
 			&mTextureObstacle,
 			0);//t0
+		mRenderer.BindTextureToDescriptorHeap(
+			device,
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			pRtDensityPing,
+			1);//t1
 		mRenderer.RecordPipelineNoClear(
 			commandList,
-			mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
-			mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
-			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Splat)),
-			pRtVelocityPong->GetRtvHandle(),//rtv
+			mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatDensity)),
+			pRtDensityPong->GetRtvHandle(),//rtv
 			&mFrameFluidSplat,
 			&mScene,
 			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		SwitchPingPong(&pRtVelocityPing, &pRtVelocityPong);//ping pong
-		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-		///////// MY FLUID PIPELINE splat 2 /////////
+		SwitchPingPong(&pRtDensityPing, &pRtDensityPong);//ping pong
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+		///////// MY FLUID PIPELINE splat density /////////
 
 		vector<D3D12_RESOURCE_BARRIER> barrierDivergence = {
 			CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureFluidDivergence.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0),
@@ -1315,7 +1424,8 @@ void UpdatePipeline()
 
 		mRenderer.BindRenderTextureToRtvDescriptorHeap(
 			device,
-			mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+			mRenderer.fluidJacobiRtvDescriptorHeap[frameIndex][0],
+			//mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
 			pRtPressurePing,
 			0);//rtv
 		mRenderer.Clear(
@@ -1333,29 +1443,36 @@ void UpdatePipeline()
 
 			mRenderer.BindRenderTextureToRtvDescriptorHeap(
 				device,
-				mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				mRenderer.fluidJacobiRtvDescriptorHeap[frameIndex][i],
+				//mRenderer.GetFluidRtvDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
 				pRtPressurePong,
 				0);//rtv
 			mRenderer.BindTextureToDescriptorHeap(
 				device,
-				mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				mRenderer.fluidJacobiDescriptorHeap[frameIndex][i],
+				//mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
 				&mTextureObstacle,
 				0);//t0
 			mRenderer.BindTextureToDescriptorHeap(
 				device,
-				mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				mRenderer.fluidJacobiDescriptorHeap[frameIndex][i],
+				//mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
 				pRtPressurePing,
 				1);//t1
 			mRenderer.BindTextureToDescriptorHeap(
 				device,
-				mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				mRenderer.fluidJacobiDescriptorHeap[frameIndex][i],
+				//mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
 				&mRenderTextureFluidDivergence,
 				2);//t2
 			mRenderer.RecordPipeline(
 				commandList,
-				mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
-				mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
-				mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				mRenderer.fluidJacobiPSO[frameIndex][i],
+				mRenderer.fluidJacobiRootSignature[frameIndex][i],
+				mRenderer.fluidJacobiDescriptorHeap[frameIndex][i],
+				//mRenderer.GetFluidPSO(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				//mRenderer.GetFluidRootSignature(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
+				//mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
 				pRtPressurePong->GetRtvHandle(),//rtv
 				&mFrameFluidJacobi,
 				&mScene,
@@ -1473,8 +1590,10 @@ void UpdatePipeline()
 	vector<D3D12_RESOURCE_BARRIER> barrierPostprocessVToGraphics = {
 		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
 		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV2.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
-		CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
-		//CD3DX12_RESOURCE_BARRIER::Transition(pRtPressurePing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0)
+		CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(pRtPressurePing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(pRtDensityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureFluidDivergence.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0)
 	};
 	commandList->ResourceBarrier(barrierPostprocessVToGraphics.size(), barrierPostprocessVToGraphics.data());
 	
@@ -1486,6 +1605,18 @@ void UpdatePipeline()
 		pRtVelocityPing,
 		//pRtPressurePing,
 		1);//t1
+	mRenderer.BindTextureToDescriptorHeap(
+		device,
+		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Default)),
+		pRtDensityPing,
+		//pRtPressurePing,
+		4);//t1
+	mRenderer.BindTextureToDescriptorHeap(
+		device,
+		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Default)),
+		pRtPressurePing,
+		//pRtPressurePing,
+		5);//t1
 	mRenderer.RecordPipeline(
 		commandList,
 		mRenderer.GetGraphicsPSO(static_cast<int>(Renderer::GraphicsStage::Default)),
@@ -1566,18 +1697,20 @@ void Gui()
 	static float waveParticleSpeedScale = mScene.GetUniformWaveParticleSpeedScale();
 	static float flowSpeed = mScene.GetUniformFlowSpeed();
 	static float timeScale = mScene.GetUniformTimeScale();
+	static float foamScale = mScene.GetUniformFoamScale();
+
 	static float timeStepFluid = mScene.GetUniformTimeStepFluid();
-	static float jacobiObstacleScale = mScene.GetUniformJacobiObstacleScale();
 	static float fluidCellSize = mScene.GetUniformFluidCellSize();
-	static float jacobiInvBeta = mScene.GetUniformJacobiInvBeta();
 	static float fluidDissipation = mScene.GetUniformFluidDissipation();
-	static float gradientScale = mScene.GetUniformGradientScale();
+	static float vorticityScale = mScene.GetUniformVorticityScale();
 	static float splatDirU = mScene.GetUniformSplatDirU();
 	static float splatDirV = mScene.GetUniformSplatDirV();
 	static float splatScale = mScene.GetUniformSplatScale();
+
 	static int edgeTess = mScene.GetUniformEdgeTessFactor();
 	static int insideTess = mScene.GetUniformInsideTessFactor();
-	static int celldiv = 3;
+	static int fluidWidth = mScene.GetUniformTextureWidthFluid();
+	static int fluidHeight = mScene.GetUniformTextureHeightFluid();
 	bool needToUpdateSceneUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -1585,7 +1718,7 @@ void Gui()
 	ImGui::Begin("Control Panel ");                        
 	ImGui::Text("Wave Particles Scale ");
 
-	if (ImGui::Combo("mode", &mode, "default\0flow map\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0\0"))
+	if (ImGui::Combo("mode", &mode, "default\0flow map\0density\0divergence\0pressure\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0\0"))
 	{
 		mScene.SetUniformMode(mode);
 		needToUpdateSceneUniform = true;
@@ -1633,43 +1766,36 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
-	ImGui::Checkbox("fluidSim ", &FluidSimulation);
+	if (ImGui::SliderFloat("foamScale ", &foamScale, 0.0f, 5.0f, "%.6f"))
+	{
+		mScene.SetUniformFoamScale(foamScale);
+		needToUpdateSceneUniform = true;
+	}
 
-	if (ImGui::SliderFloat("timeScaleFluid ", &timeStepFluid, 0.0f, 0.03, "%.6f"))
+	ImGui::Checkbox("fluidSim ", &FluidSimulation);
+	ImGui::SliderInt("fluidSimStep ", &FluidSimulationStep, 0, 60);
+
+	if (ImGui::SliderFloat("timeStepFluid ", &timeStepFluid, 0.0f, 0.1, "%.6f"))
 	{
 		mScene.SetUniformTimeStepFluid(timeStepFluid);
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("fluidDissipation ", &fluidDissipation, 0.9f, 1.1f, "%.6f"))
+	if (ImGui::SliderFloat("fluidDissipation ", &fluidDissipation, 0.99f, 1.0f, "%.6f"))
 	{
 		mScene.SetUniformFluidDissipation(fluidDissipation);
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("gradientScale ", &gradientScale, 0.01f, 2.0f, "%.6f"))
+	if (ImGui::SliderFloat("vorticityScale", &vorticityScale, 0.f, 10.f, "%.6f"))
 	{
-		mScene.SetUniformGradientScale(gradientScale);
+		mScene.SetUniformVorticityScale(vorticityScale);
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("fluidCellSize ", &fluidCellSize, 0.9f, 1.3f, "%.6f"))
+	if (ImGui::SliderFloat("fluidCellSize ", &fluidCellSize, 0.1f, 5.0f, "%.6f"))
 	{
 		mScene.SetUniformFluidCellSize(fluidCellSize);
-		needToUpdateSceneUniform = true;
-	}
-
-	ImGui::SliderInt("JacobiIteration ", &JacobiIteration, 10, 100);
-
-	if (ImGui::SliderFloat("jacobiObstacleScale ", &jacobiObstacleScale, 0.0f, 20.0f, "%.6f"))
-	{
-		mScene.SetUniformJacobiObstacleScale(jacobiObstacleScale);
-		needToUpdateSceneUniform = true;
-	}
-
-	if (ImGui::SliderFloat("jacobiInvBeta ", &jacobiInvBeta, 0.0f, 0.5f, "%.6f"))
-	{
-		mScene.SetUniformJacobiInvBeta(jacobiInvBeta);
 		needToUpdateSceneUniform = true;
 	}
 
@@ -1685,9 +1811,21 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("splatScale ", &splatScale, 0.0f, 0.02f, "%.6f"))
+	if (ImGui::SliderFloat("splatScale ", &splatScale, 0.0f, 0.01f, "%.6f"))
 	{
 		mScene.SetUniformSplatScale(splatScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderInt("fluid width ", &fluidWidth, 0, WidthRtFluid * 2))
+	{
+		mScene.SetUniformTextureWidthFluid(fluidWidth);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderInt("fluid height ", &fluidHeight, 0, HeightRtFluid * 2))
+	{
+		mScene.SetUniformTextureHeightFluid(fluidHeight);
 		needToUpdateSceneUniform = true;
 	}
 
@@ -1700,12 +1838,6 @@ void Gui()
 	if (ImGui::SliderInt("inside tess ", &insideTess, 0, 32))
 	{
 		mScene.SetUniformInsideTessFactor(insideTess);
-		needToUpdateSceneUniform = true;
-	}
-
-	if (ImGui::SliderInt("fluidtexsize", &celldiv, 1, 100))
-	{
-		mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / celldiv, HeightRtFluid / celldiv);
 		needToUpdateSceneUniform = true;
 	}
 

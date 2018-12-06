@@ -9,7 +9,7 @@ public:
 	enum class GraphicsStage { Default, Count };
 	enum class WaveParticleStage { Default, Count };
 	enum class PostProcessStage { Horizontal, Vertical, Count };
-	enum class FluidStage { Advection, ComputeDivergence, Jacobi, Splat, SubtractGradient, Count };
+	enum class FluidStage { AdvectVelocity, AdvectDensity, ComputeDivergence, Jacobi, SplatVelocity, SplatDensity, SubtractGradient, Count };
 
 	Renderer();
 	~Renderer();
@@ -145,6 +145,11 @@ public:
 	ID3D12DescriptorHeap** GetFluidDescriptorHeapPtr(int frame, int index);
 	ID3D12DescriptorHeap* GetFluidRtvDescriptorHeap(int frame, int index);
 	ID3D12DescriptorHeap** GetFluidRtvDescriptorHeapPtr(int frame, int index);
+
+	ID3D12PipelineState* fluidJacobiPSO[FrameBufferCount][JacobiIteration];
+	ID3D12RootSignature* fluidJacobiRootSignature[FrameBufferCount][JacobiIteration];
+	ID3D12DescriptorHeap* fluidJacobiDescriptorHeap[FrameBufferCount][JacobiIteration];
+	ID3D12DescriptorHeap* fluidJacobiRtvDescriptorHeap[FrameBufferCount][JacobiIteration];
 
 private:
 

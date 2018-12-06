@@ -31,7 +31,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     float halfInvCellSize = 0.5 / fluidCellSize; //DO NOT change, very delicate
 
-    float4 col = halfInvCellSize * (vE.x - vW.x + vN.y - vS.y);
+    float4 col = halfInvCellSize * (vE.x - vW.x + vN.y - vS.y);//divergenceScale * 
 
 	// return interpolated color
     return col;

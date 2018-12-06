@@ -34,6 +34,9 @@ float4 main(VS_OUTPUT input) : SV_TARGET
         float2 obstV = float2(0, 0);
         float2 vMask = float2(1, 1);
 
+	    //enforce the free slip boundary condition
+        float2 oldV = velocityTex.Sample(wrapSampler, T).xy;
+
         if (oN.x > 0.5)
         {
             pN = pC;
@@ -59,10 +62,10 @@ float4 main(VS_OUTPUT input) : SV_TARGET
             vMask.x = 0;
         }
 
-	    //enforce the free slip boundary condition
-        float2 oldV = velocityTex.Sample(wrapSampler, T).xy;
-	
-        float2 grad = float2(pE - pW, pN - pS) * gradientScale; //DO NOT change, very delicate
+
+        float halfInvCellSize = 0.5 / fluidCellSize;
+
+        float2 grad = float2(pE - pW, pN - pS) * halfInvCellSize;
         float2 newV = oldV - grad;
 
 	    // return interpolated color

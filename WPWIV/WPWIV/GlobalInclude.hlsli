@@ -2,16 +2,17 @@
 #define NUM_CONTROL_POINTS_OUTPUT 4
 #define PI 3.14159265359
 #define HALF_PI 1.57079632679
+#define EPSILON 0.00024414;
 
 /////////////// UNIFORM ///////////////
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 
 //
-//    |  wave_particle | post_process H | post_process V |    graphics   |  advect  |  jacobi  |  sub g   | divergence |  splat   |
-// t0 |      n/a       | WaveParticle   | PostProcessH1  |    Albedo     | obstacle | obstacle | obstacle |  obstacle  | obstacle |
-// t1 |      n/a       |      n/a       | PostProcessH2  |    Flowmap    | velocity | pressure | pressure |  velocity  |   n/a    |
-// t2 |      n/a       |      n/a       |      n/a       | PostProcessV1 |  source  |divergence| velocity |     n/a    |   n/a    |
-// t3 |      n/a       |      n/a       |      n/a       | PostProcessV2 |   n/a    |    n/a   |    n/a   |     n/a    |   n/a    |
+//    |  wave_particle | post_process H | post_process V |    graphics   |  advect  |  jacobi  |  sub g   | divergence |  splat   |  splat w/ vorticity   |
+// t0 |      n/a       | WaveParticle   | PostProcessH1  |    Albedo     | obstacle | obstacle | obstacle |  obstacle  | obstacle |        obstacle       |
+// t1 |      n/a       |      n/a       | PostProcessH2  |    Flowmap    | velocity | pressure | pressure |  velocity  |   n/a    |        velocity       |
+// t2 |      n/a       |      n/a       |      n/a       | PostProcessV1 |  source  |divergence| velocity |     n/a    |   n/a    |          n/a          |
+// t3 |      n/a       |      n/a       |      n/a       | PostProcessV2 |   n/a    |    n/a   |    n/a   |     n/a    |   n/a    |          n/a          |
 //
 
 //
@@ -46,31 +47,36 @@ cbuffer SceneUniform : register(b3)
     float dxScale;
     float dzScale;
     float timeScale;
-    float timeScaleFluid;//
-    float jacobiObstacleScale;//1
-    float fluidCellSize;//1.25
-    float jacobiInvBeta;//0.243
-    float fluidDissipation;//1
-    float gradientScale;//0.07 * 1.125 (/ cellsize)
-    float splatDirU;//
-    float splatDirV;//
-    float splatScale;//0.015
+    float foamScale;
+
+    float timeStepFluid;
+    float fluidCellSize;
+    float fluidDissipation;
+    float vorticityScale;
+    float splatDirU;
+    float splatDirV;
+    float splatScale;
+
     uint edgeTessFactor;
     uint insideTessFactor;
     uint textureWidth;
     uint textureHeight;
-    uint textureWidthFluid;//280
-    uint textureHeightFluid;//280
+    uint textureWidthFluid;
+    uint textureHeightFluid;
     uint blurRadius;
     uint mode; 
+
     //0 - default, 
     //1 - flow map, 
-    //2 - flow map driven texture, 
-    //3 - wave particle, 
-    //4 - horizontal blur, 
-    //5 - vertical blur, 
-    //6 - horizontal and vertical blur,
-    //7 - normal
+    //2 - density,
+    //3 - divergence,
+    //4 - pressure,
+    //5 - flow map driven texture, 
+    //6 - wave particle, 
+    //7 - horizontal blur, 
+    //8 - vertical blur, 
+    //9 - horizontal and vertical blur,
+    //10 - normal
 };
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 /////////////// UNIFORM ///////////////
@@ -103,7 +109,7 @@ float4 Flow(in float2 uv, in float time, in Texture2D flowT, in SamplerState flo
     float timeInt = float(time) / (1 * 2); //interval is always 1
     float2 fTime = frac(float2(timeInt, timeInt + .5));
     float4 flowMap = flowT.SampleLevel(flowS, uv, 0);
-    float2 flowDir = (flowMap.xy - float2(0.5, 0.5)) * 2;
+    float2 flowDir = -flowMap.xy;//(flowMap.xy - float2(0.5, 0.5)) * 2;
     float2 flowUV1 = uv - (flowDir / 2) + fTime.x * flowDir.xy;
     float2 flowUV2 = uv - (flowDir / 2) + fTime.y * flowDir.xy;
     float4 tx1 = flowedT.SampleLevel(flowedS, flowUV1, 0);
@@ -136,7 +142,7 @@ float4 FlowHeightWithNormal(in float2 uv, in float time, in Texture2D flowT, in 
     float timeInt = float(time) / (1 * 2); //interval is always 1
     float2 fTime = frac(float2(timeInt, timeInt + .5));
     float4 flowMap = flowT.SampleLevel(flowS, uv, 0);
-    float2 flowDir = (flowMap.xy - float2(0.5, 0.5)) * 2;
+    float2 flowDir = -flowMap.xy;//(flowMap.xy - float2(0.5, 0.5)) * 2;
     float2 flowUV1 = uv - (flowDir / 2) + fTime.x * flowDir.xy;
     float2 flowUV2 = uv - (flowDir / 2) + fTime.y * flowDir.xy;
     float4 tx1 = flowedT.SampleLevel(flowedS, flowUV1, 0);
@@ -152,7 +158,7 @@ float3 FlowHeightForNormal(float2 uv, float time, Texture2D flowT, SamplerState 
     float timeInt = float(time) / (1 * 2); //interval is always 1
     float2 fTime = frac(float2(timeInt, timeInt + .5));
     float4 flowMap = flowT.SampleLevel(flowS, uv, 0);
-    float2 flowDir = (flowMap.xy - float2(0.5, 0.5)) * 2;
+    float2 flowDir = -flowMap.xy;//(flowMap.xy - float2(0.5, 0.5)) * 2;
     float2 flowUV1 = uv - (flowDir / 2) + fTime.x * flowDir.xy;
     float2 flowUV2 = uv - (flowDir / 2) + fTime.y * flowDir.xy;
     float3 nor1 = HeightMapToNormal(flowUV1, flowedT, flowedS);

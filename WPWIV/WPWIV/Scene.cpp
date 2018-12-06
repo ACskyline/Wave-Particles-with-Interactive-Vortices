@@ -68,14 +68,14 @@ void Scene::SetUniformTimeScale(float _timeScale)
 	uniform.timeScale = _timeScale;
 }
 
+void Scene::SetUniformFoamScale(float _foamScale)
+{
+	uniform.foamScale = _foamScale;
+}
+
 void Scene::SetUniformTimeStepFluid(float _timeStepFluid)
 {
 	uniform.timeStepFluid = _timeStepFluid;
-}
-
-void Scene::SetUniformJacobiObstacleScale(float _jacobiObstacleScale)
-{
-	uniform.jacobiObstacleScale = _jacobiObstacleScale;
 }
 
 void Scene::SetUniformFluidCellSize(float _fluidCellSize)
@@ -83,19 +83,14 @@ void Scene::SetUniformFluidCellSize(float _fluidCellSize)
 	uniform.fluidCellSize = _fluidCellSize;
 }
 
-void Scene::SetUniformJacobiInvBeta(float _jacobiInvBeta)
-{
-	uniform.jacobiInvBeta = _jacobiInvBeta;
-}
-
 void Scene::SetUniformFluidDissipation(float _fluidDissipation)
 {
 	uniform.fluidDissipation = _fluidDissipation;
 }
 
-void Scene::SetUniformGradientScale(float _gradientScale)
+void Scene::SetUniformVorticityScale(float _vorticityScale)
 {
-	uniform.gradientScale = _gradientScale;
+	uniform.vorticityScale = _vorticityScale;
 }
 
 void Scene::SetUniformSplatDirU(float _splatDirU)
@@ -112,8 +107,6 @@ void Scene::SetUniformSplatScale(float _splatScale)
 {
 	uniform.splatScale = _splatScale;
 }
-
-
 
 void Scene::SetUniformEdgeTessFactor(uint32_t _tessellationFactor)
 {
@@ -134,6 +127,16 @@ void Scene::SetUniformTextureWidthHeight(uint32_t texWidth, uint32_t texHeight)
 void Scene::SetUniformTextureWidthHeightFluid(uint32_t texWidth, uint32_t texHeight)
 {
 	uniform.textureWidthFluid = texWidth;
+	uniform.textureHeightFluid = texHeight;
+}
+
+void Scene::SetUniformTextureWidthFluid(uint32_t texWidth)
+{
+	uniform.textureWidthFluid = texWidth;
+}
+
+void Scene::SetUniformTextureHeightFluid(uint32_t texHeight)
+{
 	uniform.textureHeightFluid = texHeight;
 }
 
@@ -177,14 +180,14 @@ float Scene::GetUniformTimeScale()
 	return uniform.timeScale;
 }
 
+float Scene::GetUniformFoamScale()
+{
+	return uniform.foamScale;
+}
+
 float Scene::GetUniformTimeStepFluid()
 {
 	return uniform.timeStepFluid;
-}
-
-float Scene::GetUniformJacobiObstacleScale()
-{
-	return uniform.jacobiObstacleScale;
 }
 
 float Scene::GetUniformFluidCellSize()
@@ -192,19 +195,14 @@ float Scene::GetUniformFluidCellSize()
 	return uniform.fluidCellSize;
 }
 
-float Scene::GetUniformJacobiInvBeta()
-{
-	return uniform.jacobiInvBeta;
-}
-
 float Scene::GetUniformFluidDissipation()
 {
 	return uniform.fluidDissipation;
 }
 
-float Scene::GetUniformGradientScale()
+float Scene::GetUniformVorticityScale()
 {
-	return uniform.gradientScale;
+	return uniform.vorticityScale;
 }
 
 float Scene::GetUniformSplatDirU()
@@ -220,6 +218,16 @@ float Scene::GetUniformSplatDirV()
 float Scene::GetUniformSplatScale()
 {
 	return uniform.splatScale;
+}
+
+uint32_t Scene::GetUniformTextureWidthFluid()
+{
+	return uniform.textureWidthFluid;
+}
+
+uint32_t Scene::GetUniformTextureHeightFluid()
+{
+	return uniform.textureHeightFluid;
 }
 
 uint32_t Scene::GetUniformEdgeTessFactor()

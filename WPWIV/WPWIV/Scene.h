@@ -14,15 +14,16 @@ public:
 		float dxScale;
 		float dzScale;
 		float timeScale;
-		float timeStepFluid;//
-		float jacobiObstacleScale;//1
-		float fluidCellSize;//1.25
-		float jacobiInvBeta;//0.243
-		float fluidDissipation;//1
-		float gradientScale;//0.07 * 1.125
-		float splatDirU;//
-		float splatDirV;//
-		float splatScale;//0.015
+		float foamScale;
+
+		float timeStepFluid;
+		float fluidCellSize;
+		float fluidDissipation;
+		float vorticityScale;
+		float splatDirU;
+		float splatDirV;
+		float splatScale;
+
 		uint32_t edgeTessFactor;
 		uint32_t insideTessFactor;
 		uint32_t textureWidth;
@@ -31,14 +32,18 @@ public:
 		uint32_t textureHeightFluid;
 		uint32_t blurRadius;
 		uint32_t mode; 
+
 		//0 - default, 
 		//1 - flow map, 
-		//2 - flow map driven texture, 
-		//3 - wave particle, 
-		//4 - horizontal blur, 
-		//5 - vertical blur, 
-		//6 - horizontal and vertical blur
-		//7 - normal
+		//2 - density,
+		//3 - divergence,
+		//4 - pressure,
+		//5 - flow map driven texture, 
+		//6 - wave particle, 
+		//7 - horizontal blur, 
+		//8 - vertical blur, 
+		//9 - horizontal and vertical blur,
+		//10 - normal
 	};
 
 	Scene();
@@ -56,38 +61,45 @@ public:
 	void SetUniformDxScale(float _dxScale);
 	void SetUniformDzScale(float _dzScale);
 	void SetUniformTimeScale(float _timeScale);
+	void SetUniformFoamScale(float _foamScale);
+
 	void SetUniformTimeStepFluid(float _timeStepFluid);
-	void SetUniformJacobiObstacleScale(float _jacobiObstacleScale);
 	void SetUniformFluidCellSize(float _fluidCellSize);
-	void SetUniformJacobiInvBeta(float _jacobiInvBeta);
 	void SetUniformFluidDissipation(float _fluidDissipation);
-	void SetUniformGradientScale(float _gradientScale);
+	void SetUniformVorticityScale(float _vorticityScale);
 	void SetUniformSplatDirU(float _splatDirU);
 	void SetUniformSplatDirV(float _splatDirV);
 	void SetUniformSplatScale(float _splatScale);
+
 	void SetUniformEdgeTessFactor(uint32_t _tessellationFactor);
 	void SetUniformInsideTessFactor(uint32_t _tessellationFactor);
 	void SetUniformTextureWidthHeight(uint32_t texWidth, uint32_t texHeight);
 	void SetUniformTextureWidthHeightFluid(uint32_t texWidth, uint32_t texHeight);
+	void SetUniformTextureWidthFluid(uint32_t texWidth);
+	void SetUniformTextureHeightFluid(uint32_t texHeight);
 	void SetUniformBlurRadius(uint32_t _blurRadius);
 	void SetUniformMode(uint32_t _mode);
+
 	float GetUniformHeightScale();
 	float GetUniformWaveParticleSpeedScale();
 	float GetUniformFlowSpeed();
 	float GetUniformDxScale();
 	float GetUniformDzScale();
 	float GetUniformTimeScale();
+	float GetUniformFoamScale();
+
 	float GetUniformTimeStepFluid();
-	float GetUniformJacobiObstacleScale();
 	float GetUniformFluidCellSize();
-	float GetUniformJacobiInvBeta();
 	float GetUniformFluidDissipation();
-	float GetUniformGradientScale();
+	float GetUniformVorticityScale();
 	float GetUniformSplatDirU();
 	float GetUniformSplatDirV();
 	float GetUniformSplatScale();
+
 	uint32_t GetUniformEdgeTessFactor();
 	uint32_t GetUniformInsideTessFactor();
+	uint32_t GetUniformTextureWidthFluid();
+	uint32_t GetUniformTextureHeightFluid();
 	uint32_t GetUniformBlurRadius();
 	uint32_t GetUniformMode();
 

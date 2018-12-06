@@ -19,7 +19,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     else
     {
         float2 u = velocityTex.Sample(wrapSampler, input.texCoord).xy;
-        float2 c = input.texCoord - timeScaleFluid * u;
+        float2 c = input.texCoord - timeStepFluid * u;
         col = fluidDissipation * srcTex.Sample(wrapSampler, c);
     }
 

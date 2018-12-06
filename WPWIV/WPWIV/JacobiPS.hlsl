@@ -32,19 +32,19 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     
 	//use center pressure for solid cells
     if (oN > 0.5)
-        pN = pC * jacobiObstacleScale;
+        pN = pC;// * jacobiObstacleScale;
     if (oS > 0.5)
-        pS = pC * jacobiObstacleScale;
+        pS = pC;// * jacobiObstacleScale;
     if (oE > 0.5)
-        pE = pC * jacobiObstacleScale;
+        pE = pC;// * jacobiObstacleScale;
     if (oW > 0.5)
-        pW = pC * jacobiObstacleScale;
+        pW = pC;// * jacobiObstacleScale;
 
     float4 bC = divergenceTex.Sample(wrapSampler, T);
 
     float alpha = -fluidCellSize * fluidCellSize;
 
-    col = (pW + pE + pS + pN + alpha * bC) * jacobiInvBeta;
+    col = (pW + pE + pS + pN + alpha * bC) * 0.25;//    jacobiInvBeta;
 
     return col;
 }
