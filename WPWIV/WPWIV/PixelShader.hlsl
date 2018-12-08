@@ -180,7 +180,7 @@ float4 main(DS_OUTPUT input) : SV_TARGET
 
 		
 
-		return float4(final, 1) + float4(specHighlightcol, 1) + clamp(foampow * float4(foamcol,1),0,1)*0.6;
+		return float4(final, 1) + float4(specHighlightcol, 1) + clamp(foampow * float4(foamcol,1),0,1)*0.3;
 	}
     return float4(0, 0, 0, 1);
 }

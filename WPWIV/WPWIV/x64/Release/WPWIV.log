@@ -1,6 +1,63 @@
-﻿D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(84,9-60): warning X3206: implicit truncation of vector type
-D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(93,3-54): warning X3206: implicit truncation of vector type
-D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(152,44-86): warning X3571: pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values if you expect them
-  
-  compilation object save succeeded; see D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Release\PixelShader.cso
+﻿  main.cpp
+  c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(65): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(66): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(68): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(299): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(300): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(301): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(302): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(303): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(304): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(307): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(308): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(309): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(310): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(314): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(317): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(318): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(320): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(325): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(326): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(327): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(330): warning C4244: 'argument': conversion from 'double' to 'uint32_t', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(336): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(337): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(341): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(342): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(456): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(460): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(461): warning C4305: '=': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(462): warning C4305: '=': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(467): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(468): warning C4305: '=': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(775): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1094): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1134): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1174): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1214): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1254): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1294): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1334): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1374): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1504): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1524): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1544): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1567): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1578): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1603): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1645): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1687): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1724): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1761): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1798): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1817): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1866): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1908): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1929): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1951): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(1976): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(2007): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(2206): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\cis565\rand\wave-particles-with-interactive-vortices\wpwiv\wpwiv\main.cpp(2337): warning C4305: 'argument': truncation from 'double' to 'float'
   WPWIV.vcxproj -> D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Release\WPWIV.exe

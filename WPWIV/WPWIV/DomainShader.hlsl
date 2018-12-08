@@ -16,6 +16,7 @@ DS_OUTPUT main(
     DS_OUTPUT Output;
     
     float3 pos = BLERP3(patch[0].pos, patch[1].pos, patch[3].pos, patch[2].pos, domain);
+	
     float2 texCoord = BLERP2(patch[0].texCoord, patch[1].texCoord, patch[3].texCoord, patch[2].texCoord, domain);
     //float3 nor = float3(0, 1, 0); //PER VERTEX NORMAL
 
@@ -35,6 +36,8 @@ DS_OUTPUT main(
             pos.z += deviation.z;
         }
     }
+	
+	pos.y = clamp(0, heightScale*2.6, pos.y);
     Output.pos = mul(mul(viewProj, model), float4(pos, 1));
     Output.texCoord = texCoord;
 	Output.PosW = pos;

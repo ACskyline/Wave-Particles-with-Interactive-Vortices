@@ -302,7 +302,7 @@ bool CreateScene()
 	mScene.SetUniformDxScale(0.03);
 	mScene.SetUniformDzScale(0.03);
 	mScene.SetUniformTimeScale(2.4);
-	mScene.SetUniformFoamScale(3.0);
+	mScene.SetUniformFoamScale(5.0);
 
 	mScene.SetUniformTimeStepFluid(0.03);
 	mScene.SetUniformFluidCellSize(0.6);
@@ -2181,7 +2181,7 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("foamScale ", &foamScale, 0.0f, 5.0f, "%.6f"))
+	if (ImGui::SliderFloat("foamScale ", &foamScale, 0.0f, 10.0f, "%.6f"))
 	{
 		mScene.SetUniformFoamScale(foamScale);
 		needToUpdateSceneUniform = true;
