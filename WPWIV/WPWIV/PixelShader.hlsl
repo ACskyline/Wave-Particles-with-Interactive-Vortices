@@ -161,7 +161,7 @@ float4 main(DS_OUTPUT input) : SV_TARGET
 		float3 groundcol = float3(0.4, 0.3, 0.2);//float3(0, 0.2, 0.5);
 		float3 topplanecol = watercol * dot(surfacenor, NaivelightDir)*suncol;
 		float3 bottomplanecol = groundcol * dot(surfacenor, NaivelightDir) * exp(-depth * ExtinctionCoeff);
-		float FoamTurbulance = foamcol.x;//for adding extra foam features(sample from foam texture)
+		float FoamTurbulance = 10*foamcol.y;//for adding extra foam features(sample from foam texture)
 		float top = 3;
 		float bottom = 0;
 
@@ -178,9 +178,9 @@ float4 main(DS_OUTPUT input) : SV_TARGET
 		float3 specHighlightcol = SpecHighlight * float3(1, 1, 1);
 		float3 final = lerp(speccol, ambientcol, R);
 
-		foamcol = clamp(foamcol, 0, 1);
+		
 
-		return float4(final, 1) + float4(specHighlightcol, 1) + foampow * float4(foamcol,1);
+		return float4(final, 1) + float4(specHighlightcol, 1) + clamp(foampow * float4(foamcol,1),0,1)*0.6;
 	}
     return float4(0, 0, 0, 1);
 }

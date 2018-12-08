@@ -305,9 +305,9 @@ bool CreateScene()
 	mScene.SetUniformFoamScale(3.0);
 
 	mScene.SetUniformTimeStepFluid(0.03);
-	mScene.SetUniformFluidCellSize(1.25);
+	mScene.SetUniformFluidCellSize(0.6);
 	mScene.SetUniformFluidDissipation(0.994);
-	mScene.SetUniformVorticityScale(3.0);
+	mScene.SetUniformVorticityScale(0.64);
 	mScene.SetUniformSplatDirU(0.5);
 	mScene.SetUniformSplatDirV(0.5);
 
@@ -327,10 +327,10 @@ bool CreateScene()
 	mScene.SetUniformObstacleThresholdWave(0.12);
 
 	mScene.SetUniformTextureWidthHeight(WidthRT, HeightRT);
-	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 2.0, HeightRtFluid / 2.0);
+	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 4.0, HeightRtFluid / 4.0);
 	mScene.SetUniformEdgeTessFactor(7);
 	mScene.SetUniformInsideTessFactor(5);
-	mScene.SetUniformBlurRadius(20);
+	mScene.SetUniformBlurRadius(15);
 	mScene.SetUniformMode(11);
 
 	mScene.SetUniformLightHight(9.35);
