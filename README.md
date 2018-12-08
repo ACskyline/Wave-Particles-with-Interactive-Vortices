@@ -179,6 +179,10 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 ![](img/m3-3.gif)
 
+* Render with interactions
+
+![](img/v2render.gif)
+
 ## References
 
 [River Editor Water Simulation in Real-Time](https://80.lv/articles/river-editor-water-simulation-in-real-time/)
