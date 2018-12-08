@@ -181,7 +181,7 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
 * Render with interactions
 
-![](img/v2render.gif)
+![](img/v3render.gif)
 
 ## References
 
