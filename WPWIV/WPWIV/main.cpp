@@ -327,7 +327,7 @@ bool CreateScene()
 	mScene.SetUniformObstacleThresholdWave(0.12);
 
 	mScene.SetUniformTextureWidthHeight(WidthRT, HeightRT);
-	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 4.0, HeightRtFluid / 4.0);
+	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 3.5, HeightRtFluid / 3.5);
 	mScene.SetUniformEdgeTessFactor(7);
 	mScene.SetUniformInsideTessFactor(5);
 	mScene.SetUniformBlurRadius(15);

@@ -124,6 +124,8 @@ float4 main(DS_OUTPUT input) : SV_TARGET
 		{
 			float3 skycol1 = float3(0.1, 0.2, 0.3);
 			float3 skycol2 = float3(0.2, 0.2, 0.2);
+			skycol1 *= 2;
+			skycol2 *= 7;
 			float3 ReflectViewDir = reflect(ViewDirection, normal);
 			ReflectViewDir = normalize(ReflectViewDir);
 			speccol = lerp(skycol1, skycol2, abs(ReflectViewDir.y));
