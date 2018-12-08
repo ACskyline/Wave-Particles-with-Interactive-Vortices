@@ -16,7 +16,7 @@ PS_OUTPUT main(VS_OUTPUT input)
     float4 gradient = float4(f123.y, 0, 0, 1); // initialize gradient at this pixel
     float2 gradCorr = float2(f123.z, f45v.y); // initialize gradient correction
 
-    if(mode==0||mode==8||mode==9||mode==10)
+    if(mode==0||mode==8||mode==9||mode==10||mode==11)
     {
         for (int i = 1; i <= blurRadius; i++)
         {

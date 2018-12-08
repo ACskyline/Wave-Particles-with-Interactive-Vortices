@@ -19,7 +19,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     {
         float2 T = input.texCoord;
         col = densityTex.Sample(wrapSampler, T);
-        if (length(T - float2(splatDensityU, splatDensityV)) < splatDensityRadius)
+        if (length(T - float2(splatDensityU, splatDensityV)) < splatDensityRadius )
         {
             col += float4(splatDensityScale, 0, 0, 0);
         }

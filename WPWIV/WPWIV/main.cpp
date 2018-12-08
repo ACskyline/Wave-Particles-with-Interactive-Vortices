@@ -67,7 +67,7 @@ Camera mDummyCameraFluid(XMFLOAT3{ 4.f,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,1,0
 Mesh mWaterSurface(Mesh::MeshType::TileableSurface, 100, 100, XMFLOAT3(WaterSurfacePosX, 0, WaterSurfacePosZ), XMFLOAT3(0, 0, 0), XMFLOAT3(WaterSurfaceScaleX, 1, WaterSurfaceScaleZ));
 Mesh mObstacleSurface(Mesh::MeshType::TileableSurface, 100, 100, XMFLOAT3(WaterSurfacePosX, -0.1, WaterSurfacePosZ), XMFLOAT3(0, 0, 0), XMFLOAT3(WaterSurfaceScaleX, 1, WaterSurfaceScaleZ));
 Mesh mQuad(Mesh::MeshType::FullScreenQuad, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
-Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 100, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
+Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 6000, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Mesh mCircle(Mesh::MeshType::Circle, 16, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 1,1,1 });
 Shader mCreateObstacleVS(Shader::ShaderType::VertexShader, L"CreateObstacleVS.hlsl");
 Shader mCreateObstaclePS(Shader::ShaderType::PixelShader, L"CreateObstaclePS.hlsl");
@@ -296,21 +296,22 @@ bool CreateScene()
 	mScene.AddRenderTexture(&mRenderTextureFluidDivergence);
 
 	// set uniform
-	mScene.SetUniformHeightScale(0.8);
-	mScene.SetUniformWaveParticleSpeedScale(0.0001);
-	mScene.SetUniformFlowSpeed(0.0001);
-	mScene.SetUniformDxScale(0.015);
-	mScene.SetUniformDzScale(0.015);
-	mScene.SetUniformTimeScale(1.0);
+	mScene.SetUniformHeightScale(0.14);
+	mScene.SetUniformWaveParticleSpeedScale(0.00005);
+	mScene.SetUniformFlowSpeed(0.000931);
+	mScene.SetUniformDxScale(0.03);
+	mScene.SetUniformDzScale(0.03);
+	mScene.SetUniformTimeScale(2.4);
 	mScene.SetUniformFoamScale(3.0);
 
 	mScene.SetUniformTimeStepFluid(0.03);
 	mScene.SetUniformFluidCellSize(1.25);
-	mScene.SetUniformFluidDissipation(0.996);
-	mScene.SetUniformVorticityScale(5.0);
+	mScene.SetUniformFluidDissipation(0.994);
+	mScene.SetUniformVorticityScale(3.0);
 	mScene.SetUniformSplatDirU(0.5);
 	mScene.SetUniformSplatDirV(0.5);
-	mScene.SetUniformSplatScale(0.005);
+
+	mScene.SetUniformSplatScale(0.00593);
 	mScene.SetUniformSplatDensityU(0.0);
 	mScene.SetUniformSplatDensityV(0.0);
 	mScene.SetUniformSplatDensityRadius(0.1);
@@ -329,8 +330,16 @@ bool CreateScene()
 	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 2.0, HeightRtFluid / 2.0);
 	mScene.SetUniformEdgeTessFactor(7);
 	mScene.SetUniformInsideTessFactor(5);
-	mScene.SetUniformBlurRadius(50);
-	mScene.SetUniformMode(0);
+	mScene.SetUniformBlurRadius(20);
+	mScene.SetUniformMode(11);
+
+	mScene.SetUniformLightHight(9.35);
+	mScene.SetUniformExtinctcoeff(-0.41);
+	mScene.SetShiness(340);
+	mScene.SetBias(0);
+	mScene.SetFPow(3);
+	mScene.SetFScale(0.68);
+	mScene.SetFoamScale(9.6);
 
 	if (!mScene.LoadScene())
 		return false;
@@ -2106,6 +2115,17 @@ void Gui()
 	static int insideTess = mScene.GetUniformInsideTessFactor();
 	static int fluidWidth = mScene.GetUniformTextureWidthFluid();
 	static int fluidHeight = mScene.GetUniformTextureHeightFluid();
+
+	static float lighthight = mScene.GetUniformLightHight();
+	static float extinctcoeff = mScene.GetUniformExtinctcoeff();
+	static float shiness = mScene.GetShiness();
+	static float fscale = mScene.GetfScale();
+	static float fbias = mScene.GetBias();
+	static float fpow = mScene.GetFpow();
+	static float foampower = mScene.GetFoamScale();
+
+
+
 	bool needToUpdateSceneUniform = false;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -2113,7 +2133,7 @@ void Gui()
 	ImGui::Begin("Control Panel ");
 	ImGui::Text("Wave Particles ");
 
-	if (ImGui::Combo("mode", &mode, "default\0flow map\0density\0divergence\0pressure\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0\0"))
+	if (ImGui::Combo("mode", &mode, "default\0flow map\0density\0divergence\0pressure\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0final\0\0"))
 	{
 		mScene.SetUniformMode(mode);
 		needToUpdateSceneUniform = true;
@@ -2149,13 +2169,13 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("flowSpeed ", &flowSpeed, 0.f, 0.0005f, "%.6f"))
+	if (ImGui::SliderFloat("flowSpeed ", &flowSpeed, 0.f, 0.002f, "%.6f"))
 	{
 		mScene.SetUniformFlowSpeed(flowSpeed);
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 100.0f, "%.6f"))
+	if (ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 10.0f, "%.6f"))
 	{
 		mScene.SetUniformTimeScale(timeScale);
 		needToUpdateSceneUniform = true;
@@ -2306,10 +2326,56 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
+	ImGui::Text("Rendering Properties ");
+
+	if (ImGui::SliderFloat("light hight", &lighthight, 1, 20, "%.6f"))
+	{
+		mScene.SetUniformLightHight(lighthight);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("extinct coeff", &extinctcoeff, -0.7, 0, "%.6f"))
+	{
+		mScene.SetUniformExtinctcoeff(extinctcoeff);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("Shiness", &shiness, 10, 600, "%.6f"))
+	{
+		mScene.SetShiness(shiness);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("fresnel scale", &fscale, 0, 1, "%.6f"))
+	{
+		mScene.SetFScale(fscale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("fresnel bias", &fbias, 0, 4, "%.6f"))
+	{
+		mScene.SetBias(fbias);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("fresnel power", &fpow, 0, 5, "%.6f"))
+	{
+		mScene.SetFPow(fpow);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("Foam power", &foampower, 3, 15, "%.6f"))
+	{
+		mScene.SetFoamScale(foampower);
+		needToUpdateSceneUniform = true;
+	}
+
 	ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Text("Hold C and use mouse to rotate camera.");
 	ImGui::Text("Hold B and use mouse to control brush.");
 	ImGui::End();
+
+
 
 	if (needToUpdateSceneUniform)
 	{

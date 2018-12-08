@@ -24,7 +24,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     {
         //do nothing
     }
-    else
+    else 
     {
         col = velocityTex.Sample(wrapSampler, input.texCoord);
 

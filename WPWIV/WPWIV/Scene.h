@@ -57,6 +57,14 @@ public:
 		//8 - vertical blur, 
 		//9 - horizontal and vertical blur,
 		//10 - normal
+
+		float lighthight;
+		float extinctcoeff;
+		float shiness;
+		float fscale;
+		float fpow;
+		float fbias;
+		float FoamScale;
 	};
 
 	Scene();
@@ -141,6 +149,22 @@ public:
 	uint32_t GetUniformTextureHeightFluid();
 	uint32_t GetUniformBlurRadius();
 	uint32_t GetUniformMode();
+
+	float GetUniformLightHight();
+	float GetUniformExtinctcoeff();
+	float GetShiness();
+	float GetfScale();
+	float GetFpow();
+	float GetBias();
+	float GetFoamScale();
+
+	void SetUniformLightHight(float v);
+	void SetUniformExtinctcoeff(float v);
+	void SetShiness(float v);
+	void SetFScale(float v);
+	void SetFPow(float v);
+	void SetBias(float v);
+	void SetFoamScale(float v);
 
 	bool LoadScene();
 	bool InitScene(ID3D12Device* device);

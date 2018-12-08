@@ -360,6 +360,79 @@ uint32_t Scene::GetUniformMode()
 	return uniform.mode;
 }
 
+
+
+float Scene::GetUniformLightHight()
+{
+	return uniform.lighthight;
+}
+
+float Scene::GetUniformExtinctcoeff()
+{
+	return uniform.extinctcoeff;
+}
+
+float Scene::GetShiness()
+{
+	return uniform.shiness;
+}
+
+float Scene::GetfScale()
+{
+	return uniform.fscale;
+}
+
+float Scene::GetFpow()
+{
+	return uniform.fpow;
+}
+
+float Scene::GetBias()
+{
+	return uniform.fbias;
+}
+
+float Scene::GetFoamScale()
+{
+	return uniform.foamScale;
+}
+
+void Scene::SetUniformLightHight(float v)
+{
+	uniform.lighthight = v;
+}
+
+void Scene::SetUniformExtinctcoeff(float v)
+{
+	uniform.extinctcoeff = v;
+}
+
+void Scene::SetShiness(float v)
+{
+	uniform.shiness = v;
+}
+
+void Scene::SetFScale(float v)
+{
+	uniform.fscale = v;
+}
+
+void Scene::SetFPow(float v)
+{
+	uniform.fpow = v;
+}
+
+void Scene::SetBias(float v)
+{
+	uniform.fbias = v;
+}
+
+void Scene::SetFoamScale(float v)
+{
+	uniform.FoamScale = v;
+}
+
+
 bool Scene::LoadScene()
 {
 	// CPU side, load data from disk

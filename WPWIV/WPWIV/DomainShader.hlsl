@@ -19,7 +19,7 @@ DS_OUTPUT main(
     float2 texCoord = BLERP2(patch[0].texCoord, patch[1].texCoord, patch[3].texCoord, patch[2].texCoord, domain);
     //float3 nor = float3(0, 1, 0); //PER VERTEX NORMAL
 
-    if(mode==0||mode==10)//0 - default, 10 - normal
+    if(mode==0||mode==10||mode==11)//0 - default, 10 - normal
     {
         float ob = obstacle.SampleLevel(clampSampler, texCoord, 0).x;
         if (ob > obstacleThresholdWave)
@@ -37,6 +37,7 @@ DS_OUTPUT main(
     }
     Output.pos = mul(mul(viewProj, model), float4(pos, 1));
     Output.texCoord = texCoord;
+	Output.PosW = pos;
     //Output.nor = nor; //PER VERTEX NORMAL
 
     return Output;

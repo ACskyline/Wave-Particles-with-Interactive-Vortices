@@ -14,7 +14,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     {
         //do nothing
     }
-    else
+    else if(input.texCoord.x<0)
     {
         float2 splatDir = float2(splatDirU, splatDirV);
         col += float4(splatDir * splatScale, 0, 0);

@@ -13,7 +13,7 @@ PS_OUTPUT main(VS_OUTPUT input)
     float4 f123 = float4(velAmp.z, 0, 0.5 * velAmp.z, 1);
     float4 f45v = float4(0, velAmp.z, sign(velAmp.z) * velAmp.xy);
 
-    if(mode==0||mode==7||mode==9||mode==10)
+    if(mode==0||mode==7||mode==9||mode==10||mode==11)
     {
         for (int i = 1; i <= blurRadius; i++)
         {

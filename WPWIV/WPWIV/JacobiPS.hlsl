@@ -44,7 +44,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 
     float alpha = -fluidCellSize * fluidCellSize;
 
-    col = (pW + pE + pS + pN + alpha * bC) * 0.25;//    jacobiInvBeta;
+    col = 1.01*(pW + pE + pS + pN + alpha * bC) * 0.25;//    jacobiInvBeta;
 
     return col;
 }
