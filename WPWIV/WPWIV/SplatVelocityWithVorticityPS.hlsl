@@ -20,7 +20,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
  
     float4 ob = obstacleTex.Sample(wrapSampler, input.texCoord);
 
-    if (ob.x > 0.5)
+    if (ob.x > obstacleThresholdFluid)
     {
         //do nothing
     }

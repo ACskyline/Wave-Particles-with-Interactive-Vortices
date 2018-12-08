@@ -5,7 +5,9 @@
 class Mesh
 {
 public:
-	enum MeshType { Plane, Cube, WaveParticle, WaterSurface, FullScreenQuad };
+	static float RayPlaneIntersection(XMFLOAT3 ori, XMFLOAT3 dir, XMFLOAT3 nor, XMFLOAT3 p);
+
+	enum MeshType { Circle, Plane, Cube, WaveParticle, TileableSurface, FullScreenQuad, Count };
 
 	struct ObjectUniform
 	{
@@ -18,7 +20,7 @@ public:
 		const XMFLOAT3& _rotation,
 		const XMFLOAT3& _scale);
 	Mesh(const MeshType& _type,
-		int waveParticleCount,
+		int waveParticleCountOrCircleSegment,
 		const XMFLOAT3& _position,
 		const XMFLOAT3& _rotation,
 		const XMFLOAT3& _scale);
@@ -85,5 +87,5 @@ private:
 	void InitWaveParticles(int waveParticleCount);
 	void InitWaterSurface(int cellCountX, int cellCountZ);
 	void InitFullScreenQuad();
+	void InitCircle(int segment);
 };
-

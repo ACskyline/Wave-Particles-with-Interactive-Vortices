@@ -431,7 +431,7 @@ void Renderer::RecordPipelineNoClear(
 	//}
 
 	// clear the depth/stencil buffer
-	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	//commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	// set root signature
 	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature

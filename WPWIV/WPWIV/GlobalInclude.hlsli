@@ -56,6 +56,19 @@ cbuffer SceneUniform : register(b3)
     float splatDirU;
     float splatDirV;
     float splatScale;
+    float splatDensityU;
+    float splatDensityV;
+    float splatDensityRadius;
+    float splatDensityScale;
+
+    float brushScale;
+    float brushStrength;
+    float brushOffsetU;
+    float brushOffsetV;
+
+    float obstacleScale;
+    float obstacleThresholdFluid;
+    float obstacleThresholdWave;
 
     uint edgeTessFactor;
     uint insideTessFactor;
@@ -137,6 +150,26 @@ float3 HeightMapToNormal(float2 uv, Texture2D heightMapT, SamplerState heightMap
     return cross(normalize(ddV), normalize(ddU));
 }
 
+float3 ObstacleMapToNormal(float2 uv, Texture2D obstacleMapT, SamplerState obstacleMapS)
+{
+    float2 dUP = uv + float2(1.0 / textureWidth, 0);
+    float2 dUN = uv - float2(1.0 / textureWidth, 0);
+    float2 dVP = uv + float2(0, 1.0 / textureHeight);
+    float2 dVN = uv - float2(0, 1.0 / textureHeight);
+
+    float deviationUP = clamp(obstacleMapT.SampleLevel(obstacleMapS, dUP, 0).x, 0, 1);
+    float deviationUN = clamp(obstacleMapT.SampleLevel(obstacleMapS, dUN, 0).x, 0, 1);
+    float deviationVP = clamp(obstacleMapT.SampleLevel(obstacleMapS, dVP, 0).x, 0, 1);
+    float deviationVN = clamp(obstacleMapT.SampleLevel(obstacleMapS, dVN, 0).x, 0, 1);
+    
+    float3 ddV = float3(0, deviationVP - deviationVN, 0);
+    ddV += float3(0, 0, 2.0 / textureHeight);
+    float3 ddU = float3(0, deviationUP - deviationUN, 0);
+    ddU += float3(2.0 / textureWidth, 0, 0);
+
+    return cross(normalize(ddV), normalize(ddU));
+}
+
 float4 FlowHeightWithNormal(in float2 uv, in float time, in Texture2D flowT, in SamplerState flowS, in Texture2D flowedT, in SamplerState flowedS, out float3 normal)
 {
     float timeInt = float(time) / (1 * 2); //interval is always 1
@@ -199,7 +232,6 @@ struct VS_CONTROL_POINT_OUTPUT
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// VS /////////////////
 
-
 ///////////////// HS /////////////////
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 struct HS_CONTROL_POINT_OUTPUT
@@ -216,18 +248,24 @@ struct HS_CONSTANT_DATA_OUTPUT
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// HS /////////////////
 
-
 ///////////////// DS /////////////////
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 struct DS_OUTPUT
 {
     float4 pos : SV_POSITION;
     float2 texCoord : TEXCOORD;
+};
+
+struct DS_OUTPUT_2
+{
+    float4 pos : SV_POSITION;
+    float2 texCoord : TEXCOORD;
+    float3 wpos : WORLD_POSITION;
+    float3 nor : NORMAL;
     //float3 nor : NORMAL; //PER VERTEX NORMAL
 };
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 ///////////////// DS /////////////////
-
 
 ///////////////// PS /////////////////
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//

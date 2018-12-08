@@ -1,24 +1,15 @@
 #include <windows.h>
 #include <wincodec.h>
 #include <dinput.h>
-#include "Renderer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "Scene.h"
+#include "Renderer.h"
 
-HWND hwnd = NULL;// Handle to the window
-LPCTSTR WindowName = L"WPWIV";// name of the window (not the title)
-LPCTSTR WindowTitle = L"WPWIV_1.0";// title of the window
-int Width = 1024;// width and height of the window
-int Height = 768;
-int WidthRT = 500;
-int HeightRT = 500;
-int WidthRtFluid = 500;
-int HeightRtFluid = 500;
-bool FluidSimulation = true;
-int FluidSimulationStep = 30;
-int fluidSimulationStep = 0;
+HWND hwnd = NULL; // Handle to the window
+LPCTSTR WindowName = L"WPWIV"; // name of the window (not the title)
+LPCTSTR WindowTitle = L"WPWIV_1.0"; // title of the window
 IDirectInputDevice8* DIKeyboard;
 IDirectInputDevice8* DIMouse;
 DIMOUSESTATE mouseLastState;
@@ -39,8 +30,28 @@ UINT64 fenceValue[FrameBufferCount]; // this value is incremented each frame. ea
 int frameIndex; // current rtv we are on
 uint32_t frameCount = 0;
 
+int Width = 1024; // width and height of the window
+int Height = 768;
+int WidthRT = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
+int HeightRT = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
+int WidthRtFluid = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
+int HeightRtFluid = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
+bool FluidSimulation = true;
+int FluidSimulationStep = 30;
+int fluidSimulationStep = 0;
+const float WaterSurfaceScaleX = 10;
+const float WaterSurfaceScaleZ = 10;
+const float WaterSurfacePosX = -5;
+const float WaterSurfacePosZ = -5;
+bool CreateObstacle = false;
+bool ClearObstacle = false;
+
 Renderer mRenderer;
 Scene mScene;
+Frame mFrameCreateObstacle;
+Frame mFrameObstacleHorizontal;
+Frame mFrameObstacleVertical;
+Frame mFrameObstacle;
 Frame mFrameGraphics;
 Frame mFrameWaveParticle;
 Frame mFramePostProcessH;
@@ -53,37 +64,50 @@ Frame mFrameFluidGradient;
 OrbitCamera mCamera(4.f, 0.f, 0.f, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), (float)Width, (float)Height, 45.0f, 0.1f, 1000.0f);
 Camera mDummyCamera(XMFLOAT3{ 4.f,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,1,0 }, WidthRT, HeightRT, 45.0f, 0.1f, 1000.f);
 Camera mDummyCameraFluid(XMFLOAT3{ 4.f,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,1,0 }, WidthRtFluid, HeightRtFluid, 45.0f, 0.1f, 1000.f);
-Mesh mWaterSurface(Mesh::MeshType::WaterSurface, 100, 100, XMFLOAT3(-5, 0, -5), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 1, 10));
+Mesh mWaterSurface(Mesh::MeshType::TileableSurface, 100, 100, XMFLOAT3(WaterSurfacePosX, 0, WaterSurfacePosZ), XMFLOAT3(0, 0, 0), XMFLOAT3(WaterSurfaceScaleX, 1, WaterSurfaceScaleZ));
+Mesh mObstacleSurface(Mesh::MeshType::TileableSurface, 100, 100, XMFLOAT3(WaterSurfacePosX, -0.1, WaterSurfacePosZ), XMFLOAT3(0, 0, 0), XMFLOAT3(WaterSurfaceScaleX, 1, WaterSurfaceScaleZ));
 Mesh mQuad(Mesh::MeshType::FullScreenQuad, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
 Mesh mWaveParticle(Mesh::MeshType::WaveParticle, 100, XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
+Mesh mCircle(Mesh::MeshType::Circle, 16, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 0,0,0 }, XMFLOAT3{ 1,1,1 });
+Shader mCreateObstacleVS(Shader::ShaderType::VertexShader, L"CreateObstacleVS.hlsl");
+Shader mCreateObstaclePS(Shader::ShaderType::PixelShader, L"CreateObstaclePS.hlsl");
+Shader mObstacleHorizontalPS(Shader::ShaderType::PixelShader, L"PostProcessObstaclePS_H.hlsl");
+Shader mObstacleVerticalPS(Shader::ShaderType::PixelShader, L"PostProcessObstaclePS_V.hlsl");
 Shader mVertexShader(Shader::ShaderType::VertexShader, L"VertexShader.hlsl");
 Shader mHullShader(Shader::ShaderType::HullShader, L"HullShader.hlsl");
 Shader mDomainShader(Shader::ShaderType::DomainShader, L"DomainShader.hlsl");
 Shader mPixelShader(Shader::ShaderType::PixelShader, L"PixelShader.hlsl");
+Shader mObstacleVS(Shader::ShaderType::VertexShader, L"ObstacleVS.hlsl");
+Shader mObstacleHS(Shader::ShaderType::HullShader, L"ObstacleHS.hlsl");
+Shader mObstacleDS(Shader::ShaderType::DomainShader, L"ObstacleDS.hlsl");
+Shader mObstaclePS(Shader::ShaderType::PixelShader, L"ObstaclePS.hlsl");
 Shader mPostProcessVS(Shader::ShaderType::VertexShader, L"PostProcessVS.hlsl");
 Shader mPostProcessPS_H(Shader::ShaderType::PixelShader, L"PostProcessPS_H.hlsl");
 Shader mPostProcessPS_V(Shader::ShaderType::PixelShader, L"PostProcessPS_V.hlsl");
 Shader mWaveParticleVS(Shader::ShaderType::VertexShader, L"WaveParticleVS.hlsl");
 Shader mWaveParticlePS(Shader::ShaderType::PixelShader, L"WaveParticlePS.hlsl");
 Shader mFluidAdvectPS(Shader::ShaderType::PixelShader, L"AdvectPS.hlsl");
-Shader mFluidSplatPS(Shader::ShaderType::PixelShader, L"SplatWithVorticityPS.hlsl");
+Shader mFluidSplatVelocityPS(Shader::ShaderType::PixelShader, L"SplatVelocityWithVorticityPS.hlsl");
+Shader mFluidSplatDensityPS(Shader::ShaderType::PixelShader, L"SplatDensityPS.hlsl");
 Shader mFluidComputeDivergencePS(Shader::ShaderType::PixelShader, L"ComputeDivergencePS.hlsl");
 Shader mFluidJacobiPS(Shader::ShaderType::PixelShader, L"JacobiPS.hlsl");
 Shader mFluidSubtractGradientPS(Shader::ShaderType::PixelShader, L"SubtractGradientPS.hlsl");
 Texture mTextureAlbedo(L"foam.jpg");
-Texture mTextureObstacle(L"ob3.jpg");
-RenderTexture mRenderTextureWaveParticle(WidthRT, HeightRT);
-RenderTexture mRenderTexturePostProcessH1(WidthRT, HeightRT);
-RenderTexture mRenderTexturePostProcessH2(WidthRT, HeightRT);
-RenderTexture mRenderTexturePostProcessV1(WidthRT, HeightRT);
-RenderTexture mRenderTexturePostProcessV2(WidthRT, HeightRT);
-RenderTexture mRenderTextureFluidDivergence(WidthRtFluid, HeightRtFluid);
-RenderTexture mRenderTextureFluidVelocity1(WidthRtFluid, HeightRtFluid);
-RenderTexture mRenderTextureFluidVelocity2(WidthRtFluid, HeightRtFluid);
-RenderTexture mRenderTextureFluidDensity1(WidthRtFluid, HeightRtFluid);
-RenderTexture mRenderTextureFluidDensity2(WidthRtFluid, HeightRtFluid);
-RenderTexture mRenderTextureFluidPressure1(WidthRtFluid, HeightRtFluid);
-RenderTexture mRenderTextureFluidPressure2(WidthRtFluid, HeightRtFluid);
+RenderTexture mRenderTextureWaveParticle(WidthRT, HeightRT, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTexturePostProcessH1(WidthRT, HeightRT, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTexturePostProcessH2(WidthRT, HeightRT, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTexturePostProcessV1(WidthRT, HeightRT, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTexturePostProcessV2(WidthRT, HeightRT, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTextureObstacleCreate(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R8G8B8A8_UNORM);
+RenderTexture mRenderTextureObstacleBlur(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R8G8B8A8_UNORM);
+RenderTexture mRenderTextureObstacle(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R8G8B8A8_UNORM);
+RenderTexture mRenderTextureFluidDivergence(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTextureFluidVelocity1(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTextureFluidVelocity2(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTextureFluidDensity1(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTextureFluidDensity2(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTextureFluidPressure1(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R16G16B16A16_FLOAT);
+RenderTexture mRenderTextureFluidPressure2(WidthRtFluid, HeightRtFluid, DXGI_FORMAT_R16G16B16A16_FLOAT);
 RenderTexture *pRtVelocityPing;
 RenderTexture *pRtVelocityPong;
 RenderTexture *pRtDensityPing;
@@ -136,6 +160,7 @@ bool CreateScene()
 	mFrameWaveParticle.AddCamera(&mDummyCamera);
 	mFrameWaveParticle.AddMesh(&mWaveParticle);
 	mFrameWaveParticle.AddRenderTexture(&mRenderTextureWaveParticle);
+	mFrameWaveParticle.SetUniformTime(0);
 
 	// filter
 	mFramePostProcessH.AddCamera(&mDummyCamera);
@@ -161,11 +186,31 @@ bool CreateScene()
 	mFrameGraphics.AddTexture(&mRenderTextureFluidDensity1);//t4
 	mFrameGraphics.AddTexture(&mRenderTextureFluidPressure1);//t5
 	mFrameGraphics.AddTexture(&mRenderTextureFluidDivergence);//t6
-	mFrameGraphics.AddTexture(&mTextureObstacle);//t7
+	mFrameGraphics.AddTexture(&mRenderTextureObstacle);//t7
+	mFrameGraphics.SetUniformTime(0);
 
-	mFramePostProcessH.SetUniformTime(0);
-	mFramePostProcessV.SetUniformTime(0);
-	mFrameWaveParticle.SetUniformTime(0);
+	// create obstacle
+	mFrameCreateObstacle.AddCamera(&mDummyCameraFluid);//same view port rect as fluid
+	mFrameCreateObstacle.AddMesh(&mCircle);
+	mFrameCreateObstacle.AddRenderTexture(&mRenderTextureObstacleCreate);
+
+	// obstacle
+	mFrameObstacle.AddCamera(&mCamera);
+	mFrameObstacle.AddMesh(&mObstacleSurface);
+	mFrameObstacle.AddTexture(&mRenderTextureObstacle);//t0
+	mFrameObstacle.AddTexture(&mRenderTextureObstacleCreate);//t1
+	mFrameObstacle.AddTexture(&mRenderTextureObstacleBlur);//t2
+
+	// obstacle filter
+	mFrameObstacleHorizontal.AddCamera(&mDummyCameraFluid);
+	mFrameObstacleHorizontal.AddMesh(&mQuad);
+	mFrameObstacleHorizontal.AddTexture(&mRenderTextureObstacleCreate);
+	mFrameObstacleHorizontal.AddRenderTexture(&mRenderTextureObstacleBlur);
+
+	mFrameObstacleVertical.AddCamera(&mDummyCameraFluid);
+	mFrameObstacleVertical.AddMesh(&mQuad);
+	mFrameObstacleVertical.AddTexture(&mRenderTextureObstacleBlur);
+	mFrameObstacleVertical.AddRenderTexture(&mRenderTextureObstacle);
 
 	// B. Data
 
@@ -178,6 +223,10 @@ bool CreateScene()
 	pRtPressurePong = &mRenderTextureFluidPressure2;
 
 	// frame
+	mScene.AddFrame(&mFrameObstacleHorizontal);
+	mScene.AddFrame(&mFrameObstacleVertical);
+	mScene.AddFrame(&mFrameObstacle);
+	mScene.AddFrame(&mFrameCreateObstacle);
 	mScene.AddFrame(&mFrameFluidAdvect);
 	mScene.AddFrame(&mFrameFluidSplat);
 	mScene.AddFrame(&mFrameFluidDivergence);
@@ -194,13 +243,24 @@ bool CreateScene()
 	mScene.AddCamera(&mDummyCameraFluid);
 
 	// mesh
+	mScene.AddMesh(&mObstacleSurface);
+	mScene.AddMesh(&mCircle);
 	mScene.AddMesh(&mQuad);
 	mScene.AddMesh(&mWaveParticle);
 	mScene.AddMesh(&mWaterSurface);
 
 	// shader
+	mScene.AddShader(&mObstacleHorizontalPS);
+	mScene.AddShader(&mObstacleVerticalPS);
+	mScene.AddShader(&mObstacleVS);
+	mScene.AddShader(&mObstacleHS);
+	mScene.AddShader(&mObstacleDS);
+	mScene.AddShader(&mObstaclePS);
+	mScene.AddShader(&mCreateObstacleVS);
+	mScene.AddShader(&mCreateObstaclePS);
 	mScene.AddShader(&mFluidAdvectPS);
-	mScene.AddShader(&mFluidSplatPS);
+	mScene.AddShader(&mFluidSplatVelocityPS);
+	mScene.AddShader(&mFluidSplatDensityPS);
 	mScene.AddShader(&mFluidComputeDivergencePS);
 	mScene.AddShader(&mFluidJacobiPS);
 	mScene.AddShader(&mFluidSubtractGradientPS);
@@ -216,9 +276,12 @@ bool CreateScene()
 
 	// texture
 	mScene.AddTexture(&mTextureAlbedo);
-	mScene.AddTexture(&mTextureObstacle);
+	//mScene.AddTexture(&mTextureObstacle);
 	
 	// render texture
+	mScene.AddRenderTexture(&mRenderTextureObstacleCreate);
+	mScene.AddRenderTexture(&mRenderTextureObstacleBlur);
+	mScene.AddRenderTexture(&mRenderTextureObstacle);
 	mScene.AddRenderTexture(&mRenderTextureWaveParticle);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessH1);
 	mScene.AddRenderTexture(&mRenderTexturePostProcessH2);
@@ -233,13 +296,14 @@ bool CreateScene()
 	mScene.AddRenderTexture(&mRenderTextureFluidDivergence);
 
 	// set uniform
-	mScene.SetUniformHeightScale(1.3);
+	mScene.SetUniformHeightScale(0.8);
 	mScene.SetUniformWaveParticleSpeedScale(0.0001);
 	mScene.SetUniformFlowSpeed(0.0001);
-	mScene.SetUniformDxScale(0.03);
-	mScene.SetUniformDzScale(0.03);
+	mScene.SetUniformDxScale(0.015);
+	mScene.SetUniformDzScale(0.015);
 	mScene.SetUniformTimeScale(1.0);
 	mScene.SetUniformFoamScale(3.0);
+
 	mScene.SetUniformTimeStepFluid(0.03);
 	mScene.SetUniformFluidCellSize(1.25);
 	mScene.SetUniformFluidDissipation(0.996);
@@ -247,12 +311,26 @@ bool CreateScene()
 	mScene.SetUniformSplatDirU(0.5);
 	mScene.SetUniformSplatDirV(0.5);
 	mScene.SetUniformSplatScale(0.005);
+	mScene.SetUniformSplatDensityU(0.0);
+	mScene.SetUniformSplatDensityV(0.0);
+	mScene.SetUniformSplatDensityRadius(0.1);
+	mScene.SetUniformSplatDensityScale(0.01);
+
+	mScene.SetUniformBrushScale(0.1);
+	mScene.SetUniformBrushStrength(1.0);
+	mScene.SetUniformBrushOffsetU(0.0);
+	mScene.SetUniformBrushOffsetV(0.0);
+
+	mScene.SetUniformObstacleScale(1.8);
+	mScene.SetUniformObstacleThresholdFluid(0.3);
+	mScene.SetUniformObstacleThresholdWave(0.12);
+
 	mScene.SetUniformTextureWidthHeight(WidthRT, HeightRT);
 	mScene.SetUniformTextureWidthHeightFluid(WidthRtFluid / 2.0, HeightRtFluid / 2.0);
-	mScene.SetUniformEdgeTessFactor(4);
-	mScene.SetUniformInsideTessFactor(2);
+	mScene.SetUniformEdgeTessFactor(7);
+	mScene.SetUniformInsideTessFactor(5);
 	mScene.SetUniformBlurRadius(50);
-	mScene.SetUniformMode(1);
+	mScene.SetUniformMode(0);
 
 	if (!mScene.LoadScene())
 		return false;
@@ -306,8 +384,15 @@ void DetectInput()
 	BYTE keyboardCurrState[256];
 
 	DIKeyboard->Acquire();
-	
+
 	DIKeyboard->GetDeviceState(sizeof(keyboardCurrState), (LPVOID)&keyboardCurrState);
+
+	POINT currentCursorPos = {};
+	GetCursorPos(&currentCursorPos);
+	ScreenToClient(hwnd, &currentCursorPos);
+
+	int mouseX = currentCursorPos.x;
+	int mouseY = currentCursorPos.y;
 
 	//keyboard control
 	if (KEYDOWN(keyboardCurrState, DIK_ESCAPE))
@@ -323,12 +408,34 @@ void DetectInput()
 			DIMouse->Acquire();
 			mouseAcquired = true;
 		}
-
+	}
+	else if (KEYDOWN(keyboardCurrState, DIK_B))//control brush
+	{
+		XMFLOAT2 screen = { static_cast<float>(mouseX), static_cast<float>(mouseY) };
+		XMFLOAT3 world = mCamera.ScreenToWorld(screen);
+		XMFLOAT3 ori = mCamera.GetPosition();
+		XMFLOAT3 dir = {};
+		XMVECTOR oriV = XMLoadFloat3(&ori);
+		XMVECTOR worldV = XMLoadFloat3(&world);
+		XMVECTOR dirV = XMVector3Normalize(worldV - oriV);
+		XMStoreFloat3(&dir, dirV);
+		XMFLOAT3 nor = { 0, 1, 0 };
+		XMFLOAT3 p = { 0, 0, 0 };
+		float t = Mesh::RayPlaneIntersection(ori, dir, nor, p);
+		XMVECTOR resultV = oriV + dirV * t;
+		XMFLOAT3 result = {};
+		XMStoreFloat3(&result, resultV);
+		//printf("plane:%f,%f,%f\n", result.x, result.y, result.z);
+		mScene.SetUniformBrushOffsetU((result.x - WaterSurfacePosX) / WaterSurfaceScaleX * 2.f - 1.f);
+		mScene.SetUniformBrushOffsetV(-((result.z - WaterSurfacePosZ) / WaterSurfaceScaleZ * 2.f - 1.f));
+		mScene.UpdateUniformBuffer();
+		CreateObstacle = true;
 	}
 	else
 	{
 		DIMouse->Unacquire();
 		mouseAcquired = false;
+		CreateObstacle = false;
 	}
 
 	if (mouseAcquired)
@@ -356,7 +463,7 @@ void DetectInput()
 		mCamera.UpdateUniform();
 		mCamera.UpdateUniformBuffer();
 	}
-
+	
 	memcpy(keyboardLastState, keyboardCurrState, 256 * sizeof(BYTE));
 
 	return;
@@ -748,7 +855,7 @@ bool InitD3D()
 		}
 	}
 
-	// fluid splat
+	// fluid splat velocity
 	for (int i = 0; i < FrameBufferCount; i++)
 	{
 		if (!mRenderer.CreateFluidRootSignature(
@@ -784,14 +891,14 @@ bool InitD3D()
 			nullptr,
 			nullptr,
 			nullptr,
-			&mFluidSplatPS))
+			&mFluidSplatVelocityPS))
 		{
 			printf("Create Fluid Pipeline PSO splat failed\n");
 			return false;
 		}
 	}
 
-	// density splat
+	// splat density 
 	for (int i = 0; i < FrameBufferCount; i++)
 	{
 		if (!mRenderer.CreateFluidRootSignature(
@@ -827,7 +934,7 @@ bool InitD3D()
 			nullptr,
 			nullptr,
 			nullptr,
-			&mFluidSplatPS))
+			&mFluidSplatDensityPS))
 		{
 			printf("Create Fluid Pipeline PSO splat failed\n");
 			return false;
@@ -971,7 +1078,6 @@ bool InitD3D()
 		}
 	}
 
-
 	// wave particle
 	if (!mRenderer.CreateWaveParticleRootSignature(
 		device,
@@ -1092,10 +1198,10 @@ bool InitD3D()
 		return false;
 	}
 
-	// graphics
+	// graphics wave surface
 	if (!mRenderer.CreateGraphicsRootSignature(
 		device,
-		mRenderer.GetGraphicsRootSignaturePtr(static_cast<int>(Renderer::GraphicsStage::Default)),
+		mRenderer.GetGraphicsRootSignaturePtr(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
 		mFrameGraphics.GetTextureVec().size()))
 	{
 		printf("CreateGraphicsPipeline RS failed\n");
@@ -1104,8 +1210,8 @@ bool InitD3D()
 
 	if (!mRenderer.CreateHeapBindTexture(
 		device,
-		mRenderer.GetGraphicsDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::Default)),
-		mRenderer.GetGraphicsRtvDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::Default)),
+		mRenderer.GetGraphicsDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
+		mRenderer.GetGraphicsRtvDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
 		mFrameGraphics.GetTextureVec(),
 		mFrameGraphics.GetRenderTextureVec()))
 	{
@@ -1115,8 +1221,8 @@ bool InitD3D()
 
 	if (!mRenderer.CreatePSO(
 		device,
-		mRenderer.GetGraphicsPsoPtr(static_cast<int>(Renderer::GraphicsStage::Default)),
-		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::Default)),
+		mRenderer.GetGraphicsPsoPtr(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
+		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH,//D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
 		CD3DX12_BLEND_DESC(D3D12_DEFAULT),// Renderer::NoBlend(),
 		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
@@ -1129,6 +1235,166 @@ bool InitD3D()
 		&mPixelShader))
 	{
 		printf("CreateGraphicsPipeline PSO failed\n");
+		return false;
+	}
+
+	// graphics obstacle surface
+	if (!mRenderer.CreateGraphicsRootSignature(
+		device,
+		mRenderer.GetGraphicsRootSignaturePtr(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		mFrameObstacle.GetTextureVec().size()))
+	{
+		printf("CreateGraphicsPipeline RS obstacle failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreateHeapBindTexture(
+		device,
+		mRenderer.GetGraphicsDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		mRenderer.GetGraphicsRtvDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		mFrameObstacle.GetTextureVec(),
+		mFrameObstacle.GetRenderTextureVec()))
+	{
+		printf("CreateGraphicsPipeline Heap obstacle failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreatePSO(
+		device,
+		mRenderer.GetGraphicsPsoPtr(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH,//D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		CD3DX12_BLEND_DESC(D3D12_DEFAULT),// Renderer::NoBlend(),
+		CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT),
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		1,
+		&mObstacleVS,
+		&mObstacleHS,
+		&mObstacleDS,
+		nullptr,
+		&mObstaclePS))
+	{
+		printf("CreateGraphicsPipeline PSO obstacle failed\n");
+		return false;
+	}
+
+	// graphics create obstacle
+	if (!mRenderer.CreateGraphicsRootSignature(
+		device,
+		mRenderer.GetGraphicsRootSignaturePtr(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+		mFrameCreateObstacle.GetTextureVec().size()))
+	{
+		printf("CreateGraphicsPipeline obstacle RS failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreateHeapBindTexture(
+		device,
+		mRenderer.GetGraphicsDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+		mRenderer.GetGraphicsRtvDescriptorHeapPtr(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+		mFrameCreateObstacle.GetTextureVec(),
+		mFrameCreateObstacle.GetRenderTextureVec()))
+	{
+		printf("CreateGraphicsPipeline obstacle Heap failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreatePSO(
+		device,
+		mRenderer.GetGraphicsPsoPtr(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		Renderer::AdditiveBlend(),
+		Renderer::NoDepthTest(),
+		DXGI_FORMAT_R8G8B8A8_UNORM,//DXGI_FORMAT_R16G16B16A16_FLOAT,
+		1,
+		&mCreateObstacleVS,
+		nullptr,
+		nullptr,
+		nullptr,
+		&mCreateObstaclePS))
+	{
+		printf("CreateGraphicsPipeline obstacle PSO failed\n");
+		return false;
+	}
+
+	// postprocess blur H obstacle
+	if (!mRenderer.CreatePostProcessRootSignature(
+		device,
+		mRenderer.GetPostProcessRootSignaturePtr(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+		mFrameObstacleHorizontal.GetTextureVec().size()))
+	{
+		printf("CreatePostProcessPipeline obstacle H RS failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreateHeapBindTexture(
+		device,
+		mRenderer.GetPostProcessDescriptorHeapPtr(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+		mRenderer.GetPostProcessRtvDescriptorHeapPtr(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+		mFrameObstacleHorizontal.GetTextureVec(),
+		mFrameObstacleHorizontal.GetRenderTextureVec()))
+	{
+		printf("CreatePostProcessPipeline obstacle H Heap failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreatePSO(
+		device,
+		mRenderer.GetPostProcessPsoPtr(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+		mRenderer.GetPostProcessRootSignature(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		Renderer::NoBlend(),
+		Renderer::NoDepthTest(),
+		DXGI_FORMAT_R8G8B8A8_UNORM,//DXGI_FORMAT_R16G16B16A16_FLOAT,
+		1,
+		&mPostProcessVS,
+		nullptr,
+		nullptr,
+		nullptr,
+		&mObstacleHorizontalPS))
+	{
+		printf("CreatePostProcessPipeline obstacle H PSO failed\n");
+		return false;
+	}
+
+	// postprocess blur V obstacle
+	if (!mRenderer.CreatePostProcessRootSignature(
+		device,
+		mRenderer.GetPostProcessRootSignaturePtr(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+		mFrameObstacleVertical.GetTextureVec().size()))
+	{
+		printf("CreatePostProcessPipeline obstacle V RS failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreateHeapBindTexture(
+		device,
+		mRenderer.GetPostProcessDescriptorHeapPtr(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+		mRenderer.GetPostProcessRtvDescriptorHeapPtr(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+		mFrameObstacleVertical.GetTextureVec(),
+		mFrameObstacleVertical.GetRenderTextureVec()))
+	{
+		printf("CreatePostProcessPipeline obstacle V Heap failed\n");
+		return false;
+	}
+
+	if (!mRenderer.CreatePSO(
+		device,
+		mRenderer.GetPostProcessPsoPtr(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+		mRenderer.GetPostProcessRootSignature(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+		Renderer::NoBlend(),
+		Renderer::NoDepthTest(),
+		DXGI_FORMAT_R8G8B8A8_UNORM,//DXGI_FORMAT_R16G16B16A16_FLOAT,
+		1,
+		&mPostProcessVS,
+		nullptr,
+		nullptr,
+		nullptr,
+		&mObstacleVerticalPS))
+	{
+		printf("CreatePostProcessPipeline obstacle V PSO failed\n");
 		return false;
 	}
 
@@ -1221,14 +1487,109 @@ void UpdatePipeline()
 	mRenderer.RecordBegin(frameIndex, commandList);
 	///////// RECORD GRAPHICS COMMANDS BEGIN /////////
 
+	if (CreateObstacle || ClearObstacle)
+	{
+		vector<D3D12_RESOURCE_BARRIER> barrierCreateObstacle = {
+				CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacleCreate.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+		};
+		commandList->ResourceBarrier(barrierCreateObstacle.size(), barrierCreateObstacle.data());
+
+		///////// MY GRAPHICS CREATE OBSTACLE PIPELINE /////////
+		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+		mRenderer.RecordPipelineNoClear(
+			commandList,
+			mRenderer.GetGraphicsPSO(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+			mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+			mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::CreateObstacle)),
+			mRenderer.GetRtvHandle(frameIndex),
+			&mFrameCreateObstacle,
+			&mScene,
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+		///////// MY GRAPHICS CREATE OBSTACLE PIPELINE /////////
+
+		vector<D3D12_RESOURCE_BARRIER> barrierObstacleH = {
+			CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacleCreate.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+			CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacleBlur.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0),
+		};
+		commandList->ResourceBarrier(barrierObstacleH.size(), barrierObstacleH.data());
+
+		///////// MY POSTPROCESS OBSTACLE H PIPELINE /////////
+		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+		mRenderer.RecordPipeline(
+			commandList,
+			mRenderer.GetPostProcessPSO(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+			mRenderer.GetPostProcessRootSignature(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+			mRenderer.GetPostProcessDescriptorHeap(static_cast<int>(Renderer::PostProcessStage::ObstacleHorizontal)),
+			mRenderer.GetRtvHandle(frameIndex),
+			&mFrameObstacleHorizontal,
+			&mScene,
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+		///////// MY POSTPROCESS OBSTACLE H PIPELINE /////////
+
+		vector<D3D12_RESOURCE_BARRIER> barrierObstacleV = {
+			CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacle.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0),
+			CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacleBlur.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
+		};
+		commandList->ResourceBarrier(barrierObstacleV.size(), barrierObstacleV.data());
+
+		///////// MY POSTPROCESS OBSTACLE V PIPELINE /////////
+		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+		mRenderer.RecordPipeline(
+			commandList,
+			mRenderer.GetPostProcessPSO(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+			mRenderer.GetPostProcessRootSignature(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+			mRenderer.GetPostProcessDescriptorHeap(static_cast<int>(Renderer::PostProcessStage::ObstacleVertical)),
+			mRenderer.GetRtvHandle(frameIndex),
+			&mFrameObstacleVertical,
+			&mScene,
+			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+		///////// MY POSTPROCESS OBSTACLE V PIPELINE /////////
+
+		if (ClearObstacle)
+		{
+			///////// MY GRAPHICS Clear OBSTACLE /////////
+			//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+			vector<D3D12_RESOURCE_BARRIER> barrierClearObstacle1 = {
+					CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacleCreate.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+			};
+			commandList->ResourceBarrier(barrierClearObstacle1.size(), barrierClearObstacle1.data());
+
+			mRenderer.Clear(
+				commandList,
+				mRenderer.GetRtvHandle(frameIndex),
+				&mFrameCreateObstacle
+			);
+
+			vector<D3D12_RESOURCE_BARRIER> barrierClearObstacle2 = {
+					CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacle.GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+			};
+			commandList->ResourceBarrier(barrierClearObstacle2.size(), barrierClearObstacle2.data());
+
+			mRenderer.Clear(
+				commandList,
+				mRenderer.GetRtvHandle(frameIndex),
+				&mFrameObstacleVertical
+			);
+			//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+			///////// MY GRAPHICS Clear OBSTACLE /////////
+			ClearObstacle = false;
+		}
+
+	}
+
 	fluidSimulationStep++;
 	if (FluidSimulation && fluidSimulationStep >= FluidSimulationStep)
 	{
 		fluidSimulationStep = 0;
 
 		vector<D3D12_RESOURCE_BARRIER> barrierAdvectVelocity = {
+			CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacle.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
 			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0),
 			CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPong->GetTextureBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET, 0)
+		
 		};
 		commandList->ResourceBarrier(barrierAdvectVelocity.size(), barrierAdvectVelocity.data());
 
@@ -1242,7 +1603,8 @@ void UpdatePipeline()
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
 			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectVelocity)),
-			&mTextureObstacle,
+			//&mTextureObstacle,
+			&mRenderTextureObstacle,
 			0);//t0
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
@@ -1283,7 +1645,8 @@ void UpdatePipeline()
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
 			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::AdvectDensity)),
-			&mTextureObstacle,
+			//&mTextureObstacle,
+			&mRenderTextureObstacle,
 			0);//t0
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
@@ -1324,7 +1687,8 @@ void UpdatePipeline()
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
 			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatVelocity)),
-			&mTextureObstacle,
+			//&mTextureObstacle,
+			&mRenderTextureObstacle,
 			0);//t0
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
@@ -1360,7 +1724,8 @@ void UpdatePipeline()
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
 			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SplatDensity)),
-			&mTextureObstacle,
+			//&mTextureObstacle,
+			&mRenderTextureObstacle,
 			0);//t0
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
@@ -1396,7 +1761,8 @@ void UpdatePipeline()
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
 			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::ComputeDivergence)),
-			&mTextureObstacle,
+			//&mTextureObstacle,
+			&mRenderTextureObstacle,
 			0);//t0
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
@@ -1451,7 +1817,8 @@ void UpdatePipeline()
 				device,
 				mRenderer.fluidJacobiDescriptorHeap[frameIndex][i],
 				//mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::Jacobi)),
-				&mTextureObstacle,
+				//&mTextureObstacle,
+				&mRenderTextureObstacle,
 				0);//t0
 			mRenderer.BindTextureToDescriptorHeap(
 				device,
@@ -1499,7 +1866,8 @@ void UpdatePipeline()
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
 			mRenderer.GetFluidDescriptorHeap(frameIndex, static_cast<int>(Renderer::FluidStage::SubtractGradient)),
-			&mTextureObstacle,
+			//&mTextureObstacle,
+			&mRenderTextureObstacle,
 			0);//t0
 		mRenderer.BindTextureToDescriptorHeap(
 			device,
@@ -1588,6 +1956,7 @@ void UpdatePipeline()
 	///////// MY POSTPROCESS V PIPELINE /////////
 
 	vector<D3D12_RESOURCE_BARRIER> barrierPostprocessVToGraphics = {
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTextureObstacle.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
 		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV1.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
 		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTexturePostProcessV2.GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
 		CD3DX12_RESOURCE_BARRIER::Transition(pRtVelocityPing->GetTextureBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0),
@@ -1597,38 +1966,52 @@ void UpdatePipeline()
 	};
 	commandList->ResourceBarrier(barrierPostprocessVToGraphics.size(), barrierPostprocessVToGraphics.data());
 	
-	///////// MY GRAPHICS PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvv//
+	///////// MY GRAPHICS WATER SURFACE PIPELINE /////////
+	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
 	mRenderer.BindTextureToDescriptorHeap(
 		device,
-		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Default)),
+		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
 		pRtVelocityPing,
 		//pRtPressurePing,
 		1);//t1
 	mRenderer.BindTextureToDescriptorHeap(
 		device,
-		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Default)),
+		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
 		pRtDensityPing,
 		//pRtPressurePing,
-		4);//t1
+		4);//t4
 	mRenderer.BindTextureToDescriptorHeap(
 		device,
-		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Default)),
+		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
 		pRtPressurePing,
 		//pRtPressurePing,
-		5);//t1
+		5);//t5
 	mRenderer.RecordPipeline(
 		commandList,
-		mRenderer.GetGraphicsPSO(static_cast<int>(Renderer::GraphicsStage::Default)),
-		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::Default)),
-		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Default)),
+		mRenderer.GetGraphicsPSO(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
+		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
+		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::WaterSurface)),
 		mRenderer.GetRtvHandle(frameIndex),
 		&mFrameGraphics,
 		&mScene,
 		D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST,
 		XMFLOAT4(0.0, 0.2, 0.4, 1.0));
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-	///////// MY GRAPHICS PIPELINE /////////
+	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+	///////// MY GRAPHICS WATER SURFACE PIPELINE /////////
+
+	///////// MY GRAPHICS OBSTACLE SURFACE PIPELINE /////////
+	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+	mRenderer.RecordPipelineNoClear(
+		commandList,
+		mRenderer.GetGraphicsPSO(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+		mRenderer.GetRtvHandle(frameIndex),
+		&mFrameObstacle,
+		&mScene,
+		D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+	///////// MY GRAPHICS OBSTACLE SURFACE PIPELINE /////////
 
 	///////// IMGUI PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
@@ -1645,6 +2028,7 @@ void UpdatePipeline()
 	hr = commandList->Close();
 	if (FAILED(hr))
 	{
+		CheckError(hr);
 		Running = false;
 	}
 }
@@ -1706,6 +2090,17 @@ void Gui()
 	static float splatDirU = mScene.GetUniformSplatDirU();
 	static float splatDirV = mScene.GetUniformSplatDirV();
 	static float splatScale = mScene.GetUniformSplatScale();
+	static float splatDensityU = mScene.GetUniformSplatDensityU();
+	static float splatDensityV = mScene.GetUniformSplatDensityV();
+	static float splatDensityRadius = mScene.GetUniformSplatDensityRadius();
+	static float splatDensityScale = mScene.GetUniformSplatDensityScale();
+
+	static float brushScale = mScene.GetUniformBrushScale();
+	static float brushStrength = mScene.GetUniformBrushStrength();
+
+	static float obstacleScale = mScene.GetUniformObstacleScale();
+	static float obstacleThresholdFluid = mScene.GetUniformObstacleThresholdFluid();
+	static float obstacleThresholdWave = mScene.GetUniformObstacleThresholdWave();
 
 	static int edgeTess = mScene.GetUniformEdgeTessFactor();
 	static int insideTess = mScene.GetUniformInsideTessFactor();
@@ -1715,8 +2110,8 @@ void Gui()
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
 
-	ImGui::Begin("Control Panel ");                        
-	ImGui::Text("Wave Particles Scale ");
+	ImGui::Begin("Control Panel ");
+	ImGui::Text("Wave Particles ");
 
 	if (ImGui::Combo("mode", &mode, "default\0flow map\0density\0divergence\0pressure\0flow map driven texture\0wave particle\0horizontal blur\0vertical blur\0horizontal and vertical blur\0normal\0\0"))
 	{
@@ -1772,6 +2167,19 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
+	if (ImGui::SliderInt("edge tess ", &edgeTess, 0, 32))
+	{
+		mScene.SetUniformEdgeTessFactor(edgeTess);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderInt("inside tess ", &insideTess, 0, 32))
+	{
+		mScene.SetUniformInsideTessFactor(insideTess);
+		needToUpdateSceneUniform = true;
+	}
+
+	ImGui::Text("Fluid ");
 	ImGui::Checkbox("fluidSim ", &FluidSimulation);
 	ImGui::SliderInt("fluidSimStep ", &FluidSimulationStep, 0, 60);
 
@@ -1817,6 +2225,30 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
+	if (ImGui::SliderFloat("splatDensityU ", &splatDensityU, 0.0f, 1.0f, "%.6f"))
+	{
+		mScene.SetUniformSplatDensityU(splatDensityU);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("splatDensityV ", &splatDensityV, 0.0f, 1.0f, "%.6f"))
+	{
+		mScene.SetUniformSplatDensityV(splatDensityV);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("splatDensityRadius ", &splatDensityRadius, 0.0f, 1.0f, "%.6f"))
+	{
+		mScene.SetUniformSplatDensityRadius(splatDensityRadius);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("splatDensityScale ", &splatDensityScale, 0.0f, 0.01f, "%.6f"))
+	{
+		mScene.SetUniformSplatDensityScale(splatDensityScale);
+		needToUpdateSceneUniform = true;
+	}
+
 	if (ImGui::SliderInt("fluid width ", &fluidWidth, 0, WidthRtFluid * 2))
 	{
 		mScene.SetUniformTextureWidthFluid(fluidWidth);
@@ -1829,26 +2261,60 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderInt("edge tess ", &edgeTess, 0, 32))
+	ImGui::Text("Brush ");
+
+	if (ImGui::Button("clearObstacle"))
 	{
-		mScene.SetUniformEdgeTessFactor(edgeTess);
+		ClearObstacle = true;
+	}
+
+	if (ImGui::SliderFloat("brushScale ", &brushScale, 0.0f, 1.0f, "%.6f"))
+	{
+		mScene.SetUniformBrushScale(brushScale);
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderInt("inside tess ", &insideTess, 0, 32))
+	if (ImGui::SliderFloat("brushStrength ", &brushStrength, -1.0f, 1.0f, "%.6f"))
 	{
-		mScene.SetUniformInsideTessFactor(insideTess);
+		mScene.SetUniformBrushStrength(brushStrength);
 		needToUpdateSceneUniform = true;
 	}
+
+	float brushOffsetU = mScene.GetUniformBrushOffsetU();
+	float brushOffsetV = mScene.GetUniformBrushOffsetV();
+
+	ImGui::Text("brushOffsetU: %f ", brushOffsetU);
+	ImGui::Text("brushOffsetV: %f ", brushOffsetV);
+
+	ImGui::Text("Obstacle ");
+
+	if (ImGui::SliderFloat("obstacleScale ", &obstacleScale, 0.0f, 3.0f, "%.6f"))
+	{
+		mScene.SetUniformObstacleScale(obstacleScale);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("obstacleThresholdFluid ", &obstacleThresholdFluid, 0.0f, 1.0f, "%.6f"))
+	{
+		mScene.SetUniformObstacleThresholdFluid(obstacleThresholdFluid);
+		needToUpdateSceneUniform = true;
+	}
+
+	if (ImGui::SliderFloat("obstacleThresholdWave ", &obstacleThresholdWave, 0.0f, 1.0f, "%.6f"))
+	{
+		mScene.SetUniformObstacleThresholdWave(obstacleThresholdWave);
+		needToUpdateSceneUniform = true;
+	}
+
+	ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Hold C and use mouse to rotate camera.");
+	ImGui::Text("Hold B and use mouse to control brush.");
+	ImGui::End();
 
 	if (needToUpdateSceneUniform)
 	{
 		mScene.UpdateUniformBuffer();
 	}
-
-	ImGui::Text("%.3f ms/frame (%.1f FPS) ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("Hold C and use mouse to rotate camera.");
-	ImGui::End();
 
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	////////// IMGUI EXAMPLES///////////

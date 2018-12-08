@@ -1,5 +1,18 @@
 #include "Mesh.h"
 
+float Mesh::RayPlaneIntersection(XMFLOAT3 ori, XMFLOAT3 dir, XMFLOAT3 nor, XMFLOAT3 p)
+{
+	float t = -1;
+	XMVECTOR oriV = XMLoadFloat3(&ori);
+	XMVECTOR dirV = XMLoadFloat3(&dir);
+	XMVECTOR norV = XMLoadFloat3(&nor);
+	XMVECTOR pV = XMLoadFloat3(&p);
+	XMStoreFloat(&t, XMVector3Dot(dirV, norV));
+	if (t == 0) return -1;
+	XMStoreFloat(&t, XMVector3Dot(pV - oriV, norV) / XMVector3Dot(dirV, norV));
+	return t;
+}
+
 Mesh::Mesh(const MeshType& _type, 
 	const XMFLOAT3& _position,
 	const XMFLOAT3& _rotation,
@@ -24,7 +37,7 @@ Mesh::Mesh(const MeshType& _type,
 }
 
 Mesh::Mesh(const MeshType& _type,
-	int waveParticleCount,
+	int waveParticleCountOrSegment,
 	const XMFLOAT3& _position,
 	const XMFLOAT3& _rotation,
 	const XMFLOAT3& _scale) :
@@ -35,7 +48,11 @@ Mesh::Mesh(const MeshType& _type,
 {
 	if (type == MeshType::WaveParticle)
 	{
-		InitWaveParticles(waveParticleCount);
+		InitWaveParticles(waveParticleCountOrSegment);
+	}
+	else if (type == MeshType::Circle)
+	{
+		InitCircle(waveParticleCountOrSegment);
 	}
 }
 
@@ -50,7 +67,7 @@ Mesh::Mesh(const MeshType& _type,
 	scale(_scale),
 	rotation(_rotation)
 {
-	if (type == MeshType::WaterSurface)
+	if (type == MeshType::TileableSurface)
 	{
 		InitWaterSurface(cellCountX, cellCountZ);
 	}
@@ -613,4 +630,32 @@ void Mesh::InitFullScreenQuad()
 	iList[3] = 0;
 	iList[4] = 2;
 	iList[5] = 3;
+}
+
+void Mesh::InitCircle(int segment)
+{
+	primitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+	float angle = 360.0 / segment;
+
+	vList.resize(3 * segment);
+
+	for (int i = 0; i < segment; i++)
+	{
+		float sini = 0, cosi = 0, sinj = 0, cosj = 0;
+		XMScalarSinCos(&sini, &cosi, XMConvertToRadians(angle * i));
+		XMScalarSinCos(&sinj, &cosj, XMConvertToRadians(angle * (i + 1)));
+		vList[i * 3 + 0] = { 0.f, 0.5f, 0.f, 0.5f, 0.5f };
+		vList[i * 3 + 1] = { cosj, sinj, 0.5f, cosj * 0.5f + 0.5f, sinj * 0.5f + 0.5f };
+		vList[i * 3 + 2] = { cosi, sini, 0.5f, cosi * 0.5f + 0.5f, sini * 0.5f + 0.5f };
+	}
+
+	iList.resize(3 * segment);
+
+	for (int i = 0; i < segment; i++)
+	{
+		iList[i * 3 + 0] = i * 3 + 0;
+		iList[i * 3 + 1] = i * 3 + 1;
+		iList[i * 3 + 2] = i * 3 + 2;
+	}
 }

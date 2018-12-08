@@ -1,39 +1,55 @@
 ﻿  main.cpp
   c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(54): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(55): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(236): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(237): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(238): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(239): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(240): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(243): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(245): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(249): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(251): warning C4244: 'argument': conversion from 'double' to 'uint32_t', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(340): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(344): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(345): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(346): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(351): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(352): warning C4305: '=': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(659): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(979): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1019): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1059): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1099): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1233): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1274): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1315): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1351): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1387): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1423): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1442): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1490): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1531): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1552): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1574): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1598): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1629): warning C4305: 'argument': truncation from 'double' to 'float'
-e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1778): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(65): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(66): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(68): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(299): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(300): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(301): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(302): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(303): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(307): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(309): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(313): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(316): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(317): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(319): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(324): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(325): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(326): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(329): warning C4244: 'argument': conversion from 'double' to 'uint32_t', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(447): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(451): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(452): warning C4305: '=': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(453): warning C4305: '=': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(458): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(459): warning C4305: '=': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(766): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1085): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1125): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1165): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1205): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1245): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1285): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1325): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1365): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1495): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1515): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1535): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1558): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1569): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1594): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1636): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1678): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1715): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1752): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1789): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1808): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1857): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1899): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1920): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1942): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1967): warning C4267: 'argument': conversion from 'size_t' to 'UINT', possible loss of data
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(1998): warning C4305: 'argument': truncation from 'double' to 'float'
+e:\projects\visual_studio_projects\wpwiv\wpwiv\main.cpp(2186): warning C4305: 'argument': truncation from 'double' to 'float'
   WPWIV.vcxproj -> E:\Projects\Visual_Studio_Projects\WPWIV\x64\Debug\WPWIV.exe

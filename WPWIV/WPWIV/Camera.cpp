@@ -130,6 +130,11 @@ void Camera::ReleaseBuffer()
 	SAFE_RELEASE(gpuUniformBuffer);
 }
 
+XMFLOAT3 Camera::GetPosition()
+{
+	return position;
+}
+
 D3D12_GPU_VIRTUAL_ADDRESS Camera::GetUniformBufferGpuAddress()
 {
 	return gpuUniformBuffer->GetGPUVirtualAddress();
@@ -143,6 +148,18 @@ D3D12_VIEWPORT Camera::GetViewport()
 D3D12_RECT Camera::GetScissorRect()
 {
 	return scissorRect;
+}
+
+XMFLOAT3 Camera::ScreenToWorld(XMFLOAT2 screenPos, bool useNearClipPlane)
+{
+	//assuming viewport.MaxDepth is 1 and viewport.MinDepth is 0
+	float z = useNearClipPlane ? 0.f : 1.f;
+	float clipPlane = useNearClipPlane ? nearClipPlane : farClipPlane;
+	XMFLOAT4 clipPos((screenPos.x / (float)width * 2.f - 1.f) * clipPlane, ((1.f - screenPos.y / (float)height) * 2.f - 1.f) * clipPlane, z * clipPlane, 1.f * clipPlane);
+	XMFLOAT4 worldPos = {};
+	XMStoreFloat4(&worldPos, XMVector4Transform(XMLoadFloat4(&clipPos), XMLoadFloat4x4(&uniform.viewProjInv)));
+	//printf("world:%f,%f,%f,%f\n", worldPos.x, worldPos.y, worldPos.z, worldPos.w);
+	return XMFLOAT3(worldPos.x, worldPos.y, worldPos.z);
 }
 
 ////////////////////////////////////////////

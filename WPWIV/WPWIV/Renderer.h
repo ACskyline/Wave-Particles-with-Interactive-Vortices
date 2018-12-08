@@ -6,9 +6,9 @@ class Renderer
 {
 public:
 	// scoped enum to avoid redefinition of Count
-	enum class GraphicsStage { Default, Count };
+	enum class GraphicsStage { CreateObstacle, Obstacle, WaterSurface, Count };
 	enum class WaveParticleStage { Default, Count };
-	enum class PostProcessStage { Horizontal, Vertical, Count };
+	enum class PostProcessStage { Horizontal, Vertical, ObstacleHorizontal, ObstacleVertical, Count };
 	enum class FluidStage { AdvectVelocity, AdvectDensity, ComputeDivergence, Jacobi, SplatVelocity, SplatDensity, SubtractGradient, Count };
 
 	Renderer();
@@ -146,6 +146,9 @@ public:
 	ID3D12DescriptorHeap* GetFluidRtvDescriptorHeap(int frame, int index);
 	ID3D12DescriptorHeap** GetFluidRtvDescriptorHeapPtr(int frame, int index);
 
+	//dynamically bound rtv and srv, so we need one heap for each frame
+	//also we have more than one draw call during one frame, so we need
+	//one heap for each draw call
 	ID3D12PipelineState* fluidJacobiPSO[FrameBufferCount][JacobiIteration];
 	ID3D12RootSignature* fluidJacobiRootSignature[FrameBufferCount][JacobiIteration];
 	ID3D12DescriptorHeap* fluidJacobiDescriptorHeap[FrameBufferCount][JacobiIteration];
@@ -161,25 +164,25 @@ private:
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandles[FrameBufferCount];
 	ID3D12DescriptorHeap* rtvDescriptorHeap;
 
-	//graphics pipeline
+	//graphics pipeline - statically bound rtv and srv
 	ID3D12PipelineState* graphicsPSO[static_cast<int>(GraphicsStage::Count)];
 	ID3D12RootSignature* graphicsRootSignature[static_cast<int>(GraphicsStage::Count)];
 	ID3D12DescriptorHeap* graphicsDescriptorHeap[static_cast<int>(GraphicsStage::Count)];
 	ID3D12DescriptorHeap* graphicsRtvDescriptorHeap[static_cast<int>(GraphicsStage::Count)];
 
-	//wave particle pipeline
+	//wave particle pipeline - statically bound rtv and srv
 	ID3D12PipelineState* waveParticlePSO[static_cast<int>(WaveParticleStage::Count)];
 	ID3D12RootSignature* waveParticleRootSignature[static_cast<int>(WaveParticleStage::Count)];
 	ID3D12DescriptorHeap* waveParticleDescriptorHeap[static_cast<int>(WaveParticleStage::Count)];
 	ID3D12DescriptorHeap* waveParticleRtvDescriptorHeap[static_cast<int>(WaveParticleStage::Count)];
 
-	//post process pipeline
+	//post process pipeline - statically bound rtv and srv
 	ID3D12PipelineState* postProcessPSO[static_cast<int>(PostProcessStage::Count)];
 	ID3D12RootSignature* postProcessRootSignature[static_cast<int>(PostProcessStage::Count)];
 	ID3D12DescriptorHeap* postProcessDescriptorHeap[static_cast<int>(PostProcessStage::Count)];
 	ID3D12DescriptorHeap* postProcessRtvDescriptorHeap[static_cast<int>(PostProcessStage::Count)];
 
-	//fluid pipeline
+	//fluid pipeline - dynamically bound rtv and srv, so we need one heap for each frame
 	ID3D12PipelineState* fluidPSO[FrameBufferCount][static_cast<int>(FluidStage::Count)];
 	ID3D12RootSignature* fluidRootSignature[FrameBufferCount][static_cast<int>(FluidStage::Count)];
 	ID3D12DescriptorHeap* fluidDescriptorHeap[FrameBufferCount][static_cast<int>(FluidStage::Count)];

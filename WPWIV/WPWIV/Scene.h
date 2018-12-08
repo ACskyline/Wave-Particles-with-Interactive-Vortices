@@ -23,6 +23,19 @@ public:
 		float splatDirU;
 		float splatDirV;
 		float splatScale;
+		float splatDensityU;
+		float splatDensityV;
+		float splatDensityRadius;
+		float splatDensityScale;
+
+		float brushScale;
+		float brushStrength;
+		float brushOffsetU;
+		float brushOffsetV;
+
+		float obstacleScale;
+		float obstacleThresholdFluid;
+		float obstacleThresholdWave;
 
 		uint32_t edgeTessFactor;
 		uint32_t insideTessFactor;
@@ -70,6 +83,19 @@ public:
 	void SetUniformSplatDirU(float _splatDirU);
 	void SetUniformSplatDirV(float _splatDirV);
 	void SetUniformSplatScale(float _splatScale);
+	void SetUniformSplatDensityU(float _splatU);
+	void SetUniformSplatDensityV(float _splatV);
+	void SetUniformSplatDensityRadius(float _splatR);
+	void SetUniformSplatDensityScale(float _splatScale);
+
+	void SetUniformBrushScale(float _brushScale);
+	void SetUniformBrushStrength(float _brushStrength);
+	void SetUniformBrushOffsetU(float _brushOffsetU);
+	void SetUniformBrushOffsetV(float _brushOffsetV);
+
+	void SetUniformObstacleScale(float _obstacleScale);
+	void SetUniformObstacleThresholdFluid(float _obstacleThresholdFluid);
+	void SetUniformObstacleThresholdWave(float _obstacleThresholdWave);
 
 	void SetUniformEdgeTessFactor(uint32_t _tessellationFactor);
 	void SetUniformInsideTessFactor(uint32_t _tessellationFactor);
@@ -95,6 +121,19 @@ public:
 	float GetUniformSplatDirU();
 	float GetUniformSplatDirV();
 	float GetUniformSplatScale();
+	float GetUniformSplatDensityU();
+	float GetUniformSplatDensityV();
+	float GetUniformSplatDensityRadius();
+	float GetUniformSplatDensityScale();
+
+	float GetUniformBrushScale();
+	float GetUniformBrushStrength();
+	float GetUniformBrushOffsetU();
+	float GetUniformBrushOffsetV();
+
+	float GetUniformObstacleScale();
+	float GetUniformObstacleThresholdFluid();
+	float GetUniformObstacleThresholdWave();
 
 	uint32_t GetUniformEdgeTessFactor();
 	uint32_t GetUniformInsideTessFactor();

@@ -22,7 +22,7 @@ DS_OUTPUT main(
     if(mode==0||mode==10)//0 - default, 10 - normal
     {
         float ob = obstacle.SampleLevel(clampSampler, texCoord, 0).x;
-        if(ob>0.5)
+        if (ob > obstacleThresholdWave)
         {
             //do nothing
         }

@@ -423,15 +423,11 @@ int Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 /////////////// RENDER TEXTURE STARTS FROM HERE ///////////////
 ///////////////////////////////////////////////////////////////
 
-RenderTexture::RenderTexture(int _width, int _height)
+RenderTexture::RenderTexture(int _width, int _height, DXGI_FORMAT format)
 	: width(_width), 
 	height(_height),
 	rtvHandle(),
 	Texture(L"no name")
-{
-}
-
-bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)
 {
 	textureDesc = {};
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -440,11 +436,15 @@ bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)
 	textureDesc.Height = height; // height of the texture
 	textureDesc.DepthOrArraySize = 1; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures (we only have one image, so we set 1)
 	textureDesc.MipLevels = 1; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
-	textureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // This is the dxgi format of the image (format of the pixels)
+	textureDesc.Format = format; // This is the dxgi format of the image (format of the pixels)
 	textureDesc.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
 	textureDesc.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+}
+
+bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)
+{
 	
 	HRESULT hr;
 	// create a default heap where the upload heap will copy its contents into (contents being the texture)

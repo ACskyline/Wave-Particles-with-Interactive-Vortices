@@ -11,7 +11,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float4 col = float4(0, 0, 0, 1);
     float2 T = input.texCoord;
     float oC = obstacleTex.Sample(wrapSampler, T).x;
-    if (oC.x > 0.5)
+    if (oC.x > obstacleThresholdFluid)
     {
         col = float4(0, 0, 0, 1);
     }
@@ -37,25 +37,25 @@ float4 main(VS_OUTPUT input) : SV_TARGET
 	    //enforce the free slip boundary condition
         float2 oldV = velocityTex.Sample(wrapSampler, T).xy;
 
-        if (oN.x > 0.5)
+        if (oN.x > obstacleThresholdFluid)
         {
             pN = pC;
             obstV.y = 0;
             vMask.y = 0;
         }
-        if (oS.x > 0.5)
+        if (oS.x > obstacleThresholdFluid)
         {
             pS = pC;
             obstV.y = 0;
             vMask.y = 0;
         }
-        if (oE.x > 0.5)
+        if (oE.x > obstacleThresholdFluid)
         {
             pE = pC;
             obstV.x = 0;
             vMask.x = 0;
         }
-        if (oW.x > 0.5)
+        if (oW.x > obstacleThresholdFluid)
         {
             pW = pC;
             obstV.x = 0;

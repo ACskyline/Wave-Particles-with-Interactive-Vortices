@@ -25,7 +25,7 @@ protected:
 	wstring fileName;
 
 	ID3D12Resource* textureBuffer;
-	D3D12_RESOURCE_DESC textureDesc;
+	D3D12_RESOURCE_DESC textureDesc;//contains format
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	int imageBytesPerRow;
 	BYTE* imageData;
@@ -45,7 +45,7 @@ protected:
 class RenderTexture : public Texture
 {
 public:
-	RenderTexture(int _width, int _height);
+	RenderTexture(int _width, int _height, DXGI_FORMAT format);
 	bool CreateTextureBuffer(ID3D12Device* device);
 	bool UpdateTextureBuffer(ID3D12Device* device);
 
@@ -57,5 +57,7 @@ private:
 	int width;
 	int height;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle;//not used currently
+	D3D12_DEPTH_STENCIL_DESC dsvDesc;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle;
 };

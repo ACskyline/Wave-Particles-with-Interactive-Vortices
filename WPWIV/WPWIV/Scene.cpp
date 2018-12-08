@@ -108,6 +108,61 @@ void Scene::SetUniformSplatScale(float _splatScale)
 	uniform.splatScale = _splatScale;
 }
 
+void Scene::SetUniformSplatDensityU(float _splatU)
+{
+	uniform.splatDensityU = _splatU;
+}
+
+void Scene::SetUniformSplatDensityV(float _splatV)
+{
+	uniform.splatDensityV = _splatV;
+}
+
+void Scene::SetUniformSplatDensityRadius(float _splatR)
+{
+	uniform.splatDensityRadius = _splatR;
+}
+
+void Scene::SetUniformSplatDensityScale(float _splatScale)
+{
+	uniform.splatDensityScale = _splatScale;
+}
+
+void Scene::SetUniformBrushScale(float _brushScale)
+{
+	uniform.brushScale = _brushScale;
+}
+
+void Scene::SetUniformBrushStrength(float _brushStrength)
+{
+	uniform.brushStrength = _brushStrength;
+}
+
+void Scene::SetUniformBrushOffsetU(float _brushOffsetU)
+{
+	uniform.brushOffsetU = _brushOffsetU;
+}
+
+void Scene::SetUniformBrushOffsetV(float _brushOffsetV)
+{
+	uniform.brushOffsetV = _brushOffsetV;
+}
+
+void Scene::SetUniformObstacleScale(float _obstacleScale)
+{
+	uniform.obstacleScale = _obstacleScale;
+}
+
+void Scene::SetUniformObstacleThresholdFluid(float _obstacleThresholdFluid)
+{
+	uniform.obstacleThresholdFluid = _obstacleThresholdFluid;
+}
+
+void Scene::SetUniformObstacleThresholdWave(float _obstacleThresholdWave)
+{
+	uniform.obstacleThresholdWave = _obstacleThresholdWave;
+}
+
 void Scene::SetUniformEdgeTessFactor(uint32_t _tessellationFactor)
 {
 	uniform.edgeTessFactor = _tessellationFactor;
@@ -218,6 +273,61 @@ float Scene::GetUniformSplatDirV()
 float Scene::GetUniformSplatScale()
 {
 	return uniform.splatScale;
+}
+
+float Scene::GetUniformSplatDensityU()
+{
+	return uniform.splatDensityU;
+}
+
+float Scene::GetUniformSplatDensityV()
+{
+	return uniform.splatDensityV;
+}
+
+float Scene::GetUniformSplatDensityRadius()
+{
+	return uniform.splatDensityRadius;
+}
+
+float Scene::GetUniformSplatDensityScale()
+{
+	return uniform.splatDensityScale;
+}
+
+float Scene::GetUniformBrushScale()
+{
+	return uniform.brushScale;
+}
+
+float Scene::GetUniformBrushStrength()
+{
+	return uniform.brushStrength;
+}
+
+float Scene::GetUniformBrushOffsetU()
+{
+	return uniform.brushOffsetU;
+}
+
+float Scene::GetUniformBrushOffsetV()
+{
+	return uniform.brushOffsetV;
+}
+
+float Scene::GetUniformObstacleScale()
+{
+	return uniform.obstacleScale;
+}
+
+float Scene::GetUniformObstacleThresholdFluid()
+{
+	return uniform.obstacleThresholdFluid;
+}
+
+float Scene::GetUniformObstacleThresholdWave()
+{
+	return uniform.obstacleThresholdWave;
 }
 
 uint32_t Scene::GetUniformTextureWidthFluid()

@@ -38,10 +38,13 @@ public:
 	bool CreateUniformBuffer(ID3D12Device* device);
 	void UpdateUniformBuffer();
 	void ReleaseBuffer();
+	XMFLOAT3 GetPosition();
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetUniformBufferGpuAddress();
 	D3D12_VIEWPORT GetViewport();
 	D3D12_RECT GetScissorRect();
+
+	XMFLOAT3 ScreenToWorld(XMFLOAT2 screenPos, bool nearClipPlane = false);
 
 protected:
 	float width;

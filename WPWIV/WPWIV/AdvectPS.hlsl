@@ -12,7 +12,7 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float4 col = float4(0, 0, 0, 1);
     float solid = obstacleTex.Sample(wrapSampler, input.texCoord).x;
 
-    if (solid > 0.5)
+    if (solid > obstacleThresholdFluid)
     {
         col = float4(0, 0, 0, 1);
     }

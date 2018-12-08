@@ -31,13 +31,13 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float oW = obstacleTex.Sample(wrapSampler, T + float2(-1.0 / textureWidthFluid, 0)).x;
     
 	//use center pressure for solid cells
-    if (oN > 0.5)
+    if (oN > obstacleThresholdFluid)
         pN = pC;// * jacobiObstacleScale;
-    if (oS > 0.5)
+    if (oS > obstacleThresholdFluid)
         pS = pC;// * jacobiObstacleScale;
-    if (oE > 0.5)
+    if (oE > obstacleThresholdFluid)
         pE = pC;// * jacobiObstacleScale;
-    if (oW > 0.5)
+    if (oW > obstacleThresholdFluid)
         pW = pC;// * jacobiObstacleScale;
 
     float4 bC = divergenceTex.Sample(wrapSampler, T);

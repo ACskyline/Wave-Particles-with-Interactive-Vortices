@@ -20,13 +20,13 @@ float4 main(VS_OUTPUT input) : SV_TARGET
     float oE = obstacleTex.Sample(wrapSampler, T + float2(1.0 / textureWidthFluid, 0)).x;
     float oW = obstacleTex.Sample(wrapSampler, T + float2(-1.0 / textureWidthFluid, 0)).x;
 
-    if (oN.x > 0.5)
+    if (oN.x > obstacleThresholdFluid)
         vN = float2(0, 0);
-    if (oS.x > 0.5)
+    if (oS.x > obstacleThresholdFluid)
         vS = float2(0, 0);
-    if (oE.x > 0.5)
+    if (oE.x > obstacleThresholdFluid)
         vE = float2(0, 0);
-    if (oW.x > 0.5)
+    if (oW.x > obstacleThresholdFluid)
         vW = float2(0, 0);
 
     float halfInvCellSize = 0.5 / fluidCellSize; //DO NOT change, very delicate
