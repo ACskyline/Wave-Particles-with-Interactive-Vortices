@@ -37,7 +37,7 @@ int HeightRT = 500; // can not exceed min(Width, Height) because we only have on
 int WidthRtFluid = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
 int HeightRtFluid = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
 bool FluidSimulation = true;
-int FluidSimulationStep = 30;
+int FluidSimulationStep = 0;
 int fluidSimulationStep = 0;
 const float WaterSurfaceScaleX = 10;
 const float WaterSurfaceScaleZ = 10;
@@ -301,7 +301,7 @@ bool CreateScene()
 	mScene.SetUniformFlowSpeed(0.000931);
 	mScene.SetUniformDxScale(0.03);
 	mScene.SetUniformDzScale(0.03);
-	mScene.SetUniformTimeScale(2.4);
+	mScene.SetUniformTimeScale(30);
 	mScene.SetUniformFoamScale(5.0);
 
 	mScene.SetUniformTimeStepFluid(0.03);
@@ -2175,7 +2175,7 @@ void Gui()
 		needToUpdateSceneUniform = true;
 	}
 
-	if (ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 10.0f, "%.6f"))
+	if (ImGui::SliderFloat("timeScale ", &timeScale, 0.0f, 100.0f, "%.6f"))
 	{
 		mScene.SetUniformTimeScale(timeScale);
 		needToUpdateSceneUniform = true;

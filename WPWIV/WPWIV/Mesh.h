@@ -61,6 +61,7 @@ public:
 	XMFLOAT3 GetRotation();
 	int GetIndexCount();
 
+	void PrintWaveParticle();
 private:
 	MeshType type;
 	XMFLOAT3 position;
@@ -88,4 +89,5 @@ private:
 	void InitWaterSurface(int cellCountX, int cellCountZ);
 	void InitFullScreenQuad();
 	void InitCircle(int segment);
+
 };

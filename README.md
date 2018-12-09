@@ -75,19 +75,17 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
     - [x] Foam
 
-    - [ ] Subsurface scattering
-
   - [x] Update flow map in real-time
 
-    - [ ] Create blockers (rocks and etc.)
+    - [x] Create blockers (rocks and etc.)
 
     - [x] Advect properties using simulation result
 
-- [ ] Final
+- [x] Final
 
-  - [ ] Finish unfinished work
+  - [x] Finish unfinished work
 
-  - [ ] Identify and solve the problems caused by advection of height, uv, normal
+  - [x] Identify and solve the problems caused by advection of height, uv, normal
 
 ## Milestone 1 Update
 
@@ -182,6 +180,10 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 * Render with interactions
 
 ![](img/v3render.gif)
+
+## Final
+
+![](img/final.gif)
 
 ## References
 

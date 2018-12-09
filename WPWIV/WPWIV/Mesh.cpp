@@ -549,23 +549,18 @@ void Mesh::InitWaveParticles(int waveParticleCount)
 	vList.resize(waveParticleCount);
 	iList.resize(waveParticleCount);
 
-	int waveParticlePerRow = sqrt(waveParticleCount);
-
-	for (int i = 0; i < waveParticlePerRow; i++)
+	for (int i = 0; i < waveParticleCount; i++)
 	{
-		for (int j = 0; j < waveParticlePerRow; j++)
-		{
-			int index = i * waveParticlePerRow + j;
-			XMFLOAT2 position = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
-			XMFLOAT2 direction = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
-			XMStoreFloat2(&direction, XMVector2Normalize(XMLoadFloat2(&direction)));
-			float height = rand() / (float)RAND_MAX * 0.1 + 0.2;
-			float radius = rand() / (float)RAND_MAX * 0.05 + 0.1;
-			float beta = rand() / (float)RAND_MAX;
-			float speed = rand() / (float)RAND_MAX;
-			vList[index] = { position.x, position.y, height, direction.x, direction.y, radius, beta, speed };
-			iList[index] = index;
-		}
+		int index = i;
+		XMFLOAT2 position = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
+		XMFLOAT2 direction = { rand() / (float)RAND_MAX * 2.f - 1.f, rand() / (float)RAND_MAX * 2.f - 1.f };
+		XMStoreFloat2(&direction, XMVector2Normalize(XMLoadFloat2(&direction)));
+		float height = rand() / (float)RAND_MAX * 0.1 + 0.2;
+		float radius = rand() / (float)RAND_MAX * 0.05 + 0.1;
+		float beta = rand() / (float)RAND_MAX;
+		float speed = rand() / (float)RAND_MAX;
+		vList[index] = { position.x, position.y, height, direction.x, direction.y, radius, beta, speed };
+		iList[index] = index;
 	}
 }
 
@@ -657,5 +652,13 @@ void Mesh::InitCircle(int segment)
 		iList[i * 3 + 0] = i * 3 + 0;
 		iList[i * 3 + 1] = i * 3 + 1;
 		iList[i * 3 + 2] = i * 3 + 2;
+	}
+}
+
+void Mesh::PrintWaveParticle()
+{
+	for (int i = 0; i < vList.size(); i++)
+	{
+		printf("%d: %f\n", i, vList[i].pos.z);
 	}
 }

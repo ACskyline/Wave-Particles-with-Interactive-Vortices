@@ -37,7 +37,6 @@ DS_OUTPUT main(
         }
     }
 	
-	pos.y = clamp(0, heightScale*2.6, pos.y);
     Output.pos = mul(mul(viewProj, model), float4(pos, 1));
     Output.texCoord = texCoord;
 	Output.PosW = pos;
