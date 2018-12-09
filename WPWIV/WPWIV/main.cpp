@@ -2008,19 +2008,22 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY GRAPHICS WATER SURFACE PIPELINE /////////
 
-	///////// MY GRAPHICS OBSTACLE SURFACE PIPELINE /////////
-	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
-	mRenderer.RecordPipelineNoClear(
-		commandList,
-		mRenderer.GetGraphicsPSO(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
-		mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
-		mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
-		mRenderer.GetRtvHandle(frameIndex),
-		&mFrameObstacle,
-		&mScene,
-		D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
-	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
-	///////// MY GRAPHICS OBSTACLE SURFACE PIPELINE /////////
+	if (mScene.GetUniformMode() == 0 || mScene.GetUniformMode() == 11)
+	{
+		///////// MY GRAPHICS OBSTACLE SURFACE PIPELINE /////////
+		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
+		mRenderer.RecordPipelineNoClear(
+			commandList,
+			mRenderer.GetGraphicsPSO(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+			mRenderer.GetGraphicsRootSignature(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+			mRenderer.GetGraphicsDescriptorHeap(static_cast<int>(Renderer::GraphicsStage::Obstacle)),
+			mRenderer.GetRtvHandle(frameIndex),
+			&mFrameObstacle,
+			&mScene,
+			D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+		///////// MY GRAPHICS OBSTACLE SURFACE PIPELINE /////////
+	}
 
 	///////// IMGUI PIPELINE /////////
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv//
