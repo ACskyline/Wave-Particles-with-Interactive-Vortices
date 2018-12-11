@@ -1,6 +1,1 @@
-﻿D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(84,9-60): warning X3206: implicit truncation of vector type
-D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(93,3-54): warning X3206: implicit truncation of vector type
-D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\WPWIV\PixelShader.hlsl(154,44-86): warning X3571: pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values if you expect them
-  
-  compilation object save succeeded; see D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Release\PixelShader.cso
-  WPWIV.vcxproj -> D:\cis565\rand\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Release\WPWIV.exe
+﻿  WPWIV.vcxproj -> E:\Documents\CIS-565\final\Wave-Particles-with-Interactive-Vortices\WPWIV\x64\Release\WPWIV.exe

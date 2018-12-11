@@ -37,7 +37,7 @@ int HeightRT = 500; // can not exceed min(Width, Height) because we only have on
 int WidthRtFluid = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
 int HeightRtFluid = 500; // can not exceed min(Width, Height) because we only have one DSV for all pipeline
 bool FluidSimulation = true;
-int FluidSimulationStep = 0;
+int FluidSimulationStep = 30;
 int fluidSimulationStep = 0;
 const float WaterSurfaceScaleX = 10;
 const float WaterSurfaceScaleZ = 10;
@@ -301,7 +301,7 @@ bool CreateScene()
 	mScene.SetUniformFlowSpeed(0.000931);
 	mScene.SetUniformDxScale(0.03);
 	mScene.SetUniformDzScale(0.03);
-	mScene.SetUniformTimeScale(30);
+	mScene.SetUniformTimeScale(1.3);
 	mScene.SetUniformFoamScale(5.0);
 
 	mScene.SetUniformTimeStepFluid(0.03);
