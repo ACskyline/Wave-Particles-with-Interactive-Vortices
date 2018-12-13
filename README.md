@@ -89,7 +89,7 @@ The significance of the Jean-Philippe Grenier's work is that it generates flow m
 
   - [x] Finish unfinished work
 
-  - [x] Identify and solve the problems caused by advection of height, uv, normal
+  - [x] Identify the problems caused by advection of height, uv, normal
 
 ## Milestone 1 Update
 
