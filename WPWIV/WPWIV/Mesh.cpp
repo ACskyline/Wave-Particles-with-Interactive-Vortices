@@ -223,6 +223,22 @@ bool Mesh::UpdateVertexBuffer(ID3D12Device* device)
 	ID3D12CommandAllocator* immediateCopyCommandAllocator;
 	ID3D12GraphicsCommandList* immediateCopyCommandList;
 	ID3D12Resource* immediateCopyBuffer;
+	ID3D12Fence* fence;
+	HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
+	UINT64 fenceValue; // this value is incremented each frame. each fence will have its own value
+
+	// -- Create fence related resources -- //
+	fenceValue = 0; // set the initial fence value to 0
+	hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+	if (FAILED(hr))
+	{
+		return false;
+	}
+	fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (fenceEvent == nullptr)
+	{
+		return false;
+	}
 
 	// -- Create a direct command queue -- //
 	D3D12_COMMAND_QUEUE_DESC cqDesc = {};
@@ -279,6 +295,30 @@ bool Mesh::UpdateVertexBuffer(ID3D12Device* device)
 	ID3D12CommandList* commandLists[] = { immediateCopyCommandList };
 	immediateCopyCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
+	// -- Use fence to wait until finish -- //
+	fenceValue++;
+	hr = immediateCopyCommandQueue->Signal(fence, fenceValue);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	if (fence->GetCompletedValue() < fenceValue)
+	{
+		// we have the fence create an event which is signaled once the fence's current value is "fenceValue"
+		hr = fence->SetEventOnCompletion(fenceValue, fenceEvent);
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// We will wait until the fence has triggered the event that it's current value has reached "fenceValue". once it's value
+		// has reached "fenceValue", we know the command queue has finished executing
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+
+	// -- Release -- //
+	SAFE_RELEASE(fence);
 	SAFE_RELEASE(immediateCopyCommandQueue);
 	SAFE_RELEASE(immediateCopyCommandAllocator);
 	SAFE_RELEASE(immediateCopyCommandList);
@@ -295,6 +335,22 @@ bool Mesh::UpdateIndexBuffer(ID3D12Device* device)
 	ID3D12CommandAllocator* immediateCopyCommandAllocator;
 	ID3D12GraphicsCommandList* immediateCopyCommandList;
 	ID3D12Resource* immediateCopyBuffer;
+	ID3D12Fence* fence;
+	HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
+	UINT64 fenceValue; // this value is incremented each frame. each fence will have its own value
+
+	// -- Create fence related resources -- //
+	fenceValue = 0; // set the initial fence value to 0
+	hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+	if (FAILED(hr))
+	{
+		return false;
+	}
+	fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (fenceEvent == nullptr)
+	{
+		return false;
+	}
 
 	// -- Create a direct command queue -- //
 	D3D12_COMMAND_QUEUE_DESC cqDesc = {};
@@ -350,7 +406,31 @@ bool Mesh::UpdateIndexBuffer(ID3D12Device* device)
 	immediateCopyCommandList->Close();
 	ID3D12CommandList* commandLists[] = { immediateCopyCommandList };
 	immediateCopyCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+	
+	// -- Use fence to wait until finish -- //
+	fenceValue++;
+	hr = immediateCopyCommandQueue->Signal(fence, fenceValue);
+	if (FAILED(hr))
+	{
+		return false;
+	}
 
+	if (fence->GetCompletedValue() < fenceValue)
+	{
+		// we have the fence create an event which is signaled once the fence's current value is "fenceValue"
+		hr = fence->SetEventOnCompletion(fenceValue, fenceEvent);
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// We will wait until the fence has triggered the event that it's current value has reached "fenceValue". once it's value
+		// has reached "fenceValue", we know the command queue has finished executing
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+
+	// -- Release -- //
+	SAFE_RELEASE(fence);
 	SAFE_RELEASE(immediateCopyCommandQueue);
 	SAFE_RELEASE(immediateCopyCommandAllocator);
 	SAFE_RELEASE(immediateCopyCommandList);

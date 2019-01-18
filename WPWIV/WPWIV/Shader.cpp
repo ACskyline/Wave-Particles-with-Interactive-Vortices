@@ -64,12 +64,12 @@ bool Shader::CreateVertexShaderFromFile(const wstring& _fileName)
 		CheckError(hr, errorBuff);
 		return false;
 	}
-
+	
 	// fill out a shader bytecode structure, which is basically just a pointer
 	// to the shader bytecode and the size of the shader bytecode
 	shaderBytecode.BytecodeLength = shader->GetBufferSize();
 	shaderBytecode.pShaderBytecode = shader->GetBufferPointer();
-
+	
 	return true;
 }
 

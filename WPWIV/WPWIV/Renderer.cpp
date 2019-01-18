@@ -22,7 +22,7 @@ Renderer::~Renderer()
 D3D12_DEPTH_STENCIL_DESC Renderer::NoDepthTest()
 {
 	D3D12_DEPTH_STENCIL_DESC result = {};
-	ZeroMemory(&result, sizeof(D3D12_DEPTH_STENCIL_DESC));
+	//ZeroMemory(&result, sizeof(D3D12_DEPTH_STENCIL_DESC));
 	result.DepthEnable = FALSE;
 	result.StencilEnable = FALSE;
 	return result;
@@ -70,9 +70,9 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE Renderer::GetRtvHandle(int frameIndex)
 	return rtvHandles[frameIndex];
 }
 
-CD3DX12_CPU_DESCRIPTOR_HANDLE Renderer::GetDsvHandle()
+CD3DX12_CPU_DESCRIPTOR_HANDLE Renderer::GetDsvHandle(int frameIndex)
 {
-	return dsvHandle;
+	return dsvHandles[frameIndex];
 }
 
 ID3D12Resource* Renderer::GetRenderTargetBuffer(int frameIndex)
@@ -80,11 +80,16 @@ ID3D12Resource* Renderer::GetRenderTargetBuffer(int frameIndex)
 	return renderTargetBuffers[frameIndex];
 }
 
+ID3D12Resource* Renderer::GetDepthStencilBuffer(int frameIndex)
+{
+	return depthStencilBuffers[frameIndex];
+}
+
 bool Renderer::CreateRenderer(ID3D12Device* device, IDXGISwapChain3* swapChain, float Width, float Height)
 {
 	if (!CreateRenderTargetBuffer(device, swapChain))
 	{
-		printf("InitRenderTargetBuffer failed\n");
+		printf("CreateRenderTargetBuffer failed\n");
 		return false;
 	}
 
@@ -104,7 +109,7 @@ bool Renderer::CreateDepthStencilBuffer(ID3D12Device* device, float Width, float
 
 	// create a depth stencil descriptor heap so we can get a pointer to the depth stencil buffer
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.NumDescriptors = FrameBufferCount;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	hr = device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvDescriptorHeap));
@@ -112,6 +117,7 @@ bool Renderer::CreateDepthStencilBuffer(ID3D12Device* device, float Width, float
 	{
 		return false;
 	}
+	dsvDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
 	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -123,23 +129,33 @@ bool Renderer::CreateDepthStencilBuffer(ID3D12Device* device, float Width, float
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
-	hr = device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, Width, Height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&depthOptimizedClearValue,
-		IID_PPV_ARGS(&depthStencilBuffer)
-	);
-	if (FAILED(hr))
+	int dsvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	for (int i = 0; i < FrameBufferCount; i++)
 	{
-		return false;
+		hr = device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, Width, Height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&depthOptimizedClearValue,
+			IID_PPV_ARGS(&depthStencilBuffers[i])
+		);
+
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		device->CreateDepthStencilView(depthStencilBuffers[i], &depthStencilDesc, dsvHandle);
+		
+		dsvHandles[i] = dsvHandle;
+
+		// we increment the dsv handle by the dsv descriptor size we got above
+		dsvHandle.Offset(1, dsvDescriptorSize);
 	}
-	dsvDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
-
-	dsvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-	device->CreateDepthStencilView(depthStencilBuffer, &depthStencilDesc, dsvHandle);
 
 	return true;
 }
@@ -163,6 +179,7 @@ bool Renderer::CreateRenderTargetBuffer(ID3D12Device* device, IDXGISwapChain3* s
 	{
 		return false;
 	}
+	rtvDescriptorHeap->SetName(L"Render Target Resource Heap");
 
 	// get the size of a descriptor in this heap (this is a rtv heap, so only rtv descriptors should be stored in it.
 	// descriptor sizes may vary from device to device, which is why there is no set size and we must ask the 
@@ -238,11 +255,10 @@ void Renderer::Release()
 	SAFE_RELEASE_ARRAY(waveParticleDescriptorHeap);
 	SAFE_RELEASE_ARRAY(waveParticleRtvDescriptorHeap);
 
-	
 	// common resource
-	SAFE_RELEASE(depthStencilBuffer);
 	SAFE_RELEASE(dsvDescriptorHeap);
 	SAFE_RELEASE(rtvDescriptorHeap);
+	SAFE_RELEASE_ARRAY(depthStencilBuffers);
 	SAFE_RELEASE_ARRAY(renderTargetBuffers);
 }
 
@@ -268,6 +284,17 @@ bool Renderer::BindTextureToDescriptorHeap(ID3D12Device* device, ID3D12Descripto
 	return true;
 }
 
+bool Renderer::BindRenderTextureToRtvDsvDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap* rtvDescriptorHeap, ID3D12DescriptorHeap* dsvDescriptorHeap, RenderTexture* texture, int slot)
+{
+	if (!BindRenderTextureToRtvDescriptorHeap(device, rtvDescriptorHeap, texture, slot))
+		return false;
+
+	if (!BindRenderTextureToDsvDescriptorHeap(device, dsvDescriptorHeap, texture, slot))
+		return false;
+
+	return true;
+}
+
 bool Renderer::BindRenderTextureToRtvDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap* descriptorHeap, RenderTexture* texture, int slot)
 {
 	CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(descriptorHeap->GetCPUDescriptorHandleForHeapStart());
@@ -275,6 +302,16 @@ bool Renderer::BindRenderTextureToRtvDescriptorHeap(ID3D12Device* device, ID3D12
 	descriptorHandle.Offset(slot, rtvDescriptorSize);
 	device->CreateRenderTargetView(texture->GetTextureBuffer(), &texture->GetRtvDesc(), descriptorHandle);
 	texture->SetRtvHandle(descriptorHandle);
+	return true;
+}
+
+bool Renderer::BindRenderTextureToDsvDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap* descriptorHeap, RenderTexture* texture, int slot)
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(descriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	int dsvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	descriptorHandle.Offset(slot, dsvDescriptorSize);
+	device->CreateDepthStencilView(texture->GetDepthStencilBuffer(), &texture->GetDsvDesc(), descriptorHandle);
+	texture->SetDsvHandle(descriptorHandle);
 	return true;
 }
 
@@ -322,6 +359,28 @@ bool Renderer::CreateRtvDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHea
 	return true;
 }
 
+bool Renderer::CreateDsvDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap** dsvDescriptorHeap, int descriptorNum)
+{
+	if (descriptorNum > 0)
+	{
+		HRESULT hr;
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		heapDesc.NumDescriptors = descriptorNum;
+		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		hr = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(dsvDescriptorHeap));
+		if (FAILED(hr))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		*dsvDescriptorHeap = nullptr;
+	}
+	return true;
+}
+
 bool Renderer::CreatePSO(
 	ID3D12Device* device,
 	ID3D12PipelineState** pso,
@@ -330,12 +389,14 @@ bool Renderer::CreatePSO(
 	D3D12_BLEND_DESC blendDesc,
 	D3D12_DEPTH_STENCIL_DESC dsDesc,
 	DXGI_FORMAT rtvFormat,
+	DXGI_FORMAT dsvFormat,
 	int rtvCount,
 	Shader* vertexShader,
 	Shader* hullShader,
 	Shader* domainShader,
 	Shader* geometryShader,
-	Shader* pixelShader)
+	Shader* pixelShader,
+	const wstring& name)
 {
 	HRESULT hr;
 	// create input layout
@@ -381,7 +442,7 @@ bool Renderer::CreatePSO(
 	psoDesc.BlendState = blendDesc;// CD3DX12_BLEND_DESC(D3D12_DEFAULT); // a default blent state.
 	psoDesc.NumRenderTargets = rtvCount; // we are only binding one render target
 	psoDesc.DepthStencilState = dsDesc;// CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state
-
+	psoDesc.DSVFormat = dsvFormat;
 	// create the pso
 	hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pso));
 	if (FAILED(hr))
@@ -390,76 +451,9 @@ bool Renderer::CreatePSO(
 		return false;
 	}
 
+	(*pso)->SetName(name.c_str());
+
 	return true;
-}
-
-void Renderer::RecordPipelineNoClear(
-	ID3D12GraphicsCommandList* commandList,
-	ID3D12PipelineState* pso,
-	ID3D12RootSignature* rootSignature,
-	ID3D12DescriptorHeap* descriptorHeap,
-	CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
-	Frame* pFrame,
-	Scene* pScene,
-	D3D_PRIMITIVE_TOPOLOGY primitiveType)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
-{
-	vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
-	int frameRtvCount = renderTextureVec.size();
-	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
-	frameRtvHandles.resize(frameRtvCount);
-	for (int i = 0; i < frameRtvCount; i++)
-	{
-		frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
-	}
-
-	if (frameRtvCount == 0)
-	{
-		frameRtvHandles.push_back(fallbackRTV);
-		frameRtvCount++;
-	}
-
-	commandList->SetPipelineState(pso);
-
-	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(frameRtvCount, frameRtvHandles.data(), FALSE, &dsvHandle);
-
-	// Clear the render target by using the ClearRenderTargetView command
-	//const float clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	//for (int i = 0; i < frameRtvCount; i++)
-	//{
-	//	commandList->ClearRenderTargetView(frameRtvHandles[i], clearColor, 0, nullptr);
-	//}
-
-	// clear the depth/stencil buffer
-	//commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	// set root signature
-	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
-
-	// set the descriptor heap
-	if (descriptorHeap != nullptr)
-	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
-		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
-	}
-
-	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
-	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
-	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
-	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
-	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
-	int meshCount = pFrame->GetMeshVec().size();
-	for (int i = 0; i < meshCount; i++)
-	{
-		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
-		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
-		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
-		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
-		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
-	}
 }
 
 void Renderer::RecordPipeline(
@@ -467,41 +461,194 @@ void Renderer::RecordPipeline(
 	ID3D12PipelineState* pso,
 	ID3D12RootSignature* rootSignature,
 	ID3D12DescriptorHeap* descriptorHeap,
-	CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
 	Frame* pFrame,
 	Scene* pScene,
-	D3D_PRIMITIVE_TOPOLOGY primitiveType,
-	XMFLOAT4 clearRtvColor)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+	bool clearColor,
+	bool clearDepth,
+	XMFLOAT4 clearColorValue,
+	float clearDepthValue,
+	D3D_PRIMITIVE_TOPOLOGY primitiveTypeOverride)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
 {
 	vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
-	int frameRtvCount = renderTextureVec.size();
+	int renderTextureCount = renderTextureVec.size();
 	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
-	frameRtvHandles.resize(frameRtvCount);
-	for (int i = 0; i < frameRtvCount; i++)
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;
+	vector<D3D12_VIEWPORT> frameViewPorts;
+	vector<D3D12_RECT> frameScissorRects;
+	frameRtvHandles.resize(renderTextureCount);
+	frameDsvHandles.resize(renderTextureCount);
+	frameViewPorts.resize(renderTextureCount);
+	frameScissorRects.resize(renderTextureCount);
+	for (int i = 0; i < renderTextureCount; i++)
 	{
 		frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
-	}
-
-	if (frameRtvCount == 0)
-	{
-		frameRtvHandles.push_back(fallbackRTV);
-		frameRtvCount++;
+		frameDsvHandles[i] = renderTextureVec[i]->GetDsvHandle();
+		frameViewPorts[i] = renderTextureVec[i]->GetViewport();
+		frameScissorRects[i] = renderTextureVec[i]->GetScissorRect();
 	}
 
 	commandList->SetPipelineState(pso);
 
 	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(frameRtvCount, frameRtvHandles.data(), FALSE, &dsvHandle);
+	commandList->OMSetRenderTargets(renderTextureCount, frameRtvHandles.data(), FALSE, frameDsvHandles.data());
 
 	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { clearRtvColor.x, clearRtvColor.y, clearRtvColor.z, clearRtvColor.w };
-	for (int i = 0; i < frameRtvCount; i++)
+	if (clearColor || clearDepth)
 	{
-		commandList->ClearRenderTargetView(frameRtvHandles[i], clearColor, 0, nullptr);
+		const float clearColorValueV[] = { clearColorValue.x, clearColorValue.y, clearColorValue.z, clearColorValue.w };
+		for (int i = 0; i < renderTextureCount; i++)
+		{
+			// clear the render target buffer
+			if(clearColor)
+				commandList->ClearRenderTargetView(frameRtvHandles[i], clearColorValueV, 0, nullptr);
+			// clear the depth/stencil buffer
+			if(clearDepth)
+				commandList->ClearDepthStencilView(frameDsvHandles[i], D3D12_CLEAR_FLAG_DEPTH, clearDepthValue, 0, 0, nullptr);
+		}
 	}
 
-	// clear the depth/stencil buffer
-	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	// set root signature
+	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
+
+	// set the descriptor heap
+	if (descriptorHeap != nullptr)
+	{
+		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
+		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	}
+
+	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
+	commandList->RSSetViewports(renderTextureCount, frameViewPorts.data()); // set the viewports
+	commandList->RSSetScissorRects(renderTextureCount, frameScissorRects.data()); // set the scissor rects
+	if (primitiveTypeOverride != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveTypeOverride); // set the primitive topology
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
+	int meshCount = pFrame->GetMeshVec().size();
+	for (int i = 0; i < meshCount; i++)
+	{
+		if (primitiveTypeOverride == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
+		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
+		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
+		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
+	}
+}
+
+void Renderer::RecordPipelineOverride(
+	ID3D12GraphicsCommandList* commandList,
+	ID3D12PipelineState* pso,
+	ID3D12RootSignature* rootSignature,
+	ID3D12DescriptorHeap* descriptorHeap,
+	vector<RenderTexture*>& renderTextureVecOverride,
+	Frame* pFrame,
+	Scene* pScene,
+	bool clearColor,
+	bool clearDepth,
+	XMFLOAT4 clearColorValue,
+	float clearDepthValue,
+	D3D_PRIMITIVE_TOPOLOGY primitiveTypeOverride)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+{
+	int renderTextureCount = renderTextureVecOverride.size();
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;
+	vector<D3D12_VIEWPORT> frameViewPorts;
+	vector<D3D12_RECT> frameScissorRects;
+	frameRtvHandles.resize(renderTextureCount);
+	frameDsvHandles.resize(renderTextureCount);
+	frameViewPorts.resize(renderTextureCount);
+	frameScissorRects.resize(renderTextureCount);
+	for (int i = 0; i < renderTextureCount; i++)
+	{
+		frameRtvHandles[i] = renderTextureVecOverride[i]->GetRtvHandle();
+		frameDsvHandles[i] = renderTextureVecOverride[i]->GetDsvHandle();
+		frameViewPorts[i] = renderTextureVecOverride[i]->GetViewport();
+		frameScissorRects[i] = renderTextureVecOverride[i]->GetScissorRect();
+	}
+
+	commandList->SetPipelineState(pso);
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(renderTextureCount, frameRtvHandles.data(), FALSE, frameDsvHandles.data());
+
+	// Clear the render target by using the ClearRenderTargetView command
+	if (clearColor || clearDepth)
+	{
+		const float clearColorValueV[] = { clearColorValue.x, clearColorValue.y, clearColorValue.z, clearColorValue.w };
+		for (int i = 0; i < renderTextureCount; i++)
+		{
+			// clear the render target buffer
+			if (clearColor)
+				commandList->ClearRenderTargetView(frameRtvHandles[i], clearColorValueV, 0, nullptr);
+			// clear the depth/stencil buffer
+			if (clearDepth)
+				commandList->ClearDepthStencilView(frameDsvHandles[i], D3D12_CLEAR_FLAG_DEPTH, clearDepthValue, 0, 0, nullptr);
+		}
+	}
+
+	// set root signature
+	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
+
+	// set the descriptor heap
+	if (descriptorHeap != nullptr)
+	{
+		ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap };
+		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		commandList->SetGraphicsRootDescriptorTable(UNIFORM_SLOT::TABLE, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	}
+
+	// set the descriptor table to the descriptor heap (parameter 1, as constant buffer root descriptor is parameter index 0)
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
+	commandList->RSSetViewports(renderTextureCount, frameViewPorts.data()); // set the viewports
+	commandList->RSSetScissorRects(renderTextureCount, frameScissorRects.data()); // set the scissor rects
+	if (primitiveTypeOverride != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveTypeOverride); // set the primitive topology
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
+	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
+	int meshCount = pFrame->GetMeshVec().size();
+	for (int i = 0; i < meshCount; i++)
+	{
+		if (primitiveTypeOverride == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
+		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
+		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
+		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
+		commandList->DrawIndexedInstanced(pFrame->GetMeshVec()[i]->GetIndexCount(), 1, 0, 0, 0);
+	}
+}
+
+void Renderer::RecordPipelineOverride(
+	ID3D12GraphicsCommandList* commandList,
+	ID3D12PipelineState* pso,
+	ID3D12RootSignature* rootSignature,
+	ID3D12DescriptorHeap* descriptorHeap,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle,
+	Frame* pFrame,
+	Scene* pScene,
+	bool clearColor,
+	bool clearDepth,
+	XMFLOAT4 clearColorValue,
+	float clearDepthValue,
+	D3D_PRIMITIVE_TOPOLOGY primitiveTypeOverride)//pass in D3D_PRIMITIVE_TOPOLOGY_UNDEFINED to use primitive type of each mesh
+{
+	commandList->SetPipelineState(pso);
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+	// Clear the render target by using the ClearRenderTargetView command
+	if (clearColor)
+	{
+		const float clearColorValueV[] = { clearColorValue.x, clearColorValue.y, clearColorValue.z, clearColorValue.w };
+		// clear the render target buffer
+		commandList->ClearRenderTargetView(rtvHandle, clearColorValueV, 0, nullptr);
+	}
+
+	if (clearDepth)
+	{
+		// clear the depth/stencil buffer
+		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, clearDepthValue, 0, 0, nullptr);
+	}
 
 	// set root signature
 	commandList->SetGraphicsRootSignature(rootSignature); // set the root signature
@@ -518,13 +665,13 @@ void Renderer::RecordPipeline(
 	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::CAMERA, pFrame->GetCameraVec()[0]->GetUniformBufferGpuAddress());
 	commandList->RSSetViewports(1, &pFrame->GetCameraVec()[0]->GetViewport()); // set the viewports
 	commandList->RSSetScissorRects(1, &pFrame->GetCameraVec()[0]->GetScissorRect()); // set the scissor rects
-	if (primitiveType != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveType); // set the primitive topology
+	if (primitiveTypeOverride != D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(primitiveTypeOverride); // set the primitive topology
 	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::FRAME, pFrame->GetUniformBufferGpuAddress());
 	commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::SCENE, pScene->GetUniformBufferGpuAddress());
 	int meshCount = pFrame->GetMeshVec().size();
 	for (int i = 0; i < meshCount; i++)
 	{
-		if (primitiveType == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
+		if (primitiveTypeOverride == D3D_PRIMITIVE_TOPOLOGY_UNDEFINED) commandList->IASetPrimitiveTopology(pFrame->GetMeshVec()[i]->GetPrimitiveType());
 		commandList->IASetVertexBuffers(0, 1, &pFrame->GetMeshVec()[i]->GetVertexBufferView());// &vertexBufferView); // set the vertex buffer (using the vertex buffer view)
 		commandList->IASetIndexBuffer(&pFrame->GetMeshVec()[i]->GetIndexBufferView());//&indexBufferView);
 		commandList->SetGraphicsRootConstantBufferView(UNIFORM_SLOT::OBJECT, pFrame->GetMeshVec()[i]->GetUniformBufferGpuAddress());//0 can be changed to frameIndex
@@ -534,46 +681,101 @@ void Renderer::RecordPipeline(
 
 void Renderer::Clear(
 	ID3D12GraphicsCommandList* commandList,
-	CD3DX12_CPU_DESCRIPTOR_HANDLE fallbackRTV,
 	Frame* pFrame,
-	XMFLOAT4 clearRtvColor)
+	bool clearDepth,
+	XMFLOAT4 clearColorValue,
+	float clearDepthValue)
 {
-	int frameRtvCount = 0;
+	vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
+	int renderTextureCount = renderTextureVec.size();
 	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
-
-	if (pFrame != nullptr)
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;
+	frameRtvHandles.resize(renderTextureCount);
+	frameDsvHandles.resize(renderTextureCount);
+	for (int i = 0; i < renderTextureCount; i++)
 	{
-		vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
-		frameRtvCount = renderTextureVec.size();
-		frameRtvHandles.resize(frameRtvCount);
-		for (int i = 0; i < frameRtvCount; i++)
-		{
-			frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
-		}
-	}
-
-	if (frameRtvCount == 0)
-	{
-		frameRtvHandles.push_back(fallbackRTV);
-		frameRtvCount++;
+		frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
+		frameDsvHandles[i] = renderTextureVec[i]->GetDsvHandle();
 	}
 
 	// set the render target for the output merger stage (the output of the pipeline)
-	commandList->OMSetRenderTargets(frameRtvCount, frameRtvHandles.data(), FALSE, &dsvHandle);
+	commandList->OMSetRenderTargets(renderTextureCount, frameRtvHandles.data(), FALSE, frameDsvHandles.data());
 
 	// Clear the render target by using the ClearRenderTargetView command
-	const float clearColor[] = { clearRtvColor.x, clearRtvColor.y, clearRtvColor.z, clearRtvColor.w };
-	for (int i = 0; i < frameRtvCount; i++)
+
+	const float clearColorValueV[] = { clearColorValue.x, clearColorValue.y, clearColorValue.z, clearColorValue.w };
+	for (int i = 0; i < renderTextureCount; i++)
 	{
-		commandList->ClearRenderTargetView(frameRtvHandles[i], clearColor, 0, nullptr);
+		// clear the render target buffer
+		commandList->ClearRenderTargetView(frameRtvHandles[i], clearColorValueV, 0, nullptr);
+		// clear the depth/stencil buffer
+		if(clearDepth)
+			commandList->ClearDepthStencilView(frameDsvHandles[i], D3D12_CLEAR_FLAG_DEPTH, clearDepthValue, 0, 0, nullptr);
 	}
 }
 
+void Renderer::ClearOverride(
+	ID3D12GraphicsCommandList* commandList,
+	vector<RenderTexture*>& renderTextureVecOverride,
+	bool clearDepth,
+	XMFLOAT4 clearColorValue,
+	float clearDepthValue)
+{
+	int renderTextureCount = renderTextureVecOverride.size();
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;
+	frameRtvHandles.resize(renderTextureCount);
+	frameDsvHandles.resize(renderTextureCount);
+	for (int i = 0; i < renderTextureCount; i++)
+	{
+		frameRtvHandles[i] = renderTextureVecOverride[i]->GetRtvHandle();
+		frameDsvHandles[i] = renderTextureVecOverride[i]->GetDsvHandle();
+	}
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(renderTextureCount, frameRtvHandles.data(), FALSE, frameDsvHandles.data());
+
+	// Clear the render target by using the ClearRenderTargetView command
+
+	const float clearColorValueV[] = { clearColorValue.x, clearColorValue.y, clearColorValue.z, clearColorValue.w };
+	for (int i = 0; i < renderTextureCount; i++)
+	{
+		// clear the render target buffer
+		commandList->ClearRenderTargetView(frameRtvHandles[i], clearColorValueV, 0, nullptr);
+		// clear the depth/stencil buffer
+		if(clearDepth)
+			commandList->ClearDepthStencilView(frameDsvHandles[i], D3D12_CLEAR_FLAG_DEPTH, clearDepthValue, 0, 0, nullptr);
+	}
+}
+
+void Renderer::ClearOverride(
+	ID3D12GraphicsCommandList* commandList,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle,
+	bool clearDepth,
+	XMFLOAT4 clearColorValue,
+	float clearDepthValue)
+{
+
+	// set the render target for the output merger stage (the output of the pipeline)
+	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+	// Clear the render target by using the ClearRenderTargetView command
+
+	const float clearColorValueV[] = { clearColorValue.x, clearColorValue.y, clearColorValue.z, clearColorValue.w };
+
+	// clear the render target buffer
+	commandList->ClearRenderTargetView(rtvHandle, clearColorValueV, 0, nullptr);
+	// clear the depth/stencil buffer
+	if(clearDepth)
+		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, clearDepthValue, 0, 0, nullptr);
+}
 
 bool Renderer::CreateHeapBindTexture(
 	ID3D12Device* device,
 	ID3D12DescriptorHeap** descriptorHeap,
 	ID3D12DescriptorHeap** rtvDescriptorHeap,
+	ID3D12DescriptorHeap** dsvDescriptorHeap,
 	const vector<Texture*>& textures,
 	const vector<RenderTexture*>& renderTextures)
 {
@@ -601,11 +803,23 @@ bool Renderer::CreateHeapBindTexture(
 		return false;
 	}
 
+	if (!CreateDsvDescriptorHeap(device, dsvDescriptorHeap, renderTexCount))
+	{
+		printf("CreateDsvDescriptorHeap failed\n");
+		return false;
+	}
+
 	for (int i = 0; i < renderTexCount; i++)
 	{
 		if (!BindRenderTextureToRtvDescriptorHeap(device, *rtvDescriptorHeap, renderTextures[i], i))
 		{
 			printf("BindRenderTextureToRtvDescriptorHeap failed\n");
+			return false;
+		}
+		
+		if (!BindRenderTextureToDsvDescriptorHeap(device, *dsvDescriptorHeap, renderTextures[i], i))
+		{
+			printf("BindRenderTextureToDsvDescriptorHeap failed\n");
 			return false;
 		}
 	}
@@ -617,6 +831,7 @@ bool Renderer::CreateHeap(
 	ID3D12Device* device,
 	ID3D12DescriptorHeap** descriptorHeap,
 	ID3D12DescriptorHeap** rtvDescriptorHeap,
+	ID3D12DescriptorHeap** dsvDescriptorHeap,
 	int textureCount,
 	int renderTextureCount)
 {
@@ -629,6 +844,12 @@ bool Renderer::CreateHeap(
 	if (!CreateRtvDescriptorHeap(device, rtvDescriptorHeap, renderTextureCount))
 	{
 		printf("CreateRtvDescriptorHeap failed\n");
+		return false;
+	}
+
+	if (!CreateDsvDescriptorHeap(device, dsvDescriptorHeap, renderTextureCount))
+	{
+		printf("CreateDsvDescriptorHeap failed\n");
 		return false;
 	}
 
@@ -789,6 +1010,16 @@ ID3D12DescriptorHeap** Renderer::GetWaveParticleRtvDescriptorHeapPtr(int index)
 	return  &waveParticleRtvDescriptorHeap[index];
 }
 
+ID3D12DescriptorHeap* Renderer::GetWaveParticleDsvDescriptorHeap(int index)
+{
+	return  waveParticleDsvDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetWaveParticleDsvDescriptorHeapPtr(int index)
+{
+	return  &waveParticleDsvDescriptorHeap[index];
+}
+
 ///////////////////////////////////////////
 ////////// Post Process Pipeline //////////
 ///////////////////////////////////////////
@@ -939,6 +1170,16 @@ ID3D12DescriptorHeap* Renderer::GetPostProcessRtvDescriptorHeap(int index)
 ID3D12DescriptorHeap** Renderer::GetPostProcessRtvDescriptorHeapPtr(int index)
 {
 	return  &postProcessRtvDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetPostProcessDsvDescriptorHeap(int index)
+{
+	return  postProcessDsvDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetPostProcessDsvDescriptorHeapPtr(int index)
+{
+	return  &postProcessDsvDescriptorHeap[index];
 }
 
 ///////////////////////////////////////////
@@ -1112,6 +1353,16 @@ ID3D12DescriptorHeap** Renderer::GetGraphicsRtvDescriptorHeapPtr(int index)
 	return  &graphicsRtvDescriptorHeap[index];
 }
 
+ID3D12DescriptorHeap* Renderer::GetGraphicsDsvDescriptorHeap(int index)
+{
+	return  graphicsDsvDescriptorHeap[index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetGraphicsDsvDescriptorHeapPtr(int index)
+{
+	return  &graphicsDsvDescriptorHeap[index];
+}
+
 ////////////////////////////////////////////
 ////////////// Fluid Pipeline //////////////
 ////////////////////////////////////////////
@@ -1264,4 +1515,14 @@ ID3D12DescriptorHeap* Renderer::GetFluidRtvDescriptorHeap(int frame, int index)
 ID3D12DescriptorHeap** Renderer::GetFluidRtvDescriptorHeapPtr(int frame, int index)
 {
 	return  &fluidRtvDescriptorHeap[frame][index];
+}
+
+ID3D12DescriptorHeap* Renderer::GetFluidDsvDescriptorHeap(int frame, int index)
+{
+	return  fluidDsvDescriptorHeap[frame][index];
+}
+
+ID3D12DescriptorHeap** Renderer::GetFluidDsvDescriptorHeapPtr(int frame, int index)
+{
+	return  &fluidDsvDescriptorHeap[frame][index];
 }

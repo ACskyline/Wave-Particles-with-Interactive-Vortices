@@ -16,9 +16,8 @@ public:
 	ID3D12Resource* GetTextureBuffer();
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSrvDesc();
 	//void ReleaseBufferCPU();//in our demo there is no need to free CPU memory before delete this object
-	void ReleaseBuffer();
 
-	bool InitTexture(ID3D12Device* device);
+	virtual bool InitTexture(ID3D12Device* device);
 	wstring GetName();
 
 protected:
@@ -45,19 +44,44 @@ protected:
 class RenderTexture : public Texture
 {
 public:
-	RenderTexture(int _width, int _height, DXGI_FORMAT format);
+	RenderTexture(int _width, int _height, DXGI_FORMAT format, bool _supportDepth = false);
+	RenderTexture(int _width, int _height, const wstring& _fileName, DXGI_FORMAT format, bool _supportDepth = false);
+	~RenderTexture();
+
 	bool CreateTextureBuffer(ID3D12Device* device);
 	bool UpdateTextureBuffer(ID3D12Device* device);
+	void UpdateViewport();
+	void UpdateScissorRect();
 
 	void SetRtvHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE _rtvHandle);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtvHandle();
-	D3D12_RENDER_TARGET_VIEW_DESC GetRtvDesc();
+	void SetDsvHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE _dsvHandle);
+	void SetResourceState(D3D12_RESOURCE_STATES _resourceState);
 
+	bool SupportDepth();
+	ID3D12Resource* GetDepthStencilBuffer();
+	D3D12_VIEWPORT GetViewport();
+	D3D12_RECT GetScissorRect();
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtvHandle();
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetDsvHandle();
+	D3D12_RENDER_TARGET_VIEW_DESC GetRtvDesc();
+	D3D12_DEPTH_STENCIL_VIEW_DESC GetDsvDesc();
+	D3D12_RESOURCE_STATES GetResourceState();
+
+	CD3DX12_RESOURCE_BARRIER TransitionToResourceState(D3D12_RESOURCE_STATES _resourceState);
+
+	bool InitTexture(ID3D12Device* device);
 private:
+	bool supportDepth;
+	ID3D12Resource* depthStencilBuffer;
+	D3D12_RESOURCE_DESC depthStencilBufferDesc;//contains format
+
 	int width;
 	int height;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-	D3D12_DEPTH_STENCIL_DESC dsvDesc;
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+	D3D12_RESOURCE_STATES resourceState;
+	D3D12_VIEWPORT viewport;
+	D3D12_RECT scissorRect;
 };

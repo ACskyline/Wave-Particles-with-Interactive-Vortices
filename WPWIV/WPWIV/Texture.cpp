@@ -1,8 +1,9 @@
 #include "Texture.h"
 
-Texture::Texture(const wstring& _fileName) : 
+Texture::Texture(const wstring& _fileName) :
 	fileName(_fileName),
-	imageData(nullptr)
+	imageData(nullptr),
+	textureBuffer(nullptr)
 {
 }
 
@@ -14,7 +15,7 @@ Texture::Texture() :
 Texture::~Texture()
 {
 	//ReleaseBufferCPU();
-	ReleaseBuffer();
+	SAFE_RELEASE(textureBuffer);
 }
 
 bool Texture::LoadTextureBuffer()
@@ -65,7 +66,8 @@ bool Texture::CreateTextureBuffer(ID3D12Device* device)
 	{
 		return false;
 	}
-	textureBuffer->SetName(L"Texture Buffer Resource Heap");
+	//textureBuffer->SetName(L"Texture Buffer Resource Heap");
+	textureBuffer->SetName(fileName.c_str());
 
 	return true;
 }
@@ -78,6 +80,22 @@ bool Texture::UpdateTextureBuffer(ID3D12Device* device)
 	ID3D12CommandAllocator* immediateCopyCommandAllocator;
 	ID3D12GraphicsCommandList* immediateCopyCommandList;
 	ID3D12Resource* immediateCopyBuffer;
+	ID3D12Fence* fence;
+	HANDLE fenceEvent; // a handle to an event when our fence is unlocked by the gpu
+	UINT64 fenceValue; // this value is incremented each frame. each fence will have its own value
+
+	// -- Create fence related resources -- //
+	fenceValue = 0; // set the initial fence value to 0
+	hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+	if (FAILED(hr))
+	{
+		return false;
+	}
+	fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (fenceEvent == nullptr)
+	{
+		return false;
+	}
 
 	// -- Create a direct command queue -- //
 	D3D12_COMMAND_QUEUE_DESC cqDesc = {};
@@ -144,7 +162,31 @@ bool Texture::UpdateTextureBuffer(ID3D12Device* device)
 	immediateCopyCommandList->Close();
 	ID3D12CommandList* commandLists[] = { immediateCopyCommandList };
 	immediateCopyCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+	
+	// -- Use fence to wait until finish -- //
+	fenceValue++;
+	hr = immediateCopyCommandQueue->Signal(fence, fenceValue);
+	if (FAILED(hr))
+	{
+		return false;
+	}
 
+	if (fence->GetCompletedValue() < fenceValue)
+	{
+		// we have the fence create an event which is signaled once the fence's current value is "fenceValue"
+		hr = fence->SetEventOnCompletion(fenceValue, fenceEvent);
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// We will wait until the fence has triggered the event that it's current value has reached "fenceValue". once it's value
+		// has reached "fenceValue", we know the command queue has finished executing
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+
+	// -- Release -- //
+	SAFE_RELEASE(fence);
 	SAFE_RELEASE(immediateCopyCommandQueue);
 	SAFE_RELEASE(immediateCopyCommandAllocator);
 	SAFE_RELEASE(immediateCopyCommandList);
@@ -167,12 +209,6 @@ D3D12_SHADER_RESOURCE_VIEW_DESC Texture::GetSrvDesc()
 //{
 //	free(imageData);
 //}
-
-void Texture::ReleaseBuffer()
-{
-	SAFE_RELEASE(textureBuffer);
-	free(imageData);
-}
 
 wstring Texture::GetName()
 {
@@ -423,11 +459,18 @@ int Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 /////////////// RENDER TEXTURE STARTS FROM HERE ///////////////
 ///////////////////////////////////////////////////////////////
 
-RenderTexture::RenderTexture(int _width, int _height, DXGI_FORMAT format)
-	: width(_width), 
+RenderTexture::RenderTexture(int _width, int _height, DXGI_FORMAT format, bool _supportDepth)
+	: RenderTexture(_width, _height, L"no name", format, _supportDepth)
+{
+}
+
+RenderTexture::RenderTexture(int _width, int _height, const wstring& _fileName, DXGI_FORMAT format, bool _supportDepth)
+	: width(_width),
 	height(_height),
-	rtvHandle(),
-	Texture(L"no name")
+	supportDepth(_supportDepth),
+	depthStencilBuffer(nullptr),
+	resourceState(D3D12_RESOURCE_STATE_RENDER_TARGET),
+	Texture(_fileName.c_str())
 {
 	textureDesc = {};
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -441,26 +484,76 @@ RenderTexture::RenderTexture(int _width, int _height, DXGI_FORMAT format)
 	textureDesc.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+	depthStencilBufferDesc = {};
+	depthStencilBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthStencilBufferDesc.Alignment = 0; // may be 0, 4KB, 64KB, or 4MB. 0 will let runtime decide between 64KB and 4MB (4MB for multi-sampled textures)
+	depthStencilBufferDesc.Width = width; // width of the texture
+	depthStencilBufferDesc.Height = height; // height of the texture
+	depthStencilBufferDesc.DepthOrArraySize = 1; // if 3d image, depth of 3d image. Otherwise an array of 1D or 2D textures (we only have one image, so we set 1)
+	depthStencilBufferDesc.MipLevels = 0; // Number of mipmaps. We are not generating mipmaps for this texture, so we have only one level
+	depthStencilBufferDesc.Format = DXGI_FORMAT_D32_FLOAT; // This is the dxgi format of the image (format of the pixels)
+	depthStencilBufferDesc.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
+	depthStencilBufferDesc.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
+	depthStencilBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
+	depthStencilBufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+}
+
+RenderTexture::~RenderTexture()
+{
+	SAFE_RELEASE(depthStencilBuffer);
 }
 
 bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)
 {
-	
 	HRESULT hr;
-	// create a default heap where the upload heap will copy its contents into (contents being the texture)
+
+	D3D12_CLEAR_VALUE colorOptimizedClearValue = {};
+	colorOptimizedClearValue.Format = textureDesc.Format;
+	colorOptimizedClearValue.Color[0] = 0.0f;
+	colorOptimizedClearValue.Color[1] = 0.0f;
+	colorOptimizedClearValue.Color[2] = 0.0f;
+	colorOptimizedClearValue.Color[3] = 0.0f;
+
 	hr = device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
-		D3D12_HEAP_FLAG_NONE, // no flags
-		&textureDesc, // the description of our texture
-		D3D12_RESOURCE_STATE_RENDER_TARGET, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
-		nullptr, // used for render targets and depth/stencil buffers
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&textureDesc,
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		&colorOptimizedClearValue,
 		IID_PPV_ARGS(&textureBuffer));
 
 	if (FAILED(hr))
 	{
 		return false;
 	}
-	textureBuffer->SetName(L"Texture Buffer Resource Heap");
+
+	textureBuffer->SetName(fileName.c_str());
+
+	////////////////////////////////////////////////////////////////////
+	if (supportDepth)
+	{
+		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+		depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+		depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+		depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+		hr = device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),//depthStencilBufferDesc,//
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&depthOptimizedClearValue,
+			IID_PPV_ARGS(&depthStencilBuffer)
+		);
+
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		depthStencilBuffer->SetName(fileName.c_str());
+	}
 
 	return true;
 }
@@ -474,12 +567,38 @@ bool RenderTexture::UpdateTextureBuffer(ID3D12Device* device)
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
-	//Render Target Handle
+	//Render Target View Desc
 	rtvDesc.Format = textureDesc.Format;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.MipSlice = 0;
 	
+	//Stencil Depth View Desc
+	//if you want to bind null dsv desciptor, you need to create the dsv
+	//if you want to create the dsv, you need a initialized dsvDesc to avoid the debug layer throwing out error
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+	dsvDesc.Texture2D.MipSlice = 0;
+
 	return true;
+}
+
+void RenderTexture::UpdateViewport()
+{
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = width;
+	viewport.Height = height;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+}
+
+void RenderTexture::UpdateScissorRect()
+{
+	scissorRect.left = 0;
+	scissorRect.top = 0;
+	scissorRect.right = width;
+	scissorRect.bottom = height;
 }
 
 void RenderTexture::SetRtvHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE _rtvHandle)
@@ -487,12 +606,86 @@ void RenderTexture::SetRtvHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE _rtvHandle)
 	rtvHandle = _rtvHandle;
 }
 
+void RenderTexture::SetDsvHandle(CD3DX12_CPU_DESCRIPTOR_HANDLE _dsvHandle)
+{
+	dsvHandle = _dsvHandle;
+}
+
+void RenderTexture::SetResourceState(D3D12_RESOURCE_STATES _resourceState)
+{
+	resourceState = _resourceState;
+}
+
+bool RenderTexture::SupportDepth()
+{
+	return supportDepth;
+}
+
+ID3D12Resource* RenderTexture::GetDepthStencilBuffer()
+{
+	// make sure to create null descriptor for render textures which does not support depth
+	return supportDepth ? depthStencilBuffer : nullptr;
+}
+
+D3D12_VIEWPORT RenderTexture::GetViewport()
+{
+	return viewport;
+}
+
+D3D12_RECT RenderTexture::GetScissorRect()
+{
+	return scissorRect;
+}
+
 CD3DX12_CPU_DESCRIPTOR_HANDLE RenderTexture::GetRtvHandle()
 {
 	return rtvHandle;
 }
 
+CD3DX12_CPU_DESCRIPTOR_HANDLE RenderTexture::GetDsvHandle()
+{
+	return dsvHandle;
+}
+
 D3D12_RENDER_TARGET_VIEW_DESC RenderTexture::GetRtvDesc()
 {
 	return rtvDesc;
+}
+
+D3D12_DEPTH_STENCIL_VIEW_DESC RenderTexture::GetDsvDesc()
+{
+	return dsvDesc;
+}
+
+D3D12_RESOURCE_STATES RenderTexture::GetResourceState()
+{
+	return resourceState;
+}
+
+CD3DX12_RESOURCE_BARRIER RenderTexture::TransitionToResourceState(D3D12_RESOURCE_STATES _resourceState)
+{
+	CD3DX12_RESOURCE_BARRIER result;
+	result = CD3DX12_RESOURCE_BARRIER::Transition(textureBuffer, resourceState, _resourceState, 0);
+	resourceState = _resourceState;
+	return result;
+}
+
+bool RenderTexture::InitTexture(ID3D12Device* device)
+{
+	UpdateViewport();
+	UpdateScissorRect();
+
+	if (!CreateTextureBuffer(device))
+	{
+		printf("CreateTextureBuffer failed\n");
+		return false;
+	}
+
+	if (!UpdateTextureBuffer(device))
+	{
+		printf("UpdateTextureBuffer failed\n");
+		return false;
+	}
+
+	return true;
 }
