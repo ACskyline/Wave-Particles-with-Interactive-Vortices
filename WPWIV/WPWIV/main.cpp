@@ -22,6 +22,7 @@ IDXGIFactory4* dxgiFactory;
 ID3D12Device* device; // direct3d device
 IDXGISwapChain3* swapChain; // swapchain used to switch between render targets
 ID3D12CommandQueue* commandQueue; // container for command lists
+ID3D12Debug* debugController;
 ID3D12CommandAllocator* commandAllocator[FrameBufferCount]; // we want enough allocators for each buffer * number of threads (we only have one thread)
 ID3D12GraphicsCommandList* commandList; // a command list we can record commands into, then execute them to render the frame
 ID3D12Fence* fence[FrameBufferCount];    
@@ -349,7 +350,6 @@ bool CreateScene()
 
 bool EnableDebugLayer()
 {
-	ID3D12Debug* debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 	{
 		debugController->EnableDebugLayer();
@@ -583,6 +583,8 @@ bool InitCommandQueue()
 		Running = false;
 		return false;
 	}
+
+	commandQueue->SetName(L"WPWIV Command Queue");
 
 	return true;
 }
@@ -1501,12 +1503,12 @@ void Update()
 	mFrameGraphics.UpdateUniformBuffer();
 }
 
-void WaitForPreviousFrame()
+void WaitForPreviousFrame(int frameIndexOverride = -1)
 {
 	HRESULT hr;
 
 	// swap the current rtv buffer index so we draw on the correct buffer
-	frameIndex = swapChain->GetCurrentBackBufferIndex();
+	frameIndex = frameIndexOverride < 0 ? swapChain->GetCurrentBackBufferIndex() : frameIndexOverride;
 
 	// if the current fence value is still less than "fenceValue", then we know the GPU has not finished executing
 	// the command queue since it has not reached the "commandQueue->Signal(fence, fenceValue)" command
@@ -2563,22 +2565,31 @@ void Gui()
 
 void Cleanup()
 {
+	// wait for the gpu to finish all frames
+	for (int i = 0; i < FrameBufferCount; ++i)
+	{
+		frameIndex = i;
+		//fenceValue[i]++;
+		commandQueue->Signal(fence[i], fenceValue[i]);
+		WaitForPreviousFrame(i);
+	}
+
+	// close the fence event
+	CloseHandle(fenceEvent);
+	mRenderer.Release();
+	mScene.Release();
+
 	//imgui stuff
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+	SAFE_RELEASE(g_pd3dSrvDescHeap);
 
 	//direct input stuff
 	DIKeyboard->Unacquire();
 	DIMouse->Unacquire();
 	DirectInput->Release();
 
-	// wait for the gpu to finish all frames
-	for (int i = 0; i < FrameBufferCount; ++i)
-	{
-		frameIndex = i;
-		WaitForPreviousFrame();
-	}
 
 	// get swapchain out of full screen before exiting
 	BOOL fs = false;
@@ -2586,16 +2597,36 @@ void Cleanup()
 	if (fs == TRUE)
 		swapChain->SetFullscreenState(false, NULL);
 
-	SAFE_RELEASE(device);
-	SAFE_RELEASE(swapChain);
-	SAFE_RELEASE(commandQueue);
-	SAFE_RELEASE(commandList);
-
 	for (int i = 0; i < FrameBufferCount; ++i)
 	{
 		SAFE_RELEASE(commandAllocator[i]);
 		SAFE_RELEASE(fence[i]);
 	};
+
+	SAFE_RELEASE(commandList);
+	SAFE_RELEASE(commandQueue);
+	SAFE_RELEASE(swapChain);
+
+	////report live objects
+	//ID3D12DebugDevice* debugDev;
+	//bool hasDebugDev = false;
+	//if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&debugDev))))
+	//{
+	//	hasDebugDev = true;
+	//}
+
+	SAFE_RELEASE(device);
+
+	//if (hasDebugDev)
+	//{
+	//	OutputDebugStringW(L"Here U Go>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+	//	debugDev->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+	//	OutputDebugStringW(L"Here U Go>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+	//}
+
+	//SAFE_RELEASE(debugDev);
+
+	SAFE_RELEASE(debugController);
 }
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -2748,13 +2779,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// OK, it seems I messed up a lot of resource state stuff.
 	// Be advised if you choose to enable debug layer.
+	// --- ALL FIXED
 
-	// debug layer
-	if (!EnableDebugLayer())
-	{
-		MessageBox(0, L"Failed to enable debug layer", L"Error", MB_OK);
-		return 1;
-	}
+	//// debug layer
+	//if (!EnableDebugLayer())
+	//{
+	//	MessageBox(0, L"Failed to enable debug layer", L"Error", MB_OK);
+	//	return 1;
+	//}
 
 	//// gpu-based validation
 	//if (!EnableShaderBasedValidation())
@@ -2773,12 +2805,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// start the main loop
 	mainloop();
-
-	// we want to wait for the gpu to finish executing the command list before we start releasing everything
-	WaitForPreviousFrame();
-
-	// close the fence event
-	CloseHandle(fenceEvent);
 
 	// clean up everything
 	Cleanup();

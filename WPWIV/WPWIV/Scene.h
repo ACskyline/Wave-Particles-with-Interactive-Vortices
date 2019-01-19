@@ -171,6 +171,7 @@ public:
 	bool CreateUniformBuffer(ID3D12Device* device);
 	void UpdateUniformBuffer();
 	void ReleaseBuffer();
+	void Release();
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetUniformBufferGpuAddress();
 

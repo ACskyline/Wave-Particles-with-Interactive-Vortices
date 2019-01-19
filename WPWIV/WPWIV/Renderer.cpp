@@ -223,6 +223,7 @@ void Renderer::Release()
 			SAFE_RELEASE(fluidRootSignature[i][j]);
 			SAFE_RELEASE(fluidDescriptorHeap[i][j]);
 			SAFE_RELEASE(fluidRtvDescriptorHeap[i][j]);
+			SAFE_RELEASE(fluidDsvDescriptorHeap[i][j]);
 		}
 	}
 
@@ -234,6 +235,7 @@ void Renderer::Release()
 			SAFE_RELEASE(fluidJacobiRootSignature[i][j]);
 			SAFE_RELEASE(fluidJacobiDescriptorHeap[i][j]);
 			SAFE_RELEASE(fluidJacobiRtvDescriptorHeap[i][j]);
+			SAFE_RELEASE(fluidJacobiDsvDescriptorHeap[i][j]);
 		}
 	}
 
@@ -242,18 +244,21 @@ void Renderer::Release()
 	SAFE_RELEASE_ARRAY(graphicsRootSignature);
 	SAFE_RELEASE_ARRAY(graphicsDescriptorHeap);
 	SAFE_RELEASE_ARRAY(graphicsRtvDescriptorHeap);
+	SAFE_RELEASE_ARRAY(graphicsDsvDescriptorHeap);
 
 	// post process pipeline
 	SAFE_RELEASE_ARRAY(postProcessPSO);
 	SAFE_RELEASE_ARRAY(postProcessRootSignature);
 	SAFE_RELEASE_ARRAY(postProcessDescriptorHeap);
 	SAFE_RELEASE_ARRAY(postProcessRtvDescriptorHeap);
+	SAFE_RELEASE_ARRAY(postProcessDsvDescriptorHeap);
 
 	// wave particle pipeline
 	SAFE_RELEASE_ARRAY(waveParticlePSO);
 	SAFE_RELEASE_ARRAY(waveParticleRootSignature);
 	SAFE_RELEASE_ARRAY(waveParticleDescriptorHeap);
 	SAFE_RELEASE_ARRAY(waveParticleRtvDescriptorHeap);
+	SAFE_RELEASE_ARRAY(waveParticleDsvDescriptorHeap);
 
 	// common resource
 	SAFE_RELEASE(dsvDescriptorHeap);

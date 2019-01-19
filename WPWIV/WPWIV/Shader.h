@@ -19,7 +19,10 @@ public:
 	bool CreatePixelShaderFromFile(const wstring& _fileName);
 	D3D12_SHADER_BYTECODE GetShaderByteCode();
 
+	void ReleaseBuffer();
+
 private:
+	ID3DBlob* shader;
 	ShaderType type;
 	wstring fileName;
 	D3D12_SHADER_BYTECODE shaderBytecode;

@@ -14,8 +14,22 @@ Texture::Texture() :
 
 Texture::~Texture()
 {
-	//ReleaseBufferCPU();
+	ReleaseBuffer();
+	ReleaseBufferCPU();
+}
+
+void Texture::ReleaseBuffer()
+{
 	SAFE_RELEASE(textureBuffer);
+}
+
+void Texture::ReleaseBufferCPU()
+{
+	if (imageData != nullptr)
+	{
+		delete imageData;
+		imageData = nullptr;
+	}
 }
 
 bool Texture::LoadTextureBuffer()
@@ -107,6 +121,7 @@ bool Texture::UpdateTextureBuffer(ID3D12Device* device)
 		return false;
 	}
 
+	immediateCopyCommandQueue->SetName(L"texture immediate copy");
 	// -- Create a command allocator -- //
 	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&immediateCopyCommandAllocator));
 	if (FAILED(hr))
@@ -501,7 +516,13 @@ RenderTexture::RenderTexture(int _width, int _height, const wstring& _fileName, 
 
 RenderTexture::~RenderTexture()
 {
+	ReleaseBuffers();
+}
+
+void RenderTexture::ReleaseBuffers()
+{
 	SAFE_RELEASE(depthStencilBuffer);
+	SAFE_RELEASE(textureBuffer);
 }
 
 bool RenderTexture::CreateTextureBuffer(ID3D12Device* device)

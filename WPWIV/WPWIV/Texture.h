@@ -15,9 +15,10 @@ public:
 	virtual bool UpdateTextureBuffer(ID3D12Device* device);
 	ID3D12Resource* GetTextureBuffer();
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSrvDesc();
-	//void ReleaseBufferCPU();//in our demo there is no need to free CPU memory before delete this object
 
 	virtual bool InitTexture(ID3D12Device* device);
+	void ReleaseBuffer();
+	void ReleaseBufferCPU();
 	wstring GetName();
 
 protected:
@@ -70,6 +71,7 @@ public:
 	CD3DX12_RESOURCE_BARRIER TransitionToResourceState(D3D12_RESOURCE_STATES _resourceState);
 
 	bool InitTexture(ID3D12Device* device);
+	void ReleaseBuffers();
 private:
 	bool supportDepth;
 	ID3D12Resource* depthStencilBuffer;

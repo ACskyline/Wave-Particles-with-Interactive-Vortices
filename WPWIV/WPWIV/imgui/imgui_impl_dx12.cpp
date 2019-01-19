@@ -319,6 +319,7 @@ static void ImGui_ImplDX12_CreateFontsTexture()
 
         ID3D12CommandQueue* cmdQueue = NULL;
         hr = g_pd3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
+		cmdQueue->SetName(L"imgui command queue");//I added this to test which command queue is being final-released while still in use by the GPU
         IM_ASSERT(SUCCEEDED(hr));
 
         ID3D12CommandAllocator* cmdAlloc = NULL;

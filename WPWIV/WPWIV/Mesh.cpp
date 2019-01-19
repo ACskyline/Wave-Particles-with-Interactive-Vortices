@@ -249,6 +249,7 @@ bool Mesh::UpdateVertexBuffer(ID3D12Device* device)
 	{
 		return false;
 	}
+	immediateCopyCommandQueue->SetName(L"mesh immediate copy vertex");
 
 	// -- Create a command allocator -- //
 	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&immediateCopyCommandAllocator));
@@ -361,7 +362,7 @@ bool Mesh::UpdateIndexBuffer(ID3D12Device* device)
 	{
 		return false;
 	}
-
+	immediateCopyCommandQueue->SetName(L"mesh immediate copy index");
 	// -- Create a command allocator -- //
 	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&immediateCopyCommandAllocator));
 	if (FAILED(hr))

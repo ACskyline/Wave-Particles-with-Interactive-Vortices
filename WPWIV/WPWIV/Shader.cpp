@@ -8,6 +8,7 @@ Shader::Shader(const ShaderType& _type, const wstring& _fileName) :
 
 Shader::~Shader()
 {
+	ReleaseBuffer();
 }
 
 bool Shader::CreateShader()
@@ -49,7 +50,7 @@ bool Shader::CreateVertexShaderFromFile(const wstring& _fileName)
 
 	// compile vertex shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
-	ID3DBlob* shader; // d3d blob for holding vertex shader bytecode
+	
 	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -64,7 +65,8 @@ bool Shader::CreateVertexShaderFromFile(const wstring& _fileName)
 		CheckError(hr, errorBuff);
 		return false;
 	}
-	
+
+	SAFE_RELEASE(errorBuff);
 	// fill out a shader bytecode structure, which is basically just a pointer
 	// to the shader bytecode and the size of the shader bytecode
 	shaderBytecode.BytecodeLength = shader->GetBufferSize();
@@ -72,7 +74,6 @@ bool Shader::CreateVertexShaderFromFile(const wstring& _fileName)
 	
 	return true;
 }
-
 
 bool Shader::CreateHullShaderFromFile(const wstring& _fileName)
 {
@@ -88,7 +89,6 @@ bool Shader::CreateHullShaderFromFile(const wstring& _fileName)
 
 	// compile vertex shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
-	ID3DBlob* shader; // d3d blob for holding vertex shader bytecode
 	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -104,6 +104,7 @@ bool Shader::CreateHullShaderFromFile(const wstring& _fileName)
 		return false;
 	}
 
+	SAFE_RELEASE(errorBuff);
 	// fill out a shader bytecode structure, which is basically just a pointer
 	// to the shader bytecode and the size of the shader bytecode
 	shaderBytecode.BytecodeLength = shader->GetBufferSize();
@@ -126,7 +127,6 @@ bool Shader::CreateDomainShaderFromFile(const wstring& _fileName)
 
 	// compile vertex shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
-	ID3DBlob* shader; // d3d blob for holding vertex shader bytecode
 	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -142,6 +142,7 @@ bool Shader::CreateDomainShaderFromFile(const wstring& _fileName)
 		return false;
 	}
 
+	SAFE_RELEASE(errorBuff);
 	// fill out a shader bytecode structure, which is basically just a pointer
 	// to the shader bytecode and the size of the shader bytecode
 	shaderBytecode.BytecodeLength = shader->GetBufferSize();
@@ -164,7 +165,6 @@ bool Shader::CreateGeometryShaderFromFile(const wstring& _fileName)
 
 	// compile vertex shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
-	ID3DBlob* shader; // d3d blob for holding vertex shader bytecode
 	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -180,6 +180,7 @@ bool Shader::CreateGeometryShaderFromFile(const wstring& _fileName)
 		return false;
 	}
 
+	SAFE_RELEASE(errorBuff);
 	// fill out a shader bytecode structure, which is basically just a pointer
 	// to the shader bytecode and the size of the shader bytecode
 	shaderBytecode.BytecodeLength = shader->GetBufferSize();
@@ -202,7 +203,6 @@ bool Shader::CreatePixelShaderFromFile(const wstring& _fileName)
 
 	// compile pixel shader
 	ID3DBlob* errorBuff; // a buffer holding the error data if any
-	ID3DBlob* shader; // d3d blob for holding pixel shader bytecode
 	
 	hr = D3DCompileFromFile(_fileName.c_str(),
 		nullptr,
@@ -219,6 +219,7 @@ bool Shader::CreatePixelShaderFromFile(const wstring& _fileName)
 		return false;
 	}
 
+	SAFE_RELEASE(errorBuff);
 	// fill out shader bytecode structure for pixel shader
 	shaderBytecode.BytecodeLength = shader->GetBufferSize();
 	shaderBytecode.pShaderBytecode = shader->GetBufferPointer();
@@ -230,4 +231,9 @@ bool Shader::CreatePixelShaderFromFile(const wstring& _fileName)
 D3D12_SHADER_BYTECODE Shader::GetShaderByteCode()
 {
 	return shaderBytecode;
+}
+
+void Shader::ReleaseBuffer()
+{
+	SAFE_RELEASE(shader);
 }

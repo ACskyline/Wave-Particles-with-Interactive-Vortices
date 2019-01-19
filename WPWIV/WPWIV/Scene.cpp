@@ -6,6 +6,7 @@ Scene::Scene()
 
 Scene::~Scene()
 {
+	ReleaseBuffer();
 }
 
 void Scene::AddFrame(Frame* pFrame)
@@ -554,6 +555,42 @@ void Scene::UpdateUniformBuffer()
 void Scene::ReleaseBuffer()
 {
 	SAFE_RELEASE(gpuUniformBuffer);
+}
+
+void Scene::Release()
+{
+	for (auto frame : pFrameVec)
+	{
+		frame->ReleaseBuffer();
+	}
+
+	for (auto camera : pCameraVec)
+	{
+		camera->ReleaseBuffer();
+	}
+
+	for (auto mesh : pMeshVec)
+	{
+		mesh->ReleaseBuffers();
+	}
+
+	for (auto texture : pTextureVec)
+	{
+		texture->ReleaseBuffer();
+		texture->ReleaseBufferCPU();
+	}
+
+	for (auto shader : pShaderVec)
+	{
+		shader->ReleaseBuffer();
+	}
+
+	for (auto renderTexture : pRenderTextureVec)
+	{
+		renderTexture->ReleaseBuffers();
+	}
+
+	ReleaseBuffer();
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Scene::GetUniformBufferGpuAddress()
