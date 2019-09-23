@@ -195,8 +195,9 @@ public:
 	ID3D12DescriptorHeap** GetFluidDsvDescriptorHeapPtr(int frame, int index);
 
 	//dynamically bound rtv and srv, we need one heap for each frame
-	//also we have more than one draw call during one frame, so we need
-	//one heap for each draw call
+	//also we have more than one draw call (stage) during one frame, so we need
+	//one heap for each draw call (stage)
+	// * ping pong multiple times per frame *
 	ID3D12PipelineState* fluidJacobiPSO[FrameBufferCount][JacobiIteration];
 	ID3D12RootSignature* fluidJacobiRootSignature[FrameBufferCount][JacobiIteration];
 	ID3D12DescriptorHeap* fluidJacobiDescriptorHeap[FrameBufferCount][JacobiIteration];
@@ -207,7 +208,6 @@ private:
 
 	bool BindRenderTextureToRtvDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap* descriptorHeap, RenderTexture* texture, int slot);
 	bool BindRenderTextureToDsvDescriptorHeap(ID3D12Device* device, ID3D12DescriptorHeap* descriptorHeap, RenderTexture* texture, int slot);
-
 
 	ID3D12Resource* depthStencilBuffers[FrameBufferCount];
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandles[FrameBufferCount];
@@ -239,6 +239,12 @@ private:
 	ID3D12DescriptorHeap* postProcessDsvDescriptorHeap[static_cast<int>(PostProcessStage::Count)];
 
 	//fluid pipeline - dynamically bound rtv and srv, so we need one heap for each frame
+
+	//dynamically bound rtv and srv, we need one heap for each frame
+	//also we have more than one draw call (stage) during one frame, so we need
+	//one heap for each draw call (stage)
+	// * ping pong 1 time per frame *
+
 	ID3D12PipelineState* fluidPSO[FrameBufferCount][static_cast<int>(FluidStage::Count)];
 	ID3D12RootSignature* fluidRootSignature[FrameBufferCount][static_cast<int>(FluidStage::Count)];
 	ID3D12DescriptorHeap* fluidDescriptorHeap[FrameBufferCount][static_cast<int>(FluidStage::Count)];

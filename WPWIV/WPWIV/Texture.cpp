@@ -498,7 +498,7 @@ RenderTexture::RenderTexture(int _width, int _height, const wstring& _fileName, 
 	textureDesc.SampleDesc.Count = 1; // This is the number of samples per pixel, we just want 1 sample
 	textureDesc.SampleDesc.Quality = 0; // The quality level of the samples. Higher is better quality, but worse performance
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // The arrangement of the pixels. Setting to unknown lets the driver choose the most efficient one
-	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
 
 	depthStencilBufferDesc = {};
 	depthStencilBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -685,8 +685,13 @@ D3D12_RESOURCE_STATES RenderTexture::GetResourceState()
 
 CD3DX12_RESOURCE_BARRIER RenderTexture::TransitionToResourceState(D3D12_RESOURCE_STATES _resourceState)
 {
+#ifdef MY_DEBUG
+	if (resourceState == _resourceState)
+		__debugbreak();
+#endif
+
 	CD3DX12_RESOURCE_BARRIER result;
-	result = CD3DX12_RESOURCE_BARRIER::Transition(textureBuffer, resourceState, _resourceState, 0);
+	result = CD3DX12_RESOURCE_BARRIER::Transition(textureBuffer, resourceState, _resourceState);
 	resourceState = _resourceState;
 	return result;
 }

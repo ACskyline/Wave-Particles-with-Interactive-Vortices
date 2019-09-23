@@ -102,6 +102,7 @@ bool Renderer::CreateRenderer(ID3D12Device* device, IDXGISwapChain3* swapChain, 
 	return true;
 }
 
+//one depth stencil buffer is enough
 bool Renderer::CreateDepthStencilBuffer(ID3D12Device* device, float Width, float Height)
 {
 	HRESULT hr;
@@ -477,17 +478,17 @@ void Renderer::RecordPipeline(
 	vector<RenderTexture*>& renderTextureVec = pFrame->GetRenderTextureVec();
 	int renderTextureCount = renderTextureVec.size();
 	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
-	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;//!!!* only the first depth stencil buffer will be used *!!!//
 	vector<D3D12_VIEWPORT> frameViewPorts;
 	vector<D3D12_RECT> frameScissorRects;
 	frameRtvHandles.resize(renderTextureCount);
-	frameDsvHandles.resize(renderTextureCount);
+	frameDsvHandles.resize(renderTextureCount);//!!!* only the first depth stencil buffer will be used *!!!//
 	frameViewPorts.resize(renderTextureCount);
 	frameScissorRects.resize(renderTextureCount);
 	for (int i = 0; i < renderTextureCount; i++)
 	{
 		frameRtvHandles[i] = renderTextureVec[i]->GetRtvHandle();
-		frameDsvHandles[i] = renderTextureVec[i]->GetDsvHandle();
+		frameDsvHandles[i] = renderTextureVec[i]->GetDsvHandle();//!!!* only the first depth stencil buffer will be used *!!!//
 		frameViewPorts[i] = renderTextureVec[i]->GetViewport();
 		frameScissorRects[i] = renderTextureVec[i]->GetScissorRect();
 	}
@@ -495,6 +496,8 @@ void Renderer::RecordPipeline(
 	commandList->SetPipelineState(pso);
 
 	// set the render target for the output merger stage (the output of the pipeline)
+	//!!!* only the first depth stencil buffer will be used *!!!//
+	//the last parameter is the address of one dsv handle
 	commandList->OMSetRenderTargets(renderTextureCount, frameRtvHandles.data(), FALSE, frameDsvHandles.data());
 
 	// Clear the render target by using the ClearRenderTargetView command
@@ -557,17 +560,17 @@ void Renderer::RecordPipelineOverride(
 {
 	int renderTextureCount = renderTextureVecOverride.size();
 	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameRtvHandles;
-	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;
+	vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> frameDsvHandles;//!!!* only the first depth stencil buffer will be used *!!!//
 	vector<D3D12_VIEWPORT> frameViewPorts;
 	vector<D3D12_RECT> frameScissorRects;
 	frameRtvHandles.resize(renderTextureCount);
-	frameDsvHandles.resize(renderTextureCount);
+	frameDsvHandles.resize(renderTextureCount);//!!!* only the first depth stencil buffer will be used *!!!//
 	frameViewPorts.resize(renderTextureCount);
 	frameScissorRects.resize(renderTextureCount);
 	for (int i = 0; i < renderTextureCount; i++)
 	{
 		frameRtvHandles[i] = renderTextureVecOverride[i]->GetRtvHandle();
-		frameDsvHandles[i] = renderTextureVecOverride[i]->GetDsvHandle();
+		frameDsvHandles[i] = renderTextureVecOverride[i]->GetDsvHandle();//!!!* only the first depth stencil buffer will be used *!!!//
 		frameViewPorts[i] = renderTextureVecOverride[i]->GetViewport();
 		frameScissorRects[i] = renderTextureVecOverride[i]->GetScissorRect();
 	}
@@ -575,6 +578,8 @@ void Renderer::RecordPipelineOverride(
 	commandList->SetPipelineState(pso);
 
 	// set the render target for the output merger stage (the output of the pipeline)
+	//!!!* only the first depth stencil buffer will be used *!!!//
+	//the last parameter is the address of one dsv handle
 	commandList->OMSetRenderTargets(renderTextureCount, frameRtvHandles.data(), FALSE, frameDsvHandles.data());
 
 	// Clear the render target by using the ClearRenderTargetView command

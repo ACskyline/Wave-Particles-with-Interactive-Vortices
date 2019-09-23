@@ -22,7 +22,9 @@ IDXGIFactory4* dxgiFactory;
 ID3D12Device* device; // direct3d device
 IDXGISwapChain3* swapChain; // swapchain used to switch between render targets
 ID3D12CommandQueue* commandQueue; // container for command lists
+#ifdef MY_DEBUG
 ID3D12Debug* debugController;
+#endif
 ID3D12CommandAllocator* commandAllocator[FrameBufferCount]; // we want enough allocators for each buffer * number of threads (we only have one thread)
 ID3D12GraphicsCommandList* commandList; // a command list we can record commands into, then execute them to render the frame
 ID3D12Fence* fence[FrameBufferCount];    
@@ -348,6 +350,7 @@ bool CreateScene()
 	return true;
 }
 
+#ifdef MY_DEBUG
 bool EnableDebugLayer()
 {
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -357,7 +360,9 @@ bool EnableDebugLayer()
 	}
 	return false;
 }
+#endif
 
+#ifdef MY_DEBUG
 bool EnableShaderBasedValidation()
 {
 	ID3D12Debug* spDebugController0;
@@ -373,6 +378,7 @@ bool EnableShaderBasedValidation()
 	spDebugController1->SetEnableGPUBasedValidation(true);
 	return true;
 }
+#endif
 
 bool InitScene()
 {
@@ -418,6 +424,7 @@ bool InitDirectInput(HINSTANCE hInstance)
 void DetectInput()
 {
 	BYTE keyboardCurrState[256];
+	memset(keyboardCurrState, 0, sizeof(keyboardCurrState));//initialization is important, sometimes the value of unpressed key will not be changed
 
 	DIKeyboard->Acquire();
 
@@ -431,10 +438,11 @@ void DetectInput()
 	int mouseY = currentCursorPos.y;
 
 	//keyboard control
-	if (KEYDOWN(keyboardCurrState, DIK_ESCAPE))
-	{
-		PostMessage(hwnd, WM_DESTROY, 0, 0);
-	}
+	//this is handled in mainloop, need to do this here again
+	//if (KEYDOWN(keyboardCurrState, DIK_ESCAPE))
+	//{
+	//	PostMessage(hwnd, WM_DESTROY, 0, 0);
+	//}
 
 	//mouse control
 	if (KEYDOWN(keyboardCurrState, DIK_C))//control camera
@@ -500,7 +508,7 @@ void DetectInput()
 		mCamera.UpdateUniformBuffer();
 	}
 	
-	memcpy(keyboardLastState, keyboardCurrState, 256 * sizeof(BYTE));
+	memcpy(keyboardLastState, keyboardCurrState, sizeof(keyboardLastState));
 
 	return;
 }
@@ -637,7 +645,6 @@ bool InitSwapChain()
 
 bool InitCommandList()
 {
-
 	HRESULT hr;
 
 	// -- Create the Command Allocators -- //
@@ -667,7 +674,6 @@ bool InitCommandList()
 
 bool InitFence()
 {
-
 	HRESULT hr;
 
 	// -- Create a Fence & Fence Event -- //
@@ -1736,6 +1742,8 @@ void UpdatePipeline()
 		vector<D3D12_RESOURCE_BARRIER> barrierAdvectDensity;
 		if (pRtDensityPing->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
 			barrierAdvectDensity.push_back(pRtDensityPing->TransitionToResourceState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		if (pRtVelocityPing->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+			barrierAdvectDensity.push_back(pRtVelocityPing->TransitionToResourceState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 		if (pRtDensityPong->GetResourceState() != D3D12_RESOURCE_STATE_RENDER_TARGET)
 			barrierAdvectDensity.push_back(pRtDensityPong->TransitionToResourceState(D3D12_RESOURCE_STATE_RENDER_TARGET));
 			
@@ -2125,15 +2133,22 @@ void UpdatePipeline()
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 	///////// MY POSTPROCESS V PIPELINE /////////
 
+	//D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE	
+	//The resource is used with a shader other than the pixel shader.
+	//A subresource must be in this state before being read by any stage(except for the pixel shader stage) via a shader resource view.
+	//You can still use the resource in a pixel shader with this flag as long as it also has the flag D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE set.
+	//This is a read - only state.
+	//https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states
+
 	vector<D3D12_RESOURCE_BARRIER> barrierPostprocessVToGraphics;
 	if (mRenderTextureObstacle.GetResourceState() != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
 		barrierPostprocessVToGraphics.push_back(mRenderTextureObstacle.TransitionToResourceState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	if (mRenderTexturePostProcessV1.GetResourceState() != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-		barrierPostprocessVToGraphics.push_back(mRenderTexturePostProcessV1.TransitionToResourceState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	if (mRenderTexturePostProcessV2.GetResourceState() != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-		barrierPostprocessVToGraphics.push_back(mRenderTexturePostProcessV2.TransitionToResourceState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-	if (pRtVelocityPing->GetResourceState() != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-		barrierPostprocessVToGraphics.push_back(pRtVelocityPing->TransitionToResourceState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	if (mRenderTexturePostProcessV1.GetResourceState() != (D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE))
+		barrierPostprocessVToGraphics.push_back(mRenderTexturePostProcessV1.TransitionToResourceState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	if (mRenderTexturePostProcessV2.GetResourceState() != (D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE))
+		barrierPostprocessVToGraphics.push_back(mRenderTexturePostProcessV2.TransitionToResourceState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	if (pRtVelocityPing->GetResourceState() != (D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE))
+		barrierPostprocessVToGraphics.push_back(pRtVelocityPing->TransitionToResourceState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	if (pRtPressurePing->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
 		barrierPostprocessVToGraphics.push_back(pRtPressurePing->TransitionToResourceState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	if (pRtDensityPing->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
@@ -2607,26 +2622,28 @@ void Cleanup()
 	SAFE_RELEASE(commandQueue);
 	SAFE_RELEASE(swapChain);
 
-	////report live objects
-	//ID3D12DebugDevice* debugDev;
-	//bool hasDebugDev = false;
-	//if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&debugDev))))
-	//{
-	//	hasDebugDev = true;
-	//}
+#ifdef MY_DEBUG
+	//report live objects
+	ID3D12DebugDevice* debugDev;
+	bool hasDebugDev = false;
+	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&debugDev))))
+	{
+		hasDebugDev = true;
+	}
+#endif 
 
 	SAFE_RELEASE(device);
 
-	//if (hasDebugDev)
-	//{
-	//	OutputDebugStringW(L"Here U Go>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-	//	debugDev->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
-	//	OutputDebugStringW(L"Here U Go>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-	//}
-
-	//SAFE_RELEASE(debugDev);
-
+#ifdef MY_DEBUG
+	if (hasDebugDev)
+	{
+		OutputDebugStringW(L"Debug Report Live Device Objects >>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+		debugDev->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+		OutputDebugStringW(L"Debug Report Live Device Objects >>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+	}
+	SAFE_RELEASE(debugDev);
 	SAFE_RELEASE(debugController);
+#endif
 }
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -2662,12 +2679,11 @@ LRESULT CALLBACK WndProc(HWND hwnd,	UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 // create and show the window
-bool InitializeWindow(HINSTANCE hInstance, int ShowWnd,	bool fullscreen)
+bool InitWindow(HINSTANCE hInstance, int ShowWnd,	bool fullscreen)
 {
 	if (fullscreen)
 	{
-		HMONITOR hmon = MonitorFromWindow(hwnd,
-			MONITOR_DEFAULTTONEAREST);
+		HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { sizeof(mi) };
 		GetMonitorInfo(hmon, &mi);
 
@@ -2741,7 +2757,8 @@ void mainloop()
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		else {
+		
+		{
 			// run gui code
 			Gui();
 			// run game code
@@ -2764,7 +2781,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	// create the window
-	if (!InitializeWindow(hInstance, nShowCmd, FullScreen))
+	if (!InitWindow(hInstance, nShowCmd, FullScreen))
 	{
 		MessageBox(0, L"Window Initialization - Failed", L"Error", MB_OK);
 		return 1;
@@ -2781,19 +2798,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// Be advised if you choose to enable debug layer.
 	// --- ALL FIXED
 
-	//// debug layer
-	//if (!EnableDebugLayer())
-	//{
-	//	MessageBox(0, L"Failed to enable debug layer", L"Error", MB_OK);
-	//	return 1;
-	//}
+#ifdef MY_DEBUG
+	// debug layer
+	if (!EnableDebugLayer())
+	{
+		MessageBox(0, L"Failed to enable debug layer", L"Error", MB_OK);
+		return 1;
+	}
 
-	//// gpu-based validation
+	// gpu-based validation
+	// this is problematic for the moment, don't know why 'FluidVelocity2' always report incompatible resource state even though I have proper barriers
+	// it is used by both domain shader and pixel shader, but it seems the transition to (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE) is not enough for some reason
 	//if (!EnableShaderBasedValidation())
 	//{
 	//	MessageBox(0, L"Failed to enable shader based validation", L"Error", MB_OK);
 	//	return 1;
 	//}
+#endif
 
 	// initialize direct3d
 	if (!InitD3D())

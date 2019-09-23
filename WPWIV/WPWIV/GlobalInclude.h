@@ -6,11 +6,13 @@
 #include <string>
 #include "Dependencies/d3dx12.h"
 
+#define MY_DEBUG
+
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
+#define SAFE_RELEASE_ARRAY(p) { int n = _countof(p); for(int i = 0;i<n;i++){ SAFE_RELEASE(p[i]); } }
 #define KEYDOWN(name, key) ((name)[(key)] & 0x80)
 #define EPSILON 0.00000001
-
-#define SAFE_RELEASE_ARRAY(p) { int n = _countof(p); for(int i = 0;i<n;i++){ SAFE_RELEASE(p[i]); } }
+#define SIZEOF_ARRAY(arr) sizeof()
 
 using namespace DirectX;
 using namespace std;
